@@ -33,7 +33,6 @@ interface AppState {
   isGenerating: boolean;
   sysPromptOverride: string;
   language: string;
-  apiKey: string;
   sidebarOpen: boolean;
 
   setUser: (user: UserProfile) => void;
