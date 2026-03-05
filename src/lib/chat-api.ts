@@ -28,19 +28,9 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
       content: m.text || '[Image]',
     }));
 
-    // First message carries the system prompt
-    const payload = {
-      messages: [
-        { role: 'user', content: userText, systemPrompt: finalSysPrompt },
-        ...history.slice(0, -1), // exclude last since it's the current user msg already added
-      ],
-      mode,
-    };
-
-    // Actually send: history + current message
     const chatMessages = [
       ...history,
-      { role: 'user', content: userText, systemPrompt: finalSysPrompt },
+      { role: 'user', content: userText },
     ];
 
     const resp = await fetch(CHAT_URL, {
@@ -49,7 +39,7 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
         'Content-Type': 'application/json',
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
-      body: JSON.stringify({ messages: chatMessages, mode }),
+      body: JSON.stringify({ messages: chatMessages, systemPrompt: finalSysPrompt, mode }),
     });
 
     if (!resp.ok) {
