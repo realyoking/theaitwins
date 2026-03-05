@@ -1,4 +1,4 @@
-import { Plus, Settings, Zap, Sun, Moon, X, Cpu, ChevronUp } from 'lucide-react';
+import { Plus, Settings, Zap, Sun, Moon, X, Cpu, ChevronUp, MessageSquare } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 
 interface SidebarProps {
@@ -7,7 +7,7 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ onOpenSettings, onOpenPricing }: SidebarProps) => {
-  const { user, credits, isPro, clearMessages, toggleTheme, theme, sidebarOpen, setSidebarOpen } = useAppStore();
+  const { user, credits, isPro, messages, clearMessages, toggleTheme, theme, sidebarOpen, setSidebarOpen } = useAppStore();
 
   if (!user) return null;
 
@@ -49,6 +49,21 @@ const Sidebar = ({ onOpenSettings, onOpenPricing }: SidebarProps) => {
             <div className="text-xl font-black">{isPro ? '∞' : credits}</div>
             <div className="text-[9px] text-muted-foreground mt-1 font-medium">Resets daily at 12:00 AM</div>
           </div>
+
+          {/* Chat History */}
+          {messages.length > 0 && (
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2 block mb-2">Chat History</span>
+              <div className="space-y-0.5 max-h-48 overflow-y-auto custom-scrollbar">
+                {messages.filter(m => m.role === 'user').slice(-10).map((msg, i) => (
+                  <div key={i} className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground rounded-lg truncate">
+                    <MessageSquare className="w-3 h-3 shrink-0" />
+                    <span className="truncate">{msg.text?.slice(0, 40) || '[Image]'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-1">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2 block mb-2">Tools</span>

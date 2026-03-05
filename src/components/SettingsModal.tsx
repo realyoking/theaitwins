@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Settings as SettingsIcon } from 'lucide-react';
+import { X, Settings as SettingsIcon, Trash2 } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 
 interface SettingsModalProps {
@@ -18,19 +18,31 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
   const [lang, setLang] = useState(language);
   const [sysPrompt, setSysPrompt] = useState(sysPromptOverride);
 
+  // Sync form state when modal opens
+  useEffect(() => {
+    if (open && user) {
+      setName(user.name);
+      setAge(user.age);
+      setGender(user.gender);
+      setHobbies(user.hobbies);
+      setLang(language);
+      setSysPrompt(sysPromptOverride);
+    }
+  }, [open]);
+
   const handleSave = () => {
     updateUser({ name, age, gender, hobbies });
-    setLanguage(lang);
     setLanguage(lang);
     setSysPromptOverride(sysPrompt);
     onClose();
   };
 
-  // Sync when opening
-  if (open && name !== user?.name && user) {
-    setName(user.name); setAge(user.age); setGender(user.gender); setHobbies(user.hobbies);
-    setLang(language); setSysPrompt(sysPromptOverride);
-  }
+  const handleResetAll = () => {
+    if (confirm('Are you sure? This will delete ALL data and restart the app.')) {
+      localStorage.clear();
+      window.location.reload();
+    }
+  };
 
   const inputClass = "w-full mt-1 px-3 py-2 bg-muted rounded-lg outline-none border border-transparent focus:border-muted-foreground/30 text-sm";
 
@@ -88,6 +100,10 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
               <button onClick={handleSave}
                 className="w-full py-2.5 mt-4 bg-primary text-primary-foreground rounded-lg text-sm font-bold shadow-md hover:scale-[1.02] transition-transform">
                 Save Changes
+              </button>
+              <button onClick={handleResetAll}
+                className="w-full py-2.5 mt-2 bg-destructive text-destructive-foreground rounded-lg text-sm font-bold shadow-md hover:scale-[1.02] transition-transform flex items-center justify-center gap-2">
+                <Trash2 className="w-4 h-4" /> Reset All Data
               </button>
             </div>
           </motion.div>
