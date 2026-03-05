@@ -20,7 +20,7 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
 
   const handleSave = () => {
     updateUser({ name, age, gender, hobbies });
-    setApiKey(key);
+    setLanguage(lang);
     setLanguage(lang);
     setSysPromptOverride(sysPrompt);
     onClose();
