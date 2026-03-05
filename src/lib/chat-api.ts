@@ -1,65 +1,117 @@
 import { SYSTEM_PROMPTS } from './prompts';
-import { useAppStore, type ChatMessage } from './store';
+import { useAppStore } from './store';
+
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
 export async function sendChatMessage(userText: string, imageData?: string | null) {
   const store = useAppStore.getState();
-  const { model, mode, user, messages, sysPromptOverride, language, apiKey } = store;
+  const { model, mode, user, messages, sysPromptOverride, language } = store;
 
-  if (!apiKey) {
-    store.addMessage({ role: 'bot', type: 'text', text: '⚠️ **No API key configured.** Please go to Settings and add your Google Gemini API key.' });
+  const isDraw = userText.toLowerCase().startsWith('/draw');
+
+  if (isDraw) {
+    store.addMessage({ role: 'bot', type: 'text', text: 'Image generation via /draw is not currently supported.' });
     store.setIsGenerating(false);
     return;
   }
 
-  const isDraw = userText.toLowerCase().startsWith('/draw');
-
   try {
-    if (isDraw && store.isPro) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instances: { prompt: userText.replace('/draw', '') }, parameters: { sampleCount: 1 } }),
-      });
-      if (!res.ok) throw new Error('Image Generation Failed.');
-      const data = await res.json();
-      store.addMessage({ role: 'bot', type: 'image', url: `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}` });
-    } else if (isDraw && !store.isPro) {
-      store.addMessage({ role: 'bot', type: 'text', text: 'Image generation requires a Pro subscription. Upgrade now to use /draw.' });
-    } else {
-      let finalSysPrompt = sysPromptOverride || SYSTEM_PROMPTS[model];
-      finalSysPrompt += `\n\nUSER PROFILE:\nName: ${user!.name}\nAge: ${user!.age}\nGender: ${user!.gender}\nHobbies: ${user!.hobbies}\nLanguage Pref: ${language}\nUse this context to personalize responses.`;
+    let finalSysPrompt = sysPromptOverride || SYSTEM_PROMPTS[model];
+    finalSysPrompt += `\n\nUSER PROFILE:\nName: ${user!.name}\nAge: ${user!.age}\nGender: ${user!.gender}\nHobbies: ${user!.hobbies}\nLanguage Pref: ${language}\nUse this context to personalize responses.`;
 
-      if (mode === 'fast') finalSysPrompt += '\nMODE: FAST. Be concise, direct, and short.';
-      if (mode === 'thinking') finalSysPrompt += '\nMODE: THINKING. Think step-by-step logically before answering.';
-      if (mode === 'pro') finalSysPrompt += '\nMODE: PRO. Provide an extremely exhaustive, expert-level response.';
+    if (mode === 'fast') finalSysPrompt += '\nMODE: FAST. Be concise, direct, and short.';
+    if (mode === 'thinking') finalSysPrompt += '\nMODE: THINKING. Think step-by-step logically before answering.';
+    if (mode === 'pro') finalSysPrompt += '\nMODE: PRO. Provide an extremely exhaustive, expert-level response.';
 
-      const history = [...messages].slice(-10).map((m) => ({
-        role: m.role === 'bot' ? 'model' : 'user',
-        parts: [{ text: m.text || '[Image]' }],
-      }));
+    const history = [...messages].slice(-10).map((m) => ({
+      role: m.role === 'bot' ? 'assistant' : 'user',
+      content: m.text || '[Image]',
+    }));
 
-      const payload = {
-        contents: history,
-        systemInstruction: { parts: [{ text: finalSysPrompt }] },
-      };
+    // First message carries the system prompt
+    const payload = {
+      messages: [
+        { role: 'user', content: userText, systemPrompt: finalSysPrompt },
+        ...history.slice(0, -1), // exclude last since it's the current user msg already added
+      ],
+      mode,
+    };
 
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }
-      );
+    // Actually send: history + current message
+    const chatMessages = [
+      ...history,
+      { role: 'user', content: userText, systemPrompt: finalSysPrompt },
+    ];
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error?.message || `HTTP Error ${res.status}`);
+    const resp = await fetch(CHAT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({ messages: chatMessages, mode }),
+    });
+
+    if (!resp.ok) {
+      const errorData = await resp.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP Error ${resp.status}`);
+    }
+
+    if (!resp.body) throw new Error('No response body');
+
+    // Stream SSE tokens
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let textBuffer = '';
+    let fullText = '';
+    let messageAdded = false;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      textBuffer += decoder.decode(value, { stream: true });
+
+      let newlineIndex: number;
+      while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
+        let line = textBuffer.slice(0, newlineIndex);
+        textBuffer = textBuffer.slice(newlineIndex + 1);
+
+        if (line.endsWith('\r')) line = line.slice(0, -1);
+        if (line.startsWith(':') || line.trim() === '') continue;
+        if (!line.startsWith('data: ')) continue;
+
+        const jsonStr = line.slice(6).trim();
+        if (jsonStr === '[DONE]') break;
+
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+          if (content) {
+            fullText += content;
+            const msgs = useAppStore.getState().messages;
+            if (!messageAdded) {
+              store.addMessage({ role: 'bot', type: 'text', text: fullText });
+              messageAdded = true;
+            } else {
+              // Update the last message
+              const updated = [...msgs];
+              updated[updated.length - 1] = { ...updated[updated.length - 1], text: fullText };
+              useAppStore.setState({ messages: updated });
+              localStorage.setItem('tat_chat', JSON.stringify(updated));
+            }
+          }
+        } catch {
+          textBuffer = line + '\n' + textBuffer;
+          break;
+        }
       }
+    }
 
-      const data = await res.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from API.';
-      store.addMessage({ role: 'bot', type: 'text', text });
+    if (!messageAdded) {
+      store.addMessage({ role: 'bot', type: 'text', text: 'No response from API.' });
     }
   } catch (e: any) {
-    store.addMessage({ role: 'bot', type: 'text', text: `⚠️ **API Error:** ${e.message}` });
+    store.addMessage({ role: 'bot', type: 'text', text: `⚠️ **Error:** ${e.message}` });
   } finally {
     store.setIsGenerating(false);
   }
