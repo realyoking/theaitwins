@@ -14,7 +14,7 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
   const [age, setAge] = useState(user?.age || '');
   const [gender, setGender] = useState(user?.gender || '');
   const [hobbies, setHobbies] = useState(user?.hobbies || '');
-  const [key, setKey] = useState(apiKey);
+  
   const [lang, setLang] = useState(language);
   const [sysPrompt, setSysPrompt] = useState(sysPromptOverride);
 
