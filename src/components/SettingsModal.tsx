@@ -101,6 +101,10 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                 className="w-full py-2.5 mt-4 bg-primary text-primary-foreground rounded-lg text-sm font-bold shadow-md hover:scale-[1.02] transition-transform">
                 Save Changes
               </button>
+              <button onClick={handleResetAll}
+                className="w-full py-2.5 mt-2 bg-destructive text-destructive-foreground rounded-lg text-sm font-bold shadow-md hover:scale-[1.02] transition-transform flex items-center justify-center gap-2">
+                <Trash2 className="w-4 h-4" /> Reset All Data
+              </button>
             </div>
           </motion.div>
         </div>
