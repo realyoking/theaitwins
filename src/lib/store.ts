@@ -100,7 +100,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   setCanvasOpen: (v) => set({ isCanvasOpen: v }),
   setCanvasCode: (c) => set({ canvasCode: c }),
   setSidebarOpen: (v) => set({ sidebarOpen: v }),
-  setApiKey: (k) => { set({ apiKey: k }); localStorage.setItem('tat_apikey', k); },
+  
   setSysPromptOverride: (s) => { set({ sysPromptOverride: s }); localStorage.setItem('tat_sysprompt', s); },
   setLanguage: (l) => { set({ language: l }); localStorage.setItem('tat_lang', l); },
   updateUser: (partial) => {
