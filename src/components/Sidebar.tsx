@@ -1,4 +1,4 @@
-import { Plus, Settings, Zap, Sun, Moon, X, Cpu, ChevronUp } from 'lucide-react';
+import { Plus, Settings, Zap, Sun, Moon, X, Cpu, ChevronUp, MessageSquare } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 
 interface SidebarProps {
