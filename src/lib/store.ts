@@ -47,7 +47,7 @@ interface AppState {
   setCanvasCode: (c: string) => void;
   deductCredits: () => boolean;
   setSidebarOpen: (v: boolean) => void;
-  setApiKey: (k: string) => void;
+  
   setSysPromptOverride: (s: string) => void;
   setLanguage: (l: string) => void;
   checkDailyReset: () => void;
