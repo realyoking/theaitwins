@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Settings as SettingsIcon, Key } from 'lucide-react';
+import { X, Settings as SettingsIcon } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 
 interface SettingsModalProps {
@@ -9,18 +9,18 @@ interface SettingsModalProps {
 }
 
 const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
-  const { user, updateUser, apiKey, setApiKey, sysPromptOverride, setSysPromptOverride, language, setLanguage } = useAppStore();
+  const { user, updateUser, sysPromptOverride, setSysPromptOverride, language, setLanguage } = useAppStore();
   const [name, setName] = useState(user?.name || '');
   const [age, setAge] = useState(user?.age || '');
   const [gender, setGender] = useState(user?.gender || '');
   const [hobbies, setHobbies] = useState(user?.hobbies || '');
-  const [key, setKey] = useState(apiKey);
+  
   const [lang, setLang] = useState(language);
   const [sysPrompt, setSysPrompt] = useState(sysPromptOverride);
 
   const handleSave = () => {
     updateUser({ name, age, gender, hobbies });
-    setApiKey(key);
+    setLanguage(lang);
     setLanguage(lang);
     setSysPromptOverride(sysPrompt);
     onClose();
@@ -29,7 +29,7 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
   // Sync when opening
   if (open && name !== user?.name && user) {
     setName(user.name); setAge(user.age); setGender(user.gender); setHobbies(user.hobbies);
-    setKey(apiKey); setLang(language); setSysPrompt(sysPromptOverride);
+    setLang(language); setSysPrompt(sysPromptOverride);
   }
 
   const inputClass = "w-full mt-1 px-3 py-2 bg-muted rounded-lg outline-none border border-transparent focus:border-muted-foreground/30 text-sm";
@@ -72,14 +72,6 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
               <div>
                 <label className="text-[10px] font-bold text-muted-foreground uppercase">Hobbies</label>
                 <input value={hobbies} onChange={(e) => setHobbies(e.target.value)} className={inputClass} />
-              </div>
-              <div>
-                <label className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
-                  <Key className="w-3 h-3" /> Google Gemini API Key
-                </label>
-                <input value={key} onChange={(e) => setKey(e.target.value)} type="password" placeholder="Paste your API key here..."
-                  className={inputClass + ' font-mono text-xs'} />
-                <p className="text-[9px] text-muted-foreground mt-1">Get yours at ai.google.dev</p>
               </div>
               <div>
                 <label className="text-[10px] font-bold text-muted-foreground uppercase">App Language</label>

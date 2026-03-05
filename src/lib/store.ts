@@ -33,7 +33,6 @@ interface AppState {
   isGenerating: boolean;
   sysPromptOverride: string;
   language: string;
-  apiKey: string;
   sidebarOpen: boolean;
 
   setUser: (user: UserProfile) => void;
@@ -48,7 +47,7 @@ interface AppState {
   setCanvasCode: (c: string) => void;
   deductCredits: () => boolean;
   setSidebarOpen: (v: boolean) => void;
-  setApiKey: (k: string) => void;
+  
   setSysPromptOverride: (s: string) => void;
   setLanguage: (l: string) => void;
   checkDailyReset: () => void;
@@ -77,7 +76,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   isGenerating: false,
   sysPromptOverride: localStorage.getItem('tat_sysprompt') || '',
   language: localStorage.getItem('tat_lang') || 'en',
-  apiKey: localStorage.getItem('tat_apikey') || '',
   sidebarOpen: false,
 
   setUser: (user) => { set({ user }); localStorage.setItem('tat_user', JSON.stringify(user)); },
@@ -102,7 +100,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   setCanvasOpen: (v) => set({ isCanvasOpen: v }),
   setCanvasCode: (c) => set({ canvasCode: c }),
   setSidebarOpen: (v) => set({ sidebarOpen: v }),
-  setApiKey: (k) => { set({ apiKey: k }); localStorage.setItem('tat_apikey', k); },
+  
   setSysPromptOverride: (s) => { set({ sysPromptOverride: s }); localStorage.setItem('tat_sysprompt', s); },
   setLanguage: (l) => { set({ language: l }); localStorage.setItem('tat_lang', l); },
   updateUser: (partial) => {
