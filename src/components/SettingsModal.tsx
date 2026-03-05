@@ -9,7 +9,7 @@ interface SettingsModalProps {
 }
 
 const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
-  const { user, updateUser, apiKey, setApiKey, sysPromptOverride, setSysPromptOverride, language, setLanguage } = useAppStore();
+  const { user, updateUser, sysPromptOverride, setSysPromptOverride, language, setLanguage } = useAppStore();
   const [name, setName] = useState(user?.name || '');
   const [age, setAge] = useState(user?.age || '');
   const [gender, setGender] = useState(user?.gender || '');
