@@ -7,7 +7,7 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ onOpenSettings, onOpenPricing }: SidebarProps) => {
-  const { user, credits, isPro, clearMessages, toggleTheme, theme, sidebarOpen, setSidebarOpen } = useAppStore();
+  const { user, credits, isPro, messages, clearMessages, toggleTheme, theme, sidebarOpen, setSidebarOpen } = useAppStore();
 
   if (!user) return null;
 
