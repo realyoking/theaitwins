@@ -29,7 +29,7 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
   // Sync when opening
   if (open && name !== user?.name && user) {
     setName(user.name); setAge(user.age); setGender(user.gender); setHobbies(user.hobbies);
-    setKey(apiKey); setLang(language); setSysPrompt(sysPromptOverride);
+    setLang(language); setSysPrompt(sysPromptOverride);
   }
 
   const inputClass = "w-full mt-1 px-3 py-2 bg-muted rounded-lg outline-none border border-transparent focus:border-muted-foreground/30 text-sm";
