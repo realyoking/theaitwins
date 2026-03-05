@@ -74,13 +74,6 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                 <input value={hobbies} onChange={(e) => setHobbies(e.target.value)} className={inputClass} />
               </div>
               <div>
-                <label className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
-                  <Key className="w-3 h-3" /> Google Gemini API Key
-                </label>
-                <input value={key} onChange={(e) => setKey(e.target.value)} type="password" placeholder="Paste your API key here..."
-                  className={inputClass + ' font-mono text-xs'} />
-                <p className="text-[9px] text-muted-foreground mt-1">Get yours at ai.google.dev</p>
-              </div>
               <div>
                 <label className="text-[10px] font-bold text-muted-foreground uppercase">App Language</label>
                 <select value={lang} onChange={(e) => setLang(e.target.value)} className={inputClass + ' appearance-none'}>
