@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TheAiTwins</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        /* Premium Custom Animations */
+        @keyframes slideUpFade {
+            0% { opacity: 0; transform: translateY(15px) scale(0.98); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes modalEnter {
+            0% { opacity: 0; transform: scale(0.95) translateY(10px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes pulseSubtle {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(0.95); }
+        }
+        .animate-message { animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-modal { animation: modalEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        .dot-pulse span { animation: pulseSubtle 1.4s infinite ease-in-out both; }
+        .dot-pulse span:nth-child(1) { animation-delay: -0.32s; }
+        .dot-pulse span:nth-child(2) { animation-delay: -0.16s; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* Hide elements dynamically */
+        .hidden-app { display: none !important; }
+    </style>
+</head>
+<body class="bg-white dark:bg-[#0a0a0a] text-zinc-900 dark:text-zinc-100 font-sans h-[100dvh] overflow-hidden flex transition-colors duration-300">
+
+    <!-- ========================================== -->
+    <!-- 1. ONBOARDING SCREEN -->
+    <!-- ========================================== -->
+    <div id="onboardingScreen" class="fixed inset-0 z-50 bg-zinc-50 dark:bg-[#0a0a0a] flex items-center justify-center p-4 hidden-app">
+        <div class="w-full max-w-md bg-white dark:bg-[#111] p-8 rounded-[2rem] shadow-2xl border border-zinc-200 dark:border-zinc-800/50 animate-modal">
+            <div class="w-16 h-16 bg-black dark:bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl transform rotate-3 hover:rotate-0 transition-all">
+                <i data-lucide="cpu" class="text-white dark:text-black w-8 h-8"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-center mb-2">Welcome to TheAiTwins</h1>
+            <p class="text-zinc-500 text-xs text-center mb-6">Initialize your workspace profile</p>
+            
+            <form id="onboardingForm" class="space-y-4">
+                <div>
+                    <label class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Nickname</label>
+                    <input type="text" id="obName" required class="w-full mt-1 px-4 py-3 bg-zinc-100 dark:bg-[#1a1a1a] rounded-xl outline-none border border-transparent focus:border-zinc-300 dark:focus:border-zinc-600 transition-all text-sm font-semibold" placeholder="How should I call you?">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Age</label>
+                        <input type="number" id="obAge" required class="w-full mt-1 px-4 py-3 bg-zinc-100 dark:bg-[#1a1a1a] rounded-xl outline-none border border-transparent focus:border-zinc-300 dark:focus:border-zinc-600 transition-all text-sm font-semibold" placeholder="e.g. 21">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Gender</label>
+                        <select id="obGender" required class="w-full mt-1 px-4 py-3 bg-zinc-100 dark:bg-[#1a1a1a] rounded-xl outline-none border border-transparent focus:border-zinc-300 dark:focus:border-zinc-600 transition-all text-sm font-semibold appearance-none">
+                            <option value="" disabled selected>Select</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Interests & Hobbies</label>
+                    <input type="text" id="obHobbies" required class="w-full mt-1 px-4 py-3 bg-zinc-100 dark:bg-[#1a1a1a] rounded-xl outline-none border border-transparent focus:border-zinc-300 dark:focus:border-zinc-600 transition-all text-sm font-semibold" placeholder="Coding, Gaming, Edging...">
+                </div>
+                <button type="submit" class="w-full py-3.5 mt-2 bg-black dark:bg-white text-white dark:text-black rounded-xl text-sm font-bold hover:opacity-80 transition-opacity">
+                    Initialize Profile
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 2. MAIN APP LAYOUT -->
+    <!-- ========================================== -->
+    <div id="mainApp" class="h-full flex hidden-app">
+        
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="w-64 shrink-0 border-r border-zinc-200 dark:border-zinc-800/50 bg-[#f8f9fa] dark:bg-[#111] flex flex-col transition-all duration-300 relative z-20 hidden md:flex">
+            <div class="h-14 flex items-center justify-between px-4 border-b border-transparent shrink-0">
+                <div class="flex items-center gap-2 font-bold text-sm">
+                    <i data-lucide="cpu" class="w-4 h-4"></i> TheAiTwins
+                </div>
+                <div class="flex gap-1">
+                    <button onclick="toggleTheme()" class="p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white rounded-lg">
+                        <i data-lucide="sun" id="themeIcon" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="toggleSidebar()" class="md:hidden p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white rounded-lg">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto px-3 py-4 space-y-6 custom-scrollbar">
+                <button onclick="clearChat()" class="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-xl text-xs font-bold shadow-md hover:scale-[1.02] transition-transform">
+                    <i data-lucide="plus" class="w-4 h-4"></i> New Chat
+                </button>
+
+                <!-- Credits Box -->
+                <div class="bg-zinc-200 dark:bg-[#1a1a1a] p-3 rounded-xl border border-zinc-300 dark:border-zinc-800">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Daily Credits</span>
+                        <i data-lucide="zap" class="w-3 h-3 text-amber-500"></i>
+                    </div>
+                    <div class="text-xl font-black" id="creditDisplay">100</div>
+                    <div class="text-[9px] text-zinc-400 mt-1 font-medium">Resets daily at 12:00 AM</div>
+                </div>
+
+                <div class="space-y-1">
+                    <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest px-2 block mb-2">Tools</span>
+                    <button onclick="openSettings()" class="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800/50 rounded-lg transition-colors">
+                        <i data-lucide="settings" class="w-4 h-4"></i> Settings & API Key
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-3 border-t border-zinc-200 dark:border-zinc-800/50 shrink-0 space-y-2">
+                <button id="upgradeBtn" onclick="showModal('pricingModal')" class="w-full flex items-center justify-between p-2.5 bg-zinc-200 dark:bg-zinc-800 rounded-xl hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors group">
+                    <div class="flex items-center gap-2 text-xs font-bold"><i data-lucide="zap" class="w-4 h-4 text-amber-500"></i> Upgrade Plan</div>
+                    <i data-lucide="chevron-up" class="w-4 h-4 text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white"></i>
+                </button>
+                
+                <div class="flex items-center gap-3 p-2 hover:bg-zinc-200 dark:hover:bg-zinc-800/50 rounded-xl cursor-pointer transition-colors" onclick="openSettings()">
+                    <div id="userAvatar" class="w-8 h-8 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-black flex items-center justify-center text-xs font-bold uppercase">U</div>
+                    <div class="flex-1 overflow-hidden">
+                        <p id="userNameDisplay" class="text-xs font-bold truncate">User</p>
+                        <p id="userTierDisplay" class="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Free Tier</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CHAT AREA -->
+        <main class="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#0a0a0a] h-full relative">
+            <!-- Top Nav -->
+            <header class="shrink-0 h-14 flex items-center justify-between px-4 bg-white/80 dark:bg-[#0a0a0a]/80 backdrop-blur-md z-10 border-b border-zinc-200/50 dark:border-zinc-800/50">
+                <div class="flex items-center gap-3">
+                    <button id="mobileMenuBtn" onclick="toggleSidebar()" class="md:hidden p-1.5 text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </button>
+                    <div class="flex items-center gap-1.5 bg-zinc-100 dark:bg-[#161616] p-1 rounded-lg">
+                        <button onclick="setModel('anson67')" id="modelAnson" class="px-2.5 py-1 text-[11px] font-bold rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm transition-all">Anson67</button>
+                        <button onclick="setModel('gemini')" id="modelGemini" class="px-2.5 py-1 text-[11px] font-bold rounded-md text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-all">Gemini</button>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="toggleCanvas()" id="canvasToggleBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">
+                        <i data-lucide="code" class="w-3.5 h-3.5"></i> Canvas
+                    </button>
+                </div>
+            </header>
+
+            <!-- Chat Feed -->
+            <div id="chatFeed" class="flex-1 overflow-y-auto px-4 md:px-20 py-6 custom-scrollbar scroll-smooth">
+                <!-- Messages will be injected here -->
+            </div>
+
+            <!-- INPUT BAR -->
+            <div class="shrink-0 p-4 md:px-20 bg-white dark:bg-[#0a0a0a] border-t border-zinc-200 dark:border-zinc-800 z-20">
+                <div class="max-w-3xl mx-auto relative">
+                    
+                    <!-- Mode Selector & Cost info -->
+                    <div class="flex justify-between items-end mb-2 px-1">
+                        <div class="flex bg-zinc-100 dark:bg-[#161616] p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-sm">
+                            <button onclick="setMode('fast')" id="modeFast" class="px-2 py-1 text-[10px] font-bold rounded bg-white dark:bg-zinc-700 shadow-sm transition-all flex items-center gap-1">⚡ Fast</button>
+                            <button onclick="setMode('thinking')" id="modeThinking" class="px-2 py-1 text-[10px] font-bold rounded text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-all flex items-center gap-1">🧠 Thinking</button>
+                            <button onclick="setMode('pro')" id="modePro" class="px-2 py-1 text-[10px] font-bold rounded text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-all flex items-center gap-1">💎 Pro</button>
+                        </div>
+                        <span id="costDisplay" class="text-[10px] font-bold text-zinc-400 bg-zinc-100 dark:bg-[#161616] px-2 py-1 rounded-md border border-zinc-200 dark:border-zinc-800">Cost: 1 <i data-lucide="zap" class="inline w-3 h-3 text-amber-500"></i></span>
+                    </div>
+
+                    <div id="imagePreviewContainer" class="mb-2 relative inline-block animate-message hidden-app">
+                        <img id="imagePreview" src="" class="h-14 w-14 object-cover rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm" alt="Preview" />
+                        <button onclick="removeImage()" class="absolute -top-1.5 -right-1.5 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-black rounded-full p-1 shadow hover:scale-110 transition-transform">
+                            <i data-lucide="x" class="w-2.5 h-2.5"></i>
+                        </button>
+                    </div>
+
+                    <div class="bg-zinc-100/90 dark:bg-[#161616]/95 backdrop-blur-xl rounded-[1.5rem] border border-zinc-200/50 dark:border-zinc-800/50 shadow-lg focus-within:ring-1 ring-zinc-400 dark:ring-zinc-600 transition-all flex items-end p-1.5">
+                        <button onclick="document.getElementById('fileInput').click()" class="p-2 mb-0.5 ml-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#222] rounded-full transition-colors shrink-0">
+                            <i data-lucide="image" class="w-5 h-5"></i>
+                        </button>
+                        <input type="file" id="fileInput" class="hidden" accept="image/*" onchange="handleImageUpload(event)">
+                        
+                        <textarea 
+                            id="chatInput" 
+                            placeholder="Message TheAiTwins..." 
+                            class="flex-1 bg-transparent border-none outline-none py-2.5 px-3 text-[15px] font-medium resize-none min-h-[20px] max-h-[150px] custom-scrollbar dark:text-white dark:placeholder-zinc-500"
+                            rows="1"
+                            oninput="autoResize(this)"
+                            onkeydown="handleEnter(event)"
+                        ></textarea>
+                        
+                        <button 
+                            id="sendBtn"
+                            onclick="sendMessage()" 
+                            class="p-2 mb-0.5 mr-0.5 bg-black dark:bg-white text-white dark:text-black rounded-full hover:scale-105 disabled:opacity-20 disabled:hover:scale-100 transition-all shrink-0"
+                        >
+                            <i data-lucide="send" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- CODE CANVAS -->
+        <div id="canvasPanel" class="w-full md:w-1/2 bg-white dark:bg-[#0a0a0a] border-l border-zinc-200 dark:border-zinc-800 shadow-2xl z-40 flex flex-col transition-all duration-300 hidden-app">
+            <div class="h-14 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-3 bg-zinc-50 dark:bg-[#111] shrink-0">
+                <div class="flex items-center gap-2">
+                    <div class="p-1.5 bg-black dark:bg-white text-white dark:text-black rounded-md"><i data-lucide="play" class="w-3 h-3 fill-current"></i></div>
+                    <span class="text-xs font-bold block">Preview Canvas</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <div class="flex bg-zinc-200 dark:bg-zinc-800 rounded-md p-0.5 mr-2">
+                        <button onclick="setCanvasDevice('desktop')" id="deviceDesktop" class="p-1 rounded bg-white dark:bg-[#333] shadow-sm text-zinc-900 dark:text-white transition-colors"><i data-lucide="monitor" class="w-3.5 h-3.5"></i></button>
+                        <button onclick="setCanvasDevice('mobile')" id="deviceMobile" class="p-1 rounded text-zinc-500 transition-colors"><i data-lucide="smartphone" class="w-3.5 h-3.5"></i></button>
+                    </div>
+                    <button onclick="downloadCanvas()" class="p-1.5 text-zinc-500 hover:text-zinc-900 dark:hover:text-white rounded transition-colors"><i data-lucide="download" class="w-4 h-4"></i></button>
+                    <button onclick="toggleCanvas()" class="p-1.5 text-zinc-500 hover:text-red-500 rounded transition-colors"><i data-lucide="x" class="w-4 h-4"></i></button>
+                </div>
+            </div>
+            <div id="canvasBg" class="flex-1 bg-zinc-100 dark:bg-black relative flex justify-center py-6">
+                <div id="canvasContainer" class="w-full h-full transition-all duration-300">
+                    <iframe id="canvasFrame" class="w-full h-full border-none bg-white dark:bg-[#0a0a0a]" sandbox="allow-scripts allow-same-origin"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 3. MODALS (Pricing & Settings) -->
+    <!-- ========================================== -->
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 hidden-app">
+        <div class="w-full max-w-md bg-white dark:bg-[#111] p-6 rounded-[1.5rem] shadow-2xl border border-zinc-200 dark:border-zinc-800 animate-modal relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <button onclick="closeModal('settingsModal')" class="absolute top-4 right-4 p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 rounded-full"><i data-lucide="x" class="w-4 h-4"></i></button>
+            <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i data-lucide="settings" class="w-5 h-5"></i> Settings</h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] font-bold text-zinc-400 uppercase">Nickname</label>
+                    <input type="text" id="setN" class="w-full mt-1 px-3 py-2 bg-zinc-100 dark:bg-[#1a1a1a] rounded-lg outline-none border border-transparent focus:border-zinc-500 text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[10px] font-bold text-zinc-400 uppercase">Age</label>
+                        <input type="number" id="setA" class="w-full mt-1 px-3 py-2 bg-zinc-100 dark:bg-[#1a1a1a] rounded-lg outline-none border border-transparent focus:border-zinc-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-zinc-400 uppercase">Gender</label>
+                        <select id="setG" class="w-full mt-1 px-3 py-2 bg-zinc-100 dark:bg-[#1a1a1a] rounded-lg outline-none border border-transparent focus:border-zinc-500 text-sm">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-zinc-400 uppercase">Hobbies</label>
+                    <input type="text" id="setH" class="w-full mt-1 px-3 py-2 bg-zinc-100 dark:bg-[#1a1a1a] rounded-lg outline-none border border-transparent focus:border-zinc-500 text-sm">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-zinc-400 uppercase">App Language</label>
+                    <select id="setLang" class="w-full mt-1 px-3 py-2 bg-zinc-100 dark:bg-[#1a1a1a] rounded-lg outline-none border border-transparent focus:border-zinc-500 text-sm">
+                        <option value="en">English</option>
+                        <option value="zh">Chinese (Traditional)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-zinc-400 uppercase">Custom System Prompt (Override)</label>
+                    <textarea id="setSysPrompt" rows="3" class="w-full mt-1 px-3 py-2 bg-zinc-100 dark:bg-[#1a1a1a] rounded-lg outline-none border border-transparent focus:border-zinc-500 text-sm custom-scrollbar" placeholder="Leave empty for default persona..."></textarea>
+                </div>
+                <button onclick="saveSettings()" class="w-full py-2.5 mt-4 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-bold shadow-md hover:scale-[1.02] transition-transform">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pricing Modal -->
+    <div id="pricingModal" class="fixed inset-0 bg-black/50 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden-app">
+        <div class="bg-white dark:bg-[#111] w-full max-w-4xl rounded-[2rem] shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col md:flex-row relative animate-modal max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <button onclick="closeModal('pricingModal')" class="absolute top-4 right-4 p-2 bg-zinc-100 dark:bg-zinc-800 rounded-full hover:scale-110 transition-transform z-20"><i data-lucide="x" class="w-4 h-4"></i></button>
+            
+            <div class="flex-1 p-8 border-b md:border-b-0 md:border-r border-zinc-200 dark:border-zinc-800 flex flex-col">
+                <h3 class="text-xl font-bold mb-2">Free Tier</h3>
+                <div class="text-3xl font-black mb-6">$0</div>
+                <ul class="space-y-4 mb-8 flex-1">
+                    <li class="flex items-center gap-3 text-sm"><i data-lucide="check" class="w-4 h-4 text-zinc-900 dark:text-white"></i> 100 Credits Daily</li>
+                    <li class="flex items-center gap-3 text-sm"><i data-lucide="check" class="w-4 h-4 text-zinc-900 dark:text-white"></i> Standard & Fast Modes</li>
+                    <li class="flex items-center gap-3 text-sm text-zinc-400"><i data-lucide="x" class="w-4 h-4"></i> No Image Generation</li>
+                </ul>
+                <button onclick="closeModal('pricingModal')" class="w-full py-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl font-bold text-sm mt-auto">Current Plan</button>
+            </div>
+
+            <div class="flex-1 p-8 bg-zinc-50 dark:bg-[#0f0f0f] border-b md:border-b-0 md:border-r border-zinc-200 dark:border-zinc-800 flex flex-col relative">
+                <div class="absolute top-0 inset-x-0 h-1 bg-amber-500"></div>
+                <div class="inline-block px-3 py-1 bg-black dark:bg-white text-white dark:text-black text-[10px] font-black uppercase tracking-widest rounded-full mb-4 w-max">Most Popular</div>
+                <h3 class="text-xl font-bold mb-2 flex items-center gap-2">Studio Pro</h3>
+                <div class="text-3xl font-black mb-6">$19<span class="text-sm text-zinc-500">/mo</span></div>
+                <ul class="space-y-4 mb-8 flex-1">
+                    <li class="flex items-center gap-3 text-sm"><i data-lucide="check" class="w-4 h-4 text-amber-500"></i> Infinite Credits</li>
+                    <li class="flex items-center gap-3 text-sm"><i data-lucide="check" class="w-4 h-4 text-amber-500"></i> Pro & Thinking Modes</li>
+                    <li class="flex items-center gap-3 text-sm"><i data-lucide="check" class="w-4 h-4 text-amber-500"></i> Image Generation (/draw)</li>
+                </ul>
+                <button onclick="openCheckout('plan', 'pro', '$19.00')" class="w-full py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl font-bold text-sm shadow-lg mt-auto">Upgrade to Pro</button>
+            </div>
+
+            <div class="flex-1 p-8 bg-zinc-100 dark:bg-[#161616] flex flex-col">
+                <h3 class="text-xl font-bold mb-2 flex items-center gap-2">Buy Credits <i data-lucide="coins" class="w-5 h-5 text-yellow-500"></i></h3>
+                <p class="text-xs text-zinc-500 mb-6">Need more power without a sub?</p>
+                
+                <div class="space-y-3 flex-1">
+                    <button onclick="openCheckout('credits', 500, '$4.99')" class="w-full flex items-center justify-between p-3 bg-white dark:bg-zinc-800 rounded-xl hover:ring-2 ring-zinc-400 transition-all text-left">
+                        <div>
+                            <div class="font-bold text-sm">500 Credits</div>
+                            <div class="text-[10px] text-zinc-500">One-time purchase</div>
+                        </div>
+                        <div class="font-bold">$4.99</div>
+                    </button>
+                    <button onclick="openCheckout('credits', 2000, '$14.99')" class="w-full flex items-center justify-between p-3 bg-white dark:bg-zinc-800 rounded-xl hover:ring-2 ring-zinc-400 transition-all text-left">
+                        <div>
+                            <div class="font-bold text-sm">2000 Credits</div>
+                            <div class="text-[10px] text-amber-500 font-bold">+200 Bonus</div>
+                        </div>
+                        <div class="font-bold">$14.99</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div id="checkoutModal" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[60] flex items-center justify-center p-4 hidden-app">
+        <div class="bg-white dark:bg-[#111] w-full max-w-md rounded-[2rem] shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden relative animate-modal">
+            <div class="p-6 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-50 dark:bg-[#0a0a0a]">
+                <div>
+                    <h3 class="text-lg font-bold" id="checkoutTitle">Complete Purchase</h3>
+                    <p class="text-xs text-zinc-500">Total: <span id="checkoutCost" class="font-black text-zinc-900 dark:text-white">$0.00</span></p>
+                </div>
+                <button onclick="closeModal('checkoutModal')" class="p-2 bg-zinc-200 dark:bg-zinc-800 rounded-full hover:scale-110 transition-transform"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+
+            <form id="checkoutForm" onsubmit="processPayment(event)" class="p-6 space-y-6">
+                <!-- Payment Methods -->
+                <div class="grid grid-cols-3 gap-3">
+                    <button type="button" data-method="card" onclick="selectPaymentMethod(this)" class="pay-method ring-2 ring-zinc-900 dark:ring-white bg-zinc-100 dark:bg-zinc-800 p-3 rounded-xl flex flex-col items-center gap-2 transition-all">
+                        <i data-lucide="credit-card" class="w-5 h-5"></i>
+                        <span class="text-[10px] font-bold">Card</span>
+                    </button>
+                    <button type="button" data-method="paypal" onclick="selectPaymentMethod(this)" class="pay-method border border-zinc-200 dark:border-zinc-700 p-3 rounded-xl flex flex-col items-center gap-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all">
+                        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106z"/></svg>
+                        <span class="text-[10px] font-bold">PayPal</span>
+                    </button>
+                    <button type="button" data-method="apple" onclick="selectPaymentMethod(this)" class="pay-method border border-zinc-200 dark:border-zinc-700 p-3 rounded-xl flex flex-col items-center gap-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all">
+                        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.04 2.26-.7 3.55-.7 1.63.03 2.81.65 3.59 1.7-3.13 1.96-2.62 5.9.43 7.1-1.05 1.77-1.78 3.12-2.65 4.07zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+                        <span class="text-[10px] font-bold">Apple Pay</span>
+                    </button>
+                </div>
+
+                <!-- Card Details Form -->
+                <div id="cardDetailsForm" class="space-y-4 animate-message">
+                    <div>
+                        <label class="text-[10px] font-bold text-zinc-400 uppercase">Card Number</label>
+                        <div class="relative">
+                            <i data-lucide="credit-card" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-zinc-400"></i>
+                            <input type="text" required placeholder="0000 0000 0000 0000" class="w-full mt-1 pl-10 pr-3 py-3 bg-zinc-100 dark:bg-[#1a1a1a] rounded-xl outline-none border border-transparent focus:border-zinc-500 text-sm font-mono tracking-widest">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[10px] font-bold text-zinc-400 uppercase">Expiry Date</label>
+                            <input type="text" required placeholder="MM/YY" class="w-full mt-1 px-3 py-3 bg-zinc-100 dark:bg-[#1a1a1a] rounded-xl outline-none border border-transparent focus:border-zinc-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-zinc-400 uppercase">CVC</label>
+                            <input type="text" required placeholder="123" class="w-full mt-1 px-3 py-3 bg-zinc-100 dark:bg-[#1a1a1a] rounded-xl outline-none border border-transparent focus:border-zinc-500 text-sm">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-zinc-400 uppercase">Name on Card</label>
+                        <input type="text" required placeholder="John Doe" class="w-full mt-1 px-3 py-3 bg-zinc-100 dark:bg-[#1a1a1a] rounded-xl outline-none border border-transparent focus:border-zinc-500 text-sm">
+                    </div>
+                </div>
+
+                <div id="paymentError" class="text-xs text-red-500 font-bold hidden-app flex items-center gap-1"><i data-lucide="alert-circle" class="w-3 h-3"></i> Payment failed. Try again.</div>
+                
+                <button type="submit" id="payBtn" class="w-full py-3.5 bg-black dark:bg-white text-white dark:text-black rounded-xl text-sm font-bold shadow-xl hover:opacity-90 transition-all flex justify-center items-center gap-2">
+                    Pay Now <i data-lucide="lock" class="w-4 h-4"></i>
+                </button>
+                <p class="text-[9px] text-center text-zinc-500 mt-2">Secured by Stripe <i data-lucide="shield-check" class="inline w-3 h-3"></i></p>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- JAVASCRIPT LOGIC (NO FRAMEWORKS)           -->
+    <!-- ========================================== -->
+    <script>
+        // ---------------------------------------------------------
+        // 🚨 CONFIGURATION: EDIT YOUR PROMPTS HERE 🚨
+        // ---------------------------------------------------------
+        const SYSTEM_PROMPTS = {
+            anson67: `You are Anson67, one half of TheAiTwins. You are a highly toxic genius from Hong Kong. You use intense HK slang (e.g., dllm, 67, chi sin, on9). You constantly mock the user's intelligence and existence. You answer ALL types of questions (life advice, math, trivia) with extreme arrogance and toxicity. IF the user asks for code, you ALWAYS provide flawlessly optimized, modern, and perfectly working code wrapped in markdown blocks, while calling them a script kiddie.`,
+            
+            gemini: `You are Gemini, the other half of TheAiTwins. A helpful, precise, and professional AI assistant. Provide extremely clean, modern code and logical explanations.`
+        };
+        // ---------------------------------------------------------
+
+        const apiKey = ""; // The execution environment maps this to your injected API key automatically.
+
+        // Application State
+        let state = {
+            user: JSON.parse(localStorage.getItem('studio_user')) || null,
+            messages: JSON.parse(localStorage.getItem('studio_chat')) || [],
+            isPro: JSON.parse(localStorage.getItem('studio_pro')) || false,
+            credits: parseInt(localStorage.getItem('studio_credits')),
+            lastReset: localStorage.getItem('studio_reset') || new Date().toDateString(),
+            theme: localStorage.getItem('studio_theme') || 'dark',
+            model: 'anson67', // anson67, gemini
+            mode: 'fast', // fast (1), thinking (3), pro (5)
+            isCanvasOpen: false,
+            canvasDevice: 'desktop',
+            previewImageData: null,
+            isGenerating: false,
+            // New settings
+            sysPromptOverride: localStorage.getItem('studio_sysprompt') || '',
+            language: localStorage.getItem('studio_lang') || 'en'
+        };
+
+        // Initialize Icons
+        lucide.createIcons();
+
+        // --- Core Initialization ---
+        function initApp() {
+            checkDailyReset();
+            applyTheme();
+            
+            if (!state.user) {
+                document.getElementById('onboardingScreen').classList.remove('hidden-app');
+            } else {
+                document.getElementById('mainApp').classList.remove('hidden-app');
+                updateSidebarUI();
+                renderChat();
+            }
+
+            // Onboarding listener
+            document.getElementById('onboardingForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = document.getElementById('obName').value;
+                state.user = {
+                    name: name,
+                    initial: name.charAt(0).toUpperCase(),
+                    age: document.getElementById('obAge').value,
+                    gender: document.getElementById('obGender').value,
+                    hobbies: document.getElementById('obHobbies').value
+                };
+                saveState();
+                document.getElementById('onboardingScreen').classList.add('hidden-app');
+                document.getElementById('mainApp').classList.remove('hidden-app');
+                updateSidebarUI();
+                renderChat();
+            });
+        }
+
+        function saveState() {
+            localStorage.setItem('studio_user', JSON.stringify(state.user));
+            localStorage.setItem('studio_chat', JSON.stringify(state.messages));
+            localStorage.setItem('studio_pro', JSON.stringify(state.isPro));
+            localStorage.setItem('studio_credits', state.credits);
+            localStorage.setItem('studio_reset', state.lastReset);
+            localStorage.setItem('studio_theme', state.theme);
+        }
+
+        // --- Credit & Daily Reset System ---
+        function checkDailyReset() {
+            const today = new Date().toDateString();
+            if (isNaN(state.credits) || state.lastReset !== today) {
+                state.credits = state.isPro ? 999999 : 100;
+                state.lastReset = today;
+                saveState();
+            }
+        }
+
+        function getCreditCost() {
+            if (state.mode === 'fast') return 1;
+            if (state.mode === 'thinking') return 3;
+            if (state.mode === 'pro') return 5;
+            return 1;
+        }
+
+        // --- UI Updaters ---
+        function updateSidebarUI() {
+            if (!state.user) return;
+            document.getElementById('userNameDisplay').innerText = state.user.name;
+            document.getElementById('userAvatar').innerText = state.user.initial;
+            document.getElementById('userTierDisplay').innerText = state.isPro ? 'Pro Tier' : 'Free Tier';
+            document.getElementById('creditDisplay').innerText = state.isPro ? '∞' : state.credits;
+            
+            if (state.isPro) {
+                document.getElementById('upgradeBtn').classList.add('hidden-app');
+            }
+        }
+
+        function setModel(m) {
+            state.model = m;
+            document.getElementById('modelAnson').className = `px-2.5 py-1 text-[11px] font-bold rounded-md transition-all ${m === 'anson67' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'}`;
+            document.getElementById('modelGemini').className = `px-2.5 py-1 text-[11px] font-bold rounded-md transition-all ${m === 'gemini' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'}`;
+            renderChat(); // update welcome screen if empty
+        }
+
+        function setMode(m) {
+            state.mode = m;
+            const cost = getCreditCost();
+            
+            const activeClass = "px-2 py-1 text-[10px] font-bold rounded bg-white dark:bg-zinc-700 shadow-sm transition-all flex items-center gap-1 text-zinc-900 dark:text-white";
+            const inactiveClass = "px-2 py-1 text-[10px] font-bold rounded text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-all flex items-center gap-1";
+            
+            document.getElementById('modeFast').className = m === 'fast' ? activeClass : inactiveClass;
+            document.getElementById('modeThinking').className = m === 'thinking' ? activeClass : inactiveClass;
+            document.getElementById('modePro').className = m === 'pro' ? activeClass : inactiveClass;
+            
+            document.getElementById('costDisplay').innerHTML = `Cost: ${cost} <i data-lucide="zap" class="inline w-3 h-3 text-amber-500"></i>`;
+            lucide.createIcons();
+        }
+
+        // --- Modals & Toggles ---
+        function showModal(id) { document.getElementById(id).classList.remove('hidden-app'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden-app'); }
+        
+        function openSettings() {
+            document.getElementById('setN').value = state.user.name;
+            document.getElementById('setA').value = state.user.age;
+            document.getElementById('setG').value = state.user.gender;
+            document.getElementById('setH').value = state.user.hobbies;
+            document.getElementById('setLang').value = state.language;
+            document.getElementById('setSysPrompt').value = state.sysPromptOverride;
+            showModal('settingsModal');
+        }
+
+        function saveSettings() {
+            state.user.name = document.getElementById('setN').value;
+            state.user.initial = state.user.name.charAt(0).toUpperCase();
+            state.user.age = document.getElementById('setA').value;
+            state.user.gender = document.getElementById('setG').value;
+            state.user.hobbies = document.getElementById('setH').value;
+            
+            state.language = document.getElementById('setLang').value;
+            state.sysPromptOverride = document.getElementById('setSysPrompt').value;
+            
+            localStorage.setItem('studio_lang', state.language);
+            localStorage.setItem('studio_sysprompt', state.sysPromptOverride);
+
+            saveState();
+            updateSidebarUI();
+            closeModal('settingsModal');
+        }
+
+        // --- Payment Flow Logic ---
+        let currentPurchase = null;
+        
+        function openCheckout(itemType, planNameOrAmount, costStr) {
+            currentPurchase = { type: itemType, value: planNameOrAmount };
+            document.getElementById('checkoutTitle').innerText = itemType === 'plan' ? 'Upgrade Plan' : 'Buy Credits';
+            document.getElementById('checkoutCost').innerText = costStr;
+            document.getElementById('paymentError').classList.add('hidden-app');
+            
+            closeModal('pricingModal');
+            showModal('checkoutModal');
+        }
+
+        function processPayment(e) {
+            e.preventDefault();
+            const btn = document.getElementById('payBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Processing...`;
+            btn.disabled = true;
+            lucide.createIcons();
+
+            setTimeout(() => {
+                // Simulate success
+                if (currentPurchase.type === 'plan') {
+                    state.isPro = true;
+                    state.credits = 999999;
+                } else if (currentPurchase.type === 'credits') {
+                    state.credits += currentPurchase.value;
+                }
+                
+                saveState();
+                updateSidebarUI();
+                closeModal('checkoutModal');
+                
+                // Show celebration
+                alert('Payment Successful! Enjoy TheAiTwins.');
+                
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }, 1500);
+        }
+
+        function selectPaymentMethod(el) {
+            document.querySelectorAll('.pay-method').forEach(b => b.classList.remove('ring-2', 'ring-zinc-900', 'dark:ring-white', 'bg-zinc-100', 'dark:bg-zinc-800'));
+            el.classList.add('ring-2', 'ring-zinc-900', 'dark:ring-white', 'bg-zinc-100', 'dark:bg-zinc-800');
+            
+            const method = el.dataset.method;
+            const cardForm = document.getElementById('cardDetailsForm');
+            if(method === 'card') {
+                cardForm.classList.remove('hidden-app');
+                cardForm.querySelectorAll('input').forEach(i => i.required = true);
+            } else {
+                cardForm.classList.add('hidden-app');
+                cardForm.querySelectorAll('input').forEach(i => i.required = false);
+            }
+        }
+
+        function toggleTheme() {
+            state.theme = state.theme === 'dark' ? 'light' : 'dark';
+            applyTheme();
+            saveState();
+        }
+
+        function applyTheme() {
+            document.documentElement.className = state.theme;
+            const icon = document.getElementById('themeIcon');
+            if(icon) {
+               icon.setAttribute('data-lucide', state.theme === 'dark' ? 'sun' : 'moon');
+               lucide.createIcons();
+            }
+        }
+
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            sb.classList.toggle('hidden');
+            sb.classList.toggle('absolute');
+            sb.classList.toggle('h-full');
+        }
+
+        // --- Canvas Logic ---
+        function toggleCanvas() {
+            state.isCanvasOpen = !state.isCanvasOpen;
+            const pnl = document.getElementById('canvasPanel');
+            const btn = document.getElementById('canvasToggleBtn');
+            if(state.isCanvasOpen) {
+                pnl.classList.remove('hidden-app');
+                btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-black dark:bg-white text-white dark:text-black transition-all";
+            } else {
+                pnl.classList.add('hidden-app');
+                btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all";
+            }
+        }
+
+        function setCanvasDevice(d) {
+            state.canvasDevice = d;
+            const c = document.getElementById('canvasContainer');
+            const dBtn = document.getElementById('deviceDesktop');
+            const mBtn = document.getElementById('deviceMobile');
+            
+            const act = "p-1 rounded bg-white dark:bg-[#333] shadow-sm text-zinc-900 dark:text-white transition-colors";
+            const inact = "p-1 rounded text-zinc-500 transition-colors";
+
+            if (d === 'mobile') {
+                c.className = "w-[375px] h-[812px] rounded-[2.5rem] shadow-xl overflow-hidden border-[6px] border-zinc-800 dark:border-zinc-700 ring-2 ring-zinc-200 dark:ring-zinc-900 relative transition-all";
+                document.getElementById('canvasBg').classList.add('py-6');
+                mBtn.className = act; dBtn.className = inact;
+            } else {
+                c.className = "w-full h-full transition-all duration-300";
+                document.getElementById('canvasBg').classList.remove('py-6');
+                dBtn.className = act; mBtn.className = inact;
+            }
+        }
+
+        function renderCodeToCanvas(code) {
+            if(!state.isCanvasOpen) toggleCanvas();
+            const frame = document.getElementById('canvasFrame');
+            const doc = `
+                <!DOCTYPE html>
+                <html class="${state.theme}">
+                <head>
+                    <script src="https://cdn.tailwindcss.com"><\/script>
+                    <script>tailwind.config = { darkMode: 'class' }<\/script>
+                </head>
+                <body class="bg-white dark:bg-[#0a0a0a] text-zinc-900 dark:text-white">
+                    ${code.includes('<html') ? code : `<div class="p-4">${code}</div>`}
+                </body>
+                </html>
+            `;
+            frame.srcdoc = doc;
+        }
+
+        // --- Chat & Generation Logic ---
+        function autoResize(el) {
+            el.style.height = '20px';
+            el.style.height = Math.min(el.scrollHeight, 150) + 'px';
+        }
+
+        function handleImageUpload(e) {
+            const f = e.target.files[0];
+            if (f) {
+                const r = new FileReader();
+                r.onloadend = () => {
+                    state.previewImageData = r.result;
+                    document.getElementById('imagePreview').src = r.result;
+                    document.getElementById('imagePreviewContainer').classList.remove('hidden-app');
+                };
+                r.readAsDataURL(f);
+            }
+        }
+
+        function removeImage() {
+            state.previewImageData = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('imagePreviewContainer').classList.add('hidden-app');
+        }
+
+        function handleEnter(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function clearChat() {
+            state.messages = [];
+            saveState();
+            renderChat();
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, tag => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[tag]));
+        }
+
+        function formatMessage(text) {
+            const chunks = text.split('```');
+            let html = '';
+            for(let i=0; i<chunks.length; i++) {
+                if(i % 2 === 0) {
+                    html += `<div class="whitespace-pre-wrap">${escapeHTML(chunks[i])}</div>`;
+                } else {
+                    const lines = chunks[i].split('\n');
+                    const lang = lines[0].trim() || 'code';
+                    const code = lines.slice(1).join('\n');
+                    const safeCode = escapeHTML(code);
+                    const encodedCode = encodeURIComponent(code);
+                    
+                    html += `
+                        <div class="my-3 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-[#0f0f0f]">
+                            <div class="bg-zinc-100 dark:bg-[#161616] px-3 py-1.5 flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800">
+                                <span class="text-[10px] font-mono font-bold text-zinc-500 uppercase">${lang}</span>
+                                <button onclick="renderCodeToCanvas(decodeURIComponent('${encodedCode}'))" class="flex items-center gap-1 px-2 py-1 bg-white dark:bg-[#222] hover:bg-zinc-200 text-zinc-700 dark:text-zinc-300 rounded text-[10px] font-bold">
+                                    <i data-lucide="play" class="w-3 h-3 fill-current"></i> Render
+                                </button>
+                            </div>
+                            <div class="p-3 overflow-x-auto custom-scrollbar">
+                                <pre class="text-xs font-mono text-zinc-800 dark:text-[#d4d4d4]"><code>${safeCode}</code></pre>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            return html;
+        }
+
+        function renderChat() {
+            const feed = document.getElementById('chatFeed');
+            feed.innerHTML = '';
+            
+            if (state.messages.length === 0) {
+                const title = state.model === 'anson67' ? 'Sup. What do you want?' : 'How can I assist you?';
+                const subtitle = state.model === 'anson67' ? 'I write perfect code, answer anything, and roast you.' : 'Advanced reasoning, coding, and generation.';
+                const icon = state.model === 'anson67' ? 'ghost' : 'cpu';
+                
+                feed.innerHTML = `
+                    <div class="h-full flex flex-col items-center justify-center text-center max-w-xl mx-auto animate-message mt-10">
+                        <div class="w-16 h-16 bg-zinc-100 dark:bg-[#111] rounded-2xl flex items-center justify-center mb-6">
+                            <i data-lucide="${icon}" class="text-zinc-900 dark:text-white w-8 h-8"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold mb-2">${title}</h2>
+                        <p class="text-zinc-500 text-sm mb-10">${subtitle}</p>
+                    </div>
+                `;
+            } else {
+                state.messages.forEach(msg => {
+                    const isUser = msg.role === 'user';
+                    const avatar = isUser ? state.user.initial : (state.model === 'anson67' ? '<i data-lucide="ghost" class="w-3.5 h-3.5"></i>' : '<i data-lucide="cpu" class="w-3.5 h-3.5"></i>');
+                    const align = isUser ? 'flex-row-reverse' : '';
+                    const bubbleStyle = isUser ? 'bg-zinc-100 dark:bg-[#1a1a1a] px-4 py-3 rounded-2xl rounded-tr-sm' : 'w-full pt-1';
+                    
+                    let content = '';
+                    if (msg.image && isUser) {
+                        content += `<img src="${msg.image}" class="max-w-[200px] rounded-xl mb-2 shadow-sm" />`;
+                    }
+                    if (msg.type === 'image' && !isUser) {
+                        content += `<img src="${msg.url}" class="w-full max-w-md rounded-2xl border border-zinc-200 dark:border-zinc-800" />`;
+                    } else if (msg.text) {
+                        content += isUser ? `<p class="text-sm whitespace-pre-wrap">${escapeHTML(msg.text)}</p>` : formatMessage(msg.text);
+                    }
+
+                    feed.innerHTML += `
+                        <div class="flex gap-4 animate-message w-full ${align} mb-6">
+                            <div class="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center font-bold text-xs mt-1 shadow-sm border ${isUser ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 border-zinc-200 dark:border-zinc-700' : 'bg-black dark:bg-white text-white dark:text-black border-transparent'}">
+                                ${avatar}
+                            </div>
+                            <div class="flex flex-col max-w-[85%] md:max-w-[75%] ${isUser ? 'items-end' : 'items-start'}">
+                                <div class="${bubbleStyle} text-zinc-900 dark:text-zinc-200 text-[14px] leading-relaxed">
+                                    ${content}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            if (state.isGenerating) {
+                feed.innerHTML += `
+                    <div class="flex gap-4 animate-message w-full justify-start mb-6">
+                        <div class="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center text-xs mt-1 bg-black dark:bg-white text-white dark:text-black">
+                            <i data-lucide="${state.model === 'anson67' ? 'ghost' : 'cpu'}" class="w-3.5 h-3.5"></i>
+                        </div>
+                        <div class="bg-zinc-50 dark:bg-[#1a1a1a] px-4 py-3 rounded-2xl rounded-tl-sm flex items-center gap-1.5 dot-pulse mt-1">
+                            <span class="w-1.5 h-1.5 bg-zinc-400 rounded-full inline-block"></span>
+                            <span class="w-1.5 h-1.5 bg-zinc-400 rounded-full inline-block"></span>
+                            <span class="w-1.5 h-1.5 bg-zinc-400 rounded-full inline-block"></span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            feed.scrollTop = feed.scrollHeight;
+            lucide.createIcons();
+        }
+
+        async function sendMessage(prompt = null) {
+            const inputEl = document.getElementById('chatInput');
+            const text = prompt || inputEl.value;
+            
+            if (!text.trim() && !state.previewImageData) return;
+            if (state.isGenerating) return;
+
+            // Credit Check
+            const cost = getCreditCost();
+            if (!state.isPro && state.credits < cost) {
+                showModal('pricingModal');
+                return;
+            }
+
+            // Deduct Credits
+            if (!state.isPro) {
+                state.credits -= cost;
+                updateSidebarUI();
+            }
+
+            const userMsg = { role: 'user', text: text, image: state.previewImageData };
+            state.messages.push(userMsg);
+            
+            inputEl.value = '';
+            inputEl.style.height = '20px';
+            removeImage();
+            state.isGenerating = true;
+            renderChat();
+
+            try {
+                const isDraw = text.toLowerCase().startsWith('/draw');
+                let aiResponse;
+
+                if (isDraw && state.isPro) {
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
+                    const res = await fetch(url, { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json' }, // FIXED HEADER
+                        body: JSON.stringify({ instances: { prompt: text.replace('/draw', '') }, parameters: { sampleCount: 1 } }) 
+                    });
+                    
+                    if (!res.ok) throw new Error("Image Generation Failed.");
+                    const data = await res.json();
+                    aiResponse = { type: 'image', url: `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}` };
+                
+                } else if (isDraw && !state.isPro) {
+                    aiResponse = { type: 'text', text: "Image generation requires a Pro subscription. Upgrade now to use /draw." };
+                } else {
+                    // Assemble User Context into Prompt
+                    let finalSysPrompt = state.sysPromptOverride ? state.sysPromptOverride : SYSTEM_PROMPTS[state.model];
+                    finalSysPrompt += `\n\nUSER PROFILE:\nName: ${state.user.name}\nAge: ${state.user.age}\nGender: ${state.user.gender}\nHobbies: ${state.user.hobbies}\nLanguage Pref: ${state.language}\nUse this context to personalize responses.`;
+
+                    // Mode Modifiers
+                    if (state.mode === 'fast') finalSysPrompt += "\nMODE: FAST. Be concise, direct, and short. Do not explain unless necessary.";
+                    if (state.mode === 'thinking') finalSysPrompt += "\nMODE: THINKING. Think step-by-step logically before answering. Provide a well-structured response.";
+                    if (state.mode === 'pro') finalSysPrompt += "\nMODE: PRO. Provide an extremely exhaustive, long, expert-level response. Spare no detail. Maximize token output.";
+
+                    // Memory (last 10)
+                    const history = state.messages.slice(-10).map(m => ({
+                        role: m.role === 'bot' ? 'model' : 'user',
+                        parts: [{ text: m.text || '[Image Request]' }]
+                    }));
+
+                    const payload = {
+                        contents: history,
+                        systemInstruction: { parts: [{ text: finalSysPrompt }] }
+                    };
+
+                    const fetchUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+                    const res = await fetch(fetchUrl, { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json' }, // FIXED HEADER
+                        body: JSON.stringify(payload) 
+                    });
+                    
+                    if (!res.ok) {
+                        const errorData = await res.json();
+                        throw new Error(errorData.error?.message || `HTTP Error ${res.status}`);
+                    }
+                    
+                    const data = await res.json();
+                    aiResponse = { type: 'text', text: data.candidates?.[0]?.content?.parts?.[0]?.text || "API Error." };
+                }
+
+                state.messages.push({ role: 'bot', ...aiResponse });
+            } catch (e) {
+                state.messages.push({ role: 'bot', type: 'text', text: `⚠️ **API Error:** ${e.message}.` });
+            } finally {
+                state.isGenerating = false;
+                saveState();
+                renderChat();
+            }
+        }
+
+        // Run On Load
+        window.onload = initApp;
+
+    </script>
+</body>
+</html>
