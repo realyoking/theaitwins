@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Settings as SettingsIcon, Key } from 'lucide-react';
+import { X, Settings as SettingsIcon } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 
 interface SettingsModalProps {
