@@ -23,15 +23,13 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
     if (mode === 'thinking') finalSysPrompt += '\nMODE: THINKING. Think step-by-step logically before answering.';
     if (mode === 'pro') finalSysPrompt += '\nMODE: PRO. Provide an extremely exhaustive, expert-level response.';
 
-    const history = [...messages].slice(-10).map((m) => ({
+    // Use messages from store (which already includes the latest user message)
+    const history = useAppStore.getState().messages.slice(-12).map((m) => ({
       role: m.role === 'bot' ? 'assistant' : 'user',
       content: m.text || '[Image]',
     }));
 
-    const chatMessages = [
-      ...history,
-      { role: 'user', content: userText },
-    ];
+    const chatMessages = history;
 
     const resp = await fetch(CHAT_URL, {
       method: 'POST',
