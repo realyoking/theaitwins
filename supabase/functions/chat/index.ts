@@ -9,13 +9,13 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { messages, mode } = await req.json();
+    const { messages, systemPrompt, mode } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    let systemPrompt = messages[0]?.systemPrompt || "You are a helpful AI assistant.";
-    
-    // Strip the systemPrompt field from messages
+    const finalSystemPrompt = systemPrompt || "You are a helpful AI assistant.";
+
+    // Clean messages to only have role + content
     const chatMessages = messages.map((m: any) => ({
       role: m.role,
       content: m.content,
