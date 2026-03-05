@@ -76,7 +76,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   isGenerating: false,
   sysPromptOverride: localStorage.getItem('tat_sysprompt') || '',
   language: localStorage.getItem('tat_lang') || 'en',
-  apiKey: localStorage.getItem('tat_apikey') || '',
   sidebarOpen: false,
 
   setUser: (user) => { set({ user }); localStorage.setItem('tat_user', JSON.stringify(user)); },
