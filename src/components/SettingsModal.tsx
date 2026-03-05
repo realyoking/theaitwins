@@ -74,7 +74,6 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                 <input value={hobbies} onChange={(e) => setHobbies(e.target.value)} className={inputClass} />
               </div>
               <div>
-              <div>
                 <label className="text-[10px] font-bold text-muted-foreground uppercase">App Language</label>
                 <select value={lang} onChange={(e) => setLang(e.target.value)} className={inputClass + ' appearance-none'}>
                   <option value="en">English</option>
