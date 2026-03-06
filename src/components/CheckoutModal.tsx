@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, CreditCard, Lock, ShieldCheck } from 'lucide-react';
+import { X, CreditCard, Lock, ShieldCheck, Smartphone, Wallet, Banknote } from 'lucide-react';
 
 interface CheckoutModalProps {
   open: boolean;
@@ -10,8 +10,19 @@ interface CheckoutModalProps {
   onSuccess: () => void;
 }
 
+const methods = [
+  { id: 'card', label: 'Card', icon: CreditCard },
+  { id: 'paypal', label: 'PayPal', icon: Wallet },
+  { id: 'apple', label: 'Apple Pay', icon: Smartphone },
+  { id: 'google', label: 'Google Pay', icon: Smartphone },
+  { id: 'crypto', label: 'Crypto', icon: Banknote },
+  { id: 'alipay', label: 'Alipay', icon: Wallet },
+] as const;
+
+type Method = typeof methods[number]['id'];
+
 const CheckoutModal = ({ open, onClose, title, cost, onSuccess }: CheckoutModalProps) => {
-  const [method, setMethod] = useState<'card' | 'paypal' | 'apple'>('card');
+  const [method, setMethod] = useState<Method>('card');
   const [processing, setProcessing] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -35,7 +46,7 @@ const CheckoutModal = ({ open, onClose, title, cost, onSuccess }: CheckoutModalP
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-card w-full max-w-md rounded-3xl shadow-2xl border border-border overflow-hidden relative"
+            className="bg-card w-full max-w-md rounded-3xl shadow-2xl border border-border overflow-hidden relative max-h-[90vh] overflow-y-auto custom-scrollbar"
           >
             <div className="p-6 border-b border-border flex justify-between items-center bg-surface-sunken">
               <div>
@@ -48,14 +59,14 @@ const CheckoutModal = ({ open, onClose, title, cost, onSuccess }: CheckoutModalP
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
-              <div className="grid grid-cols-3 gap-3">
-                {(['card', 'paypal', 'apple'] as const).map((m) => (
-                  <button key={m} type="button" onClick={() => setMethod(m)}
-                    className={`p-3 rounded-xl flex flex-col items-center gap-2 transition-all border ${method === m
+              <div className="grid grid-cols-3 gap-2">
+                {methods.map((m) => (
+                  <button key={m.id} type="button" onClick={() => setMethod(m.id)}
+                    className={`p-2.5 rounded-xl flex flex-col items-center gap-1.5 transition-all border text-center ${method === m.id
                       ? 'ring-2 ring-ring bg-muted border-transparent'
                       : 'border-border hover:bg-muted/50'}`}>
-                    <CreditCard className="w-5 h-5" />
-                    <span className="text-[10px] font-bold capitalize">{m === 'apple' ? 'Apple Pay' : m}</span>
+                    <m.icon className="w-4 h-4" />
+                    <span className="text-[9px] font-bold">{m.label}</span>
                   </button>
                 ))}
               </div>
@@ -83,9 +94,47 @@ const CheckoutModal = ({ open, onClose, title, cost, onSuccess }: CheckoutModalP
                 </div>
               )}
 
+              {method === 'paypal' && (
+                <div className="text-center py-6">
+                  <p className="text-sm text-muted-foreground mb-4">You will be redirected to PayPal to complete payment.</p>
+                </div>
+              )}
+
+              {method === 'apple' && (
+                <div className="text-center py-6">
+                  <Smartphone className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Confirm with Apple Pay on your device.</p>
+                </div>
+              )}
+
+              {method === 'google' && (
+                <div className="text-center py-6">
+                  <Smartphone className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Confirm with Google Pay on your device.</p>
+                </div>
+              )}
+
+              {method === 'crypto' && (
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground">Send payment to the following address:</p>
+                  <div className="bg-muted p-3 rounded-xl font-mono text-xs break-all border border-border">
+                    0x1234...abcd (ETH/USDC)
+                  </div>
+                </div>
+              )}
+
+              {method === 'alipay' && (
+                <div className="text-center py-6">
+                  <p className="text-sm text-muted-foreground">Scan the QR code with Alipay to pay.</p>
+                  <div className="w-32 h-32 mx-auto mt-4 bg-muted rounded-xl border border-border flex items-center justify-center text-muted-foreground text-xs">
+                    QR Code
+                  </div>
+                </div>
+              )}
+
               <button type="submit" disabled={processing}
                 className="w-full py-3.5 bg-primary text-primary-foreground rounded-xl text-sm font-bold shadow-xl hover:opacity-90 transition-all flex justify-center items-center gap-2 disabled:opacity-50">
-                {processing ? 'Processing...' : <><span>Pay Now</span> <Lock className="w-4 h-4" /></>}
+                {processing ? 'Processing...' : <><span>Pay {cost}</span> <Lock className="w-4 h-4" /></>}
               </button>
               <p className="text-[9px] text-center text-muted-foreground mt-2 flex items-center justify-center gap-1">
                 Secured by Stripe <ShieldCheck className="w-3 h-3" />

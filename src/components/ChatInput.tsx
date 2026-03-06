@@ -4,7 +4,7 @@ import { useAppStore, type ChatMode } from '@/lib/store';
 import { sendChatMessage } from '@/lib/chat-api';
 
 const ChatInput = () => {
-  const { mode, setMode, isGenerating, addMessage, deductCredits, setIsGenerating } = useAppStore();
+  const { mode, setMode, isGenerating, addMessage, deductCredits, setIsGenerating, sendOnEnter } = useAppStore();
   const [text, setText] = useState('');
   const [imageData, setImageData] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -15,7 +15,7 @@ const ChatInput = () => {
 
   const handleSend = async () => {
     if ((!text.trim() && !imageData) || isGenerating) return;
-    if (!deductCredits()) return; // show pricing modal could be added
+    if (!deductCredits()) return;
 
     addMessage({ role: 'user', text: text.trim(), image: imageData || undefined });
     const userText = text.trim();
@@ -27,7 +27,7 @@ const ChatInput = () => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+    if (sendOnEnter && e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
 
   const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,7 +47,6 @@ const ChatInput = () => {
   return (
     <div className="shrink-0 p-4 md:px-20 bg-background border-t border-border z-20">
       <div className="max-w-3xl mx-auto">
-        {/* Mode selector */}
         <div className="flex justify-between items-end mb-2 px-1">
           <div className="flex bg-muted p-0.5 rounded-lg border border-border shadow-sm">
             {(['fast', 'thinking', 'pro'] as ChatMode[]).map((m) => (
@@ -64,7 +63,6 @@ const ChatInput = () => {
           </span>
         </div>
 
-        {/* Image preview */}
         {imageData && (
           <div className="mb-2 relative inline-block">
             <img src={imageData} className="h-14 w-14 object-cover rounded-xl border border-border shadow-sm" alt="Preview" />
@@ -75,7 +73,6 @@ const ChatInput = () => {
           </div>
         )}
 
-        {/* Input area */}
         <div className="bg-muted/90 backdrop-blur-xl rounded-3xl border border-border/50 shadow-lg focus-within:ring-1 ring-ring/30 transition-all flex items-end p-1.5">
           <button onClick={() => fileRef.current?.click()}
             className="p-2 mb-0.5 ml-1 text-muted-foreground hover:text-foreground hover:bg-card rounded-full transition-colors shrink-0">
