@@ -5,7 +5,7 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
 export async function sendChatMessage(userText: string, imageData?: string | null) {
   const store = useAppStore.getState();
-  const { model, mode, user, messages, sysPromptOverride, language } = store;
+  const { model, mode, user, modelPrompts, language } = store;
 
   const isDraw = userText.toLowerCase().startsWith('/draw');
 
@@ -16,20 +16,18 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
   }
 
   try {
-    let finalSysPrompt = sysPromptOverride || SYSTEM_PROMPTS[model];
+    let finalSysPrompt = modelPrompts[model] || SYSTEM_PROMPTS[model] || SYSTEM_PROMPTS.gemini;
     finalSysPrompt += `\n\nUSER PROFILE:\nName: ${user!.name}\nAge: ${user!.age}\nGender: ${user!.gender}\nHobbies: ${user!.hobbies}\nLanguage Pref: ${language}\nUse this context to personalize responses.`;
 
     if (mode === 'fast') finalSysPrompt += '\nMODE: FAST. Be concise, direct, and short.';
     if (mode === 'thinking') finalSysPrompt += '\nMODE: THINKING. Think step-by-step logically before answering.';
     if (mode === 'pro') finalSysPrompt += '\nMODE: PRO. Provide an extremely exhaustive, expert-level response.';
 
-    // Use messages from store (which already includes the latest user message)
-    const history = useAppStore.getState().messages.slice(-12).map((m) => ({
+    const messages = useAppStore.getState().messages;
+    const history = messages.slice(-12).map((m) => ({
       role: m.role === 'bot' ? 'assistant' : 'user',
       content: m.text || '[Image]',
     }));
-
-    const chatMessages = history;
 
     const resp = await fetch(CHAT_URL, {
       method: 'POST',
@@ -37,7 +35,7 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
         'Content-Type': 'application/json',
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
-      body: JSON.stringify({ messages: chatMessages, systemPrompt: finalSysPrompt, mode }),
+      body: JSON.stringify({ messages: history, systemPrompt: finalSysPrompt, mode }),
     });
 
     if (!resp.ok) {
@@ -47,7 +45,6 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
 
     if (!resp.body) throw new Error('No response body');
 
-    // Stream SSE tokens
     const reader = resp.body.getReader();
     const decoder = new TextDecoder();
     let textBuffer = '';
@@ -76,16 +73,21 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
           const content = parsed.choices?.[0]?.delta?.content as string | undefined;
           if (content) {
             fullText += content;
-            const msgs = useAppStore.getState().messages;
             if (!messageAdded) {
               store.addMessage({ role: 'bot', type: 'text', text: fullText });
               messageAdded = true;
             } else {
-              // Update the last message
-              const updated = [...msgs];
-              updated[updated.length - 1] = { ...updated[updated.length - 1], text: fullText };
-              useAppStore.setState({ messages: updated });
-              localStorage.setItem('tat_chat', JSON.stringify(updated));
+              // Update the last message in the active conversation
+              const convos = useAppStore.getState().conversations;
+              const activeId = useAppStore.getState().activeConversationId;
+              const updated = convos.map(c => {
+                if (c.id !== activeId) return c;
+                const msgs = [...c.messages];
+                msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], text: fullText };
+                return { ...c, messages: msgs };
+              });
+              useAppStore.setState({ conversations: updated });
+              localStorage.setItem('tat_convos', JSON.stringify(updated));
             }
           }
         } catch {
