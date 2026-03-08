@@ -385,7 +385,7 @@ export const useAppStore = create<AppState>((set, get) => {
       if (msg.role === 'bot' && state.notificationsEnabled && state.notificationMode !== 'never') {
         const shouldNotify = state.notificationMode === 'every' || (state.notificationMode === 'inactive' && document.hidden);
         if (shouldNotify) {
-          const title = 'Anson AI';
+          const title = 'TheAiTwins';
           const body = msg.text?.slice(0, 120) || 'New response';
           
           // Local notification (when tab is open)

@@ -23,9 +23,9 @@ export default defineConfig(({ mode }) => ({
         importScripts: ['/push-handler.js'],
       },
       manifest: {
-        name: "Anson AI - TheAiTwins",
-        short_name: "AnsonAI",
-        description: "AI chat with Anson model",
+        name: "TheAiTwins",
+        short_name: "TheAiTwins",
+        description: "AI chat by TheAiTwins",
         theme_color: "#0a0a0f",
         background_color: "#0a0a0f",
         display: "standalone",
