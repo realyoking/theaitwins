@@ -151,10 +151,15 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
       store.addMessage({ role: 'bot', type: 'text', text: 'No response from API.' });
     }
 
-    // Browser notification
-    if (notificationsEnabled && document.hidden) {
+    // Send notification when AI is done and user is away
+    if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+      const preview = fullText.slice(0, 80) + (fullText.length > 80 ? '...' : '');
       try {
-        new Notification('TheAiTwins', { body: 'AI response ready!', icon: '/favicon.ico' });
+        new Notification('🤖 AI Response Ready!', {
+          body: preview || 'Your AI response is ready.',
+          icon: '/pwa-192.png',
+          tag: 'ai-response',
+        });
       } catch {}
     }
   } catch (e: any) {

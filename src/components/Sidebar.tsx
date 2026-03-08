@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Settings, Zap, Sun, Moon, X, Cpu, ChevronUp, MessageSquare, Pin, Trash2, Edit3, Search, MoreHorizontal, Copy, Download, Archive, Tag, BarChart3, Users, Gift, Shield, LogOut } from 'lucide-react';
 import NotificationBell from './NotificationBell';
@@ -13,6 +13,7 @@ interface SidebarProps {
 
 const Sidebar = ({ onOpenSettings, onOpenPricing, onOpenAnalytics }: SidebarProps) => {
   const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
   const {
     user, credits, isPro, conversations, activeConversationId,
     clearMessages, toggleTheme, theme, sidebarOpen, setSidebarOpen,
@@ -27,6 +28,15 @@ const Sidebar = ({ onOpenSettings, onOpenPricing, onOpenAnalytics }: SidebarProp
   const [editName, setEditName] = useState('');
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [showTagPicker, setShowTagPicker] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user: authUser } }) => {
+      if (!authUser) return;
+      supabase.rpc('has_role', { _user_id: authUser.id, _role: 'admin' }).then(({ data }) => {
+        setIsAdmin(!!data);
+      });
+    });
+  }, []);
 
   if (!user) return null;
 
@@ -231,10 +241,12 @@ const Sidebar = ({ onOpenSettings, onOpenPricing, onOpenAnalytics }: SidebarProp
               className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-accent rounded-lg transition-colors">
               <BarChart3 className="w-4 h-4" /> Analytics
             </button>
-            <button onClick={() => navigate('/admin')}
-              className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-accent rounded-lg transition-colors">
-              <Shield className="w-4 h-4" /> Admin Panel
-            </button>
+            {isAdmin && (
+              <button onClick={() => navigate('/admin')}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-accent rounded-lg transition-colors">
+                <Shield className="w-4 h-4" /> Admin Panel
+              </button>
+            )}
             <button onClick={onOpenSettings}
               className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-accent rounded-lg transition-colors">
               <Settings className="w-4 h-4" /> Settings
