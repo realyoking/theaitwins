@@ -239,7 +239,7 @@ const ChatArea = () => {
         </div>
       )}
 
-      <div ref={feedRef} className="flex-1 overflow-y-auto px-4 md:px-20 py-6 custom-scrollbar scroll-smooth" style={wallpaperStyle}>
+      <div ref={feedRef} className="flex-1 overflow-y-auto px-3 md:px-20 py-4 md:py-6 custom-scrollbar scroll-smooth" style={wallpaperStyle}>
         {filteredMessages.length === 0 && !chatSearchQuery ? (
           <div className="h-full flex flex-col items-center justify-center text-center max-w-xl mx-auto mt-10">
             <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-6">
