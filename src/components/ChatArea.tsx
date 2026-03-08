@@ -139,44 +139,47 @@ const ChatArea = () => {
 
       {/* Header */}
       {!focusMode && (
-        <header className="shrink-0 h-14 flex items-center justify-between px-4 bg-background/80 backdrop-blur-md z-10 border-b border-border/50">
-          <div className="flex items-center gap-3">
+        <header className="shrink-0 h-12 md:h-14 flex items-center justify-between px-2 md:px-4 bg-background/80 backdrop-blur-md z-10 border-b border-border/50">
+          <div className="flex items-center gap-2">
             <button onClick={() => setSidebarOpen(true)} className="md:hidden p-1.5 text-muted-foreground hover:text-foreground">
               <Menu className="w-5 h-5" />
             </button>
-            <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
-              {modelBtn('anson67', 'Anson67')}
-              {modelBtn('gemini', 'Gemini')}
-              {modelBtn('chester', 'Chester')}
+            <div className="flex items-center gap-0.5 bg-muted p-0.5 rounded-lg">
+              {modelBtn('anson67', '👻')}
+              {modelBtn('gemini', '🤖')}
+              {modelBtn('chester', '💀')}
             </div>
+            <span className="hidden md:inline text-[10px] text-muted-foreground font-medium">
+              {model === 'anson67' ? 'Anson67' : model === 'gemini' ? 'Gemini' : 'Chester'}
+            </span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             {messages.length > 0 && (
               <span className="text-[10px] text-muted-foreground font-medium bg-muted px-2 py-1 rounded-md hidden md:block">
-                {messages.length} msgs · {messages.reduce((a, m) => a + (m.text?.split(/\s+/).length || 0), 0)} words
+                {messages.length} msgs
               </span>
             )}
             <button onClick={() => setShowSearch(!showSearch)}
-              className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors" title="Search (Ctrl+K)">
+              className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors" title="Search">
               <Search className="w-4 h-4" />
             </button>
             <button onClick={() => setShowTemplates(!showTemplates)}
-              className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors" title="Templates (Ctrl+/)">
+              className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors hidden md:flex" title="Templates">
               <BookTemplate className="w-4 h-4" />
             </button>
             <button onClick={handleOpenInTab}
-              className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors" title="Open in Tab (Ctrl+T)">
+              className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors hidden md:flex" title="Open in Tab">
               <Layers className="w-4 h-4" />
             </button>
             <button onClick={() => setFocusMode(true)}
-              className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors" title="Focus Mode">
+              className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors hidden md:flex" title="Focus Mode">
               <Maximize2 className="w-4 h-4" />
             </button>
             <button onClick={() => setCanvasOpen(!isCanvasOpen)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${isCanvasOpen
+              className={`flex items-center gap-1 px-2 md:px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${isCanvasOpen
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:bg-muted'}`}>
-              <Code className="w-3.5 h-3.5" /> Canvas
+              <Code className="w-3.5 h-3.5" /> <span className="hidden md:inline">Canvas</span>
             </button>
           </div>
         </header>
