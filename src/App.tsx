@@ -10,6 +10,7 @@ import Groups from "./pages/Groups";
 import GroupChat from "./pages/GroupChat";
 import JoinGroup from "./pages/JoinGroup";
 import AdminPanel from "./pages/AdminPanel";
+import CodePlayground from "./pages/CodePlayground";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/group/:groupId" element={<GroupChat />} />
           <Route path="/join/:code" element={<JoinGroup />} />
           <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/playground" element={<CodePlayground />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
