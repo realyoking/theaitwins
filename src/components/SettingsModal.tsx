@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { subscribeToPush, unsubscribeFromPush } from '@/lib/push-notifications';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Settings as SettingsIcon, Trash2, Ghost, Cpu, Skull, Palette, Brain, Users, Bell, Volume2, Type, Image, Sparkles, Upload, Check, Copy } from 'lucide-react';
+import { X, Settings as SettingsIcon, Trash2, Ghost, Cpu, Skull, Palette, Brain, Users, Bell, Volume2, Type, Image, Sparkles, Upload, Check, Copy, Camera } from 'lucide-react';
 import { useAppStore, type AIModel, type CustomPersona, THEME_PRESETS, WALLPAPERS } from '@/lib/store';
 import { SYSTEM_PROMPTS } from '@/lib/prompts';
 import { EXTRA_WALLPAPERS } from './WallpaperPicker';
