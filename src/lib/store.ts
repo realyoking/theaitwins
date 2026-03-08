@@ -114,6 +114,10 @@ interface AppState {
   ttsEnabled: boolean;
   ttsVoice: string;
   memories: string[];
+  customFont: string;
+  plugins: import('@/components/PluginSystem').Plugin[];
+  workspaceTabs: import('@/components/WorkspaceTabs').WorkspaceTab[];
+  activeTabId: string;
 
   setUser: (user: UserProfile) => void;
   addMessage: (msg: ChatMessage) => void;
@@ -184,6 +188,17 @@ interface AppState {
   trackMessage: (model: AIModel, mode: ChatMode) => void;
   addMemory: (m: string) => void;
   removeMemory: (i: number) => void;
+
+  // Font
+  setCustomFont: (f: string) => void;
+
+  // Plugins
+  setPlugins: (p: import('@/components/PluginSystem').Plugin[]) => void;
+
+  // Workspace tabs
+  addWorkspaceTab: (conversationId: string) => void;
+  removeWorkspaceTab: (tabId: string) => void;
+  setActiveTab: (tabId: string) => void;
 
   // Streak
   checkStreak: () => void;
@@ -301,6 +316,19 @@ export const useAppStore = create<AppState>((set, get) => {
     ttsEnabled: loadFromLS('tat_tts', false),
     ttsVoice: localStorage.getItem('tat_tts_voice') || '',
     memories: loadFromLS('tat_memories', []),
+    customFont: localStorage.getItem('tat_font') || 'Inter',
+    plugins: loadFromLS('tat_plugins', [
+      { id: 'calculator', name: 'Calculator', description: 'Evaluate math expressions. Type /calc 2+2', icon: '🧮', enabled: false, type: 'builtin' },
+      { id: 'translator', name: 'Quick Translate', description: 'Translate text. Type /translate [lang] [text]', icon: '🌐', enabled: false, type: 'builtin' },
+      { id: 'timestamp', name: 'Timestamp', description: 'Insert date/time. Type /now', icon: '🕐', enabled: false, type: 'builtin' },
+      { id: 'wordcount', name: 'Word Counter', description: 'Count words. Type /count [text]', icon: '📊', enabled: false, type: 'builtin' },
+      { id: 'lorem', name: 'Lorem Generator', description: 'Placeholder text. Type /lorem [words]', icon: '📝', enabled: false, type: 'builtin' },
+      { id: 'color', name: 'Color Picker', description: 'Convert colors. Type /color #ff0000', icon: '🎨', enabled: false, type: 'builtin' },
+      { id: 'uuid', name: 'UUID Generator', description: 'Generate UUIDs. Type /uuid', icon: '🔑', enabled: false, type: 'builtin' },
+      { id: 'base64', name: 'Base64 Encoder', description: 'Encode base64. Type /base64 [text]', icon: '🔐', enabled: false, type: 'builtin' },
+    ]),
+    workspaceTabs: [],
+    activeTabId: '',
 
     setUser: (user) => { set({ user }); localStorage.setItem('tat_user', JSON.stringify(user)); },
 
@@ -631,6 +659,55 @@ export const useAppStore = create<AppState>((set, get) => {
       const next = get().memories.filter((_, idx) => idx !== i);
       set({ memories: next });
       localStorage.setItem('tat_memories', JSON.stringify(next));
+    },
+
+    setCustomFont: (f) => {
+      set({ customFont: f });
+      localStorage.setItem('tat_font', f);
+      document.body.style.fontFamily = `'${f}', system-ui, sans-serif`;
+    },
+
+    setPlugins: (p) => {
+      set({ plugins: p });
+      localStorage.setItem('tat_plugins', JSON.stringify(p));
+    },
+
+    addWorkspaceTab: (conversationId) => {
+      const state = get();
+      const convo = state.conversations.find(c => c.id === conversationId);
+      // Check if tab already exists
+      const existing = state.workspaceTabs.find(t => t.conversationId === conversationId);
+      if (existing) {
+        set({ activeTabId: existing.id, activeConversationId: conversationId });
+        return;
+      }
+      const tab = { id: generateId(), conversationId, name: convo?.name || 'New Tab' };
+      const tabs = [...state.workspaceTabs, tab];
+      set({ workspaceTabs: tabs, activeTabId: tab.id, activeConversationId: conversationId });
+      localStorage.setItem('tat_tabs', JSON.stringify(tabs));
+    },
+
+    removeWorkspaceTab: (tabId) => {
+      const state = get();
+      const tabs = state.workspaceTabs.filter(t => t.id !== tabId);
+      let activeTabId = state.activeTabId;
+      if (activeTabId === tabId && tabs.length > 0) {
+        activeTabId = tabs[tabs.length - 1].id;
+        const convoId = tabs[tabs.length - 1].conversationId;
+        set({ activeConversationId: convoId });
+        localStorage.setItem('tat_active_convo', convoId);
+      }
+      set({ workspaceTabs: tabs, activeTabId });
+      localStorage.setItem('tat_tabs', JSON.stringify(tabs));
+    },
+
+    setActiveTab: (tabId) => {
+      const state = get();
+      const tab = state.workspaceTabs.find(t => t.id === tabId);
+      if (tab) {
+        set({ activeTabId: tabId, activeConversationId: tab.conversationId });
+        localStorage.setItem('tat_active_convo', tab.conversationId);
+      }
     },
 
     checkStreak: () => {

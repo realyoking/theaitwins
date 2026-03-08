@@ -2,9 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, ImageIcon, X, Zap, Mic, MicOff, Square, Circle } from 'lucide-react';
 import { useAppStore, type ChatMode } from '@/lib/store';
 import { sendChatMessage, abortChat } from '@/lib/chat-api';
+import { executePlugin } from './PluginSystem';
 
 const ChatInput = () => {
-  const { mode, setMode, isGenerating, addMessage, deductCredits, setIsGenerating, sendOnEnter, stopGenerating, trackMessage, model } = useAppStore();
+  const { mode, setMode, isGenerating, addMessage, deductCredits, setIsGenerating, sendOnEnter, stopGenerating, trackMessage, model, plugins } = useAppStore();
   const [text, setText] = useState('');
   const [imageData, setImageData] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
@@ -111,6 +112,18 @@ const ChatInput = () => {
   };
 
   const handleSendText = async (userText: string) => {
+    // Check for plugin commands first
+    if (userText.startsWith('/')) {
+      const result = executePlugin(userText, plugins);
+      if (result) {
+        addMessage({ role: 'user', text: userText });
+        addMessage({ role: 'bot', text: result });
+        setText('');
+        if (textareaRef.current) textareaRef.current.style.height = '20px';
+        return;
+      }
+    }
+
     if (!deductCredits()) return;
     addMessage({ role: 'user', text: userText, image: imageData || undefined });
     setText('');
