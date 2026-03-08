@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
-import { Ghost, Cpu, Skull, Copy, Check, Share2, ThumbsUp, Heart, Laugh, Lightbulb, Pin, Edit3, Trash2, Volume2, VolumeX, RefreshCw, MoreHorizontal, Sparkles, Languages, ListChecks } from 'lucide-react';
+import { Ghost, Cpu, Skull, Copy, Check, Share2, ThumbsUp, Heart, Laugh, Lightbulb, Pin, Edit3, Trash2, Volume2, VolumeX, RefreshCw, MoreHorizontal, Sparkles, Languages, ListChecks, Play, Loader2 } from 'lucide-react';
 import type { ChatMessage, AIModel } from '@/lib/store';
 import { useAppStore } from '@/lib/store';
+import { detectLanguage, getLanguageLabel, getLanguageColor, runCode, type SupportedLanguage } from '@/lib/code-runner';
+import { toast } from 'sonner';
 
 interface MessageBubbleProps {
   msg: ChatMessage;
