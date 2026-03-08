@@ -617,6 +617,7 @@ export const useAppStore = create<AppState>((set, get) => {
     setShowArchived: (v) => set({ showArchived: v }),
     setFilterTag: (t) => set({ filterTag: t }),
     setNotificationsEnabled: (v) => { set({ notificationsEnabled: v }); localStorage.setItem('tat_notif', JSON.stringify(v)); },
+    setNotificationMode: (m) => { set({ notificationMode: m }); localStorage.setItem('tat_notif_mode', m); },
     setTtsEnabled: (v) => { set({ ttsEnabled: v }); localStorage.setItem('tat_tts', JSON.stringify(v)); },
     setTtsVoice: (v) => { set({ ttsVoice: v }); localStorage.setItem('tat_tts_voice', v); },
 
