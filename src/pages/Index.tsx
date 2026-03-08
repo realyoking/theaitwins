@@ -10,20 +10,14 @@ import SettingsModal from '@/components/SettingsModal';
 import PricingModal from '@/components/PricingModal';
 import CheckoutModal from '@/components/CheckoutModal';
 import AnalyticsModal from '@/components/AnalyticsModal';
-import ThemeStudio from '@/components/ThemeStudio';
 import PluginSystem from '@/components/PluginSystem';
-import FontPicker from '@/components/FontPicker';
-import WallpaperPicker from '@/components/WallpaperPicker';
 
 const Index = () => {
-  const { user, theme, checkDailyReset, checkStreak, customThemeId, setCustomThemeId, customFont, plugins, setPlugins, setCustomFont } = useAppStore();
+  const { user, theme, checkDailyReset, checkStreak, customThemeId, setCustomThemeId, customFont, plugins, setPlugins } = useAppStore();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pricingOpen, setPricingOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
-  const [themeStudioOpen, setThemeStudioOpen] = useState(false);
   const [pluginsOpen, setPluginsOpen] = useState(false);
-  const [fontsOpen, setFontsOpen] = useState(false);
-  const [wallpaperOpen, setWallpaperOpen] = useState(false);
   const [authUser, setAuthUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const navigate = useNavigate();
@@ -93,10 +87,7 @@ const Index = () => {
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenPricing={() => setPricingOpen(true)}
         onOpenAnalytics={() => setAnalyticsOpen(true)}
-        onOpenThemeStudio={() => setThemeStudioOpen(true)}
         onOpenPlugins={() => setPluginsOpen(true)}
-        onOpenFonts={() => setFontsOpen(true)}
-        onOpenWallpapers={() => setWallpaperOpen(true)}
       />
       <ChatArea />
       <CodeCanvas />
@@ -111,10 +102,7 @@ const Index = () => {
         onSuccess={handleCheckoutSuccess}
       />
       <AnalyticsModal open={analyticsOpen} onClose={() => setAnalyticsOpen(false)} />
-      <ThemeStudio open={themeStudioOpen} onClose={() => setThemeStudioOpen(false)} />
       <PluginSystem open={pluginsOpen} onClose={() => setPluginsOpen(false)} plugins={plugins} setPlugins={setPlugins} />
-      <FontPicker open={fontsOpen} onClose={() => setFontsOpen(false)} currentFont={customFont} onSelectFont={setCustomFont} />
-      <WallpaperPicker open={wallpaperOpen} onClose={() => setWallpaperOpen(false)} />
     </div>
   );
 };

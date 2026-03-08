@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Settings as SettingsIcon, Trash2, Ghost, Cpu, Skull, Palette, Brain, Users, Bell, Volume2 } from 'lucide-react';
+import { X, Settings as SettingsIcon, Trash2, Ghost, Cpu, Skull, Palette, Brain, Users, Bell, Volume2, Type, Image, Sparkles, Upload, Check, Copy } from 'lucide-react';
 import { useAppStore, type AIModel, type CustomPersona, THEME_PRESETS, WALLPAPERS } from '@/lib/store';
 import { SYSTEM_PROMPTS } from '@/lib/prompts';
+import { EXTRA_WALLPAPERS } from './WallpaperPicker';
 
 interface SettingsModalProps {
   open: boolean;
@@ -83,6 +84,8 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
     a.href = URL.createObjectURL(blob); a.download = `${convo.name}.txt`; a.click();
   };
 
+  const { customFont, setCustomFont } = useAppStore();
+
   const inputClass = "w-full mt-1 px-3 py-2 bg-muted rounded-lg outline-none border border-transparent focus:border-muted-foreground/30 text-sm";
   const modelIcons: Record<AIModel, any> = { anson67: Ghost, gemini: Cpu, chester: Skull };
   const modelNames: Record<AIModel, string> = { anson67: 'Anson67', gemini: 'Gemini', chester: 'Chester' };
@@ -94,6 +97,73 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
         className={`w-10 h-6 rounded-full transition-colors relative ${value ? 'bg-primary' : 'bg-muted border border-border'}`}>
         <div className={`w-4 h-4 rounded-full bg-primary-foreground absolute top-1 transition-transform ${value ? 'left-5' : 'left-1'}`} />
       </button>
+    </div>
+  );
+
+  const allWallpapers = [...WALLPAPERS, ...EXTRA_WALLPAPERS];
+  const GOOGLE_FONTS_QUICK = ['Inter', 'JetBrains Mono', 'Space Grotesk', 'DM Sans', 'Outfit', 'Sora', 'Plus Jakarta Sans', 'Manrope', 'Playfair Display', 'Lora', 'Fira Code', 'Rubik'];
+
+  const handleFontSelect = (fontName: string) => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(/ /g, '+')}:wght@400;500;600;700;800;900&display=swap`;
+    document.head.appendChild(link);
+    document.body.style.fontFamily = `'${fontName}', system-ui, sans-serif`;
+    setCustomFont(fontName);
+  };
+
+  const AppearanceTab = () => (
+    <div className="space-y-5">
+      {/* Theme Presets */}
+      <div>
+        <label className="text-[10px] font-bold text-muted-foreground uppercase mb-2 block flex items-center gap-1">
+          <Palette className="w-3 h-3" /> Theme
+        </label>
+        <div className="grid grid-cols-4 gap-2">
+          {THEME_PRESETS.map(t => (
+            <button key={t.id} onClick={() => setCustomThemeId(t.id)}
+              className={`p-2 rounded-xl border text-center transition-all ${customThemeId === t.id ? 'ring-2 ring-ring border-transparent' : 'border-border hover:border-muted-foreground/30'}`}>
+              <div className="w-full h-6 rounded-lg mb-1" style={{ background: `hsl(${t.bg})` }}>
+                <div className="w-3 h-3 rounded-full ml-auto mr-1 mt-0.5" style={{ background: `hsl(${t.primary})` }} />
+              </div>
+              <span className="text-[9px] font-bold">{t.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Font Picker */}
+      <div>
+        <label className="text-[10px] font-bold text-muted-foreground uppercase mb-2 block flex items-center gap-1">
+          <Type className="w-3 h-3" /> Font — <span className="normal-case text-foreground">{customFont}</span>
+        </label>
+        <div className="grid grid-cols-3 gap-1.5">
+          {GOOGLE_FONTS_QUICK.map(f => (
+            <button key={f} onClick={() => handleFontSelect(f)}
+              className={`px-2 py-2 rounded-lg text-[10px] font-medium transition-all text-left ${
+                customFont === f ? 'bg-primary/10 border border-primary/30 text-foreground' : 'bg-muted hover:bg-accent text-muted-foreground border border-transparent'}`}>
+              {f}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Chat Wallpaper */}
+      <div>
+        <label className="text-[10px] font-bold text-muted-foreground uppercase mb-2 block flex items-center gap-1">
+          <Image className="w-3 h-3" /> Chat Wallpaper
+        </label>
+        <div className="grid grid-cols-4 gap-1.5">
+          {allWallpapers.map(w => (
+            <button key={w.id} onClick={() => setWallpaper(w.id)}
+              className={`rounded-xl border text-center transition-all h-12 flex items-center justify-center ${
+                wallpaper === w.id ? 'ring-2 ring-ring border-transparent' : 'border-border hover:border-muted-foreground/30'}`}
+              style={w.css ? { backgroundImage: w.css, backgroundSize: w.id === 'dots' || w.id === 'grid' ? '20px 20px' : w.id === 'stars' ? '150px 100px' : undefined } : {}}>
+              <span className="text-[8px] font-bold bg-card/80 px-1 py-0.5 rounded">{w.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 
@@ -286,37 +356,7 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
 
             {/* Appearance */}
             {tab === 'Appearance' && (
-              <div className="space-y-4">
-                <div>
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase mb-2 block flex items-center gap-1">
-                    <Palette className="w-3 h-3" /> Theme
-                  </label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {THEME_PRESETS.map(t => (
-                      <button key={t.id} onClick={() => setCustomThemeId(t.id)}
-                        className={`p-2 rounded-xl border text-center transition-all ${customThemeId === t.id ? 'ring-2 ring-ring border-transparent' : 'border-border hover:border-muted-foreground/30'}`}>
-                        <div className="w-full h-6 rounded-lg mb-1" style={{ background: `hsl(${t.bg})` }}>
-                          <div className="w-3 h-3 rounded-full ml-auto mr-1 mt-0.5" style={{ background: `hsl(${t.primary})` }} />
-                        </div>
-                        <span className="text-[9px] font-bold">{t.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase mb-2 block">Chat Wallpaper</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {WALLPAPERS.map(w => (
-                      <button key={w.id} onClick={() => setWallpaper(w.id)}
-                        className={`p-3 rounded-xl border text-center transition-all h-16 ${wallpaper === w.id ? 'ring-2 ring-ring border-transparent' : 'border-border'}`}
-                        style={w.css ? { backgroundImage: w.css, backgroundSize: w.id === 'dots' || w.id === 'grid' ? '20px 20px' : undefined } : {}}>
-                        <span className="text-[9px] font-bold bg-card/80 px-1.5 py-0.5 rounded">{w.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <AppearanceTab />
             )}
 
             {/* Data */}
