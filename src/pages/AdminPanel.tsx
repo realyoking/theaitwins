@@ -549,6 +549,60 @@ const AdminPanel = () => {
           </div>
         )}
 
+        {/* ═══ NOTIFICATIONS ═══ */}
+        {tab === 'notifications' && (
+          <div className="space-y-4">
+            <h2 className="text-sm font-bold">Send Notification</h2>
+            <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+              <div className="flex gap-2">
+                <button onClick={() => setNotiMode('everyone')}
+                  className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-bold border transition-all ${notiMode === 'everyone' ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted border-border hover:bg-accent'}`}>
+                  📢 Everyone ({profiles.length})
+                </button>
+                <button onClick={() => setNotiMode('specific')}
+                  className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-bold border transition-all ${notiMode === 'specific' ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted border-border hover:bg-accent'}`}>
+                  👤 Specific Users
+                </button>
+              </div>
+
+              {notiMode === 'specific' && (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input value={notiSearchQuery} onChange={e => setNotiSearchQuery(e.target.value)} placeholder="Search users..."
+                      className="w-full pl-9 pr-3 py-2 bg-muted rounded-xl text-xs outline-none border border-transparent focus:border-primary" />
+                  </div>
+                  <div className="max-h-40 overflow-y-auto space-y-1 border border-border rounded-lg p-2">
+                    {notiFilteredProfiles.map(p => (
+                      <label key={p.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted cursor-pointer">
+                        <input type="checkbox" checked={notiSelectedUsers.includes(p.id)} onChange={() => toggleNotiUser(p.id)}
+                          className="rounded border-border" />
+                        <span className="text-xs font-medium">{p.display_name}</span>
+                        <span className="text-[10px] text-muted-foreground ml-auto">{p.email}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {notiSelectedUsers.length > 0 && (
+                    <p className="text-[10px] text-primary font-bold">{notiSelectedUsers.length} user(s) selected</p>
+                  )}
+                </div>
+              )}
+
+              <input value={notiTitle} onChange={e => setNotiTitle(e.target.value)}
+                placeholder="Notification title *" className={inputClass} />
+              <textarea value={notiBody} onChange={e => setNotiBody(e.target.value)}
+                placeholder="Notification body *" rows={3} className={inputClass + ' resize-none'} />
+              <input value={notiLink} onChange={e => setNotiLink(e.target.value)}
+                placeholder="Link (optional, e.g. /groups)" className={inputClass} />
+
+              <button onClick={sendNotification} disabled={notiSending || !notiTitle.trim() || !notiBody.trim() || (notiMode === 'specific' && notiSelectedUsers.length === 0)}
+                className="w-full py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50">
+                <Send className="w-4 h-4" /> {notiSending ? 'Sending...' : `Send to ${notiMode === 'everyone' ? 'everyone' : notiSelectedUsers.length + ' user(s)'}`}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ═══ PROMPTS ═══ */}
         {tab === 'prompts' && (
           <div className="space-y-4">
