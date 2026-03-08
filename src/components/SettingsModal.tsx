@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { subscribeToPush, unsubscribeFromPush } from '@/lib/push-notifications';
+import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Settings as SettingsIcon, Trash2, Ghost, Cpu, Skull, Palette, Brain, Users, Bell, Volume2, Type, Image, Sparkles, Upload, Check, Copy } from 'lucide-react';
 import { useAppStore, type AIModel, type CustomPersona, THEME_PRESETS, WALLPAPERS } from '@/lib/store';
@@ -327,9 +329,20 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                 {toggleItem('Sound Effects', soundEnabled, setSoundEnabled)}
                 {toggleItem('Auto Scroll', autoScroll, setAutoScroll)}
                 {toggleItem('Text-to-Speech', ttsEnabled, setTtsEnabled)}
-                {toggleItem('Notifications', notificationsEnabled, (v) => {
-                  if (v && 'Notification' in window) Notification.requestPermission();
+                {toggleItem('Notifications', notificationsEnabled, async (v) => {
                   setNotificationsEnabled(v);
+                  if (v) {
+                    if ('Notification' in window) await Notification.requestPermission();
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session?.user?.id) {
+                      await subscribeToPush(session.user.id);
+                    }
+                  } else {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session?.user?.id) {
+                      await unsubscribeFromPush(session.user.id);
+                    }
+                  }
                 })}
                 {notificationsEnabled && (
                   <div className="pl-2 pb-2">
