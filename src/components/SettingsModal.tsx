@@ -22,6 +22,7 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
     personas, addPersona, removePersona, customThemeId, setCustomThemeId,
     wallpaper, setWallpaper, autoDarkMode, setAutoDarkMode,
     notificationsEnabled, setNotificationsEnabled, ttsEnabled, setTtsEnabled,
+    notificationMode, setNotificationMode,
     memories, addMemory, removeMemory,
   } = useAppStore();
 
