@@ -176,6 +176,7 @@ interface AppState {
   setShowArchived: (v: boolean) => void;
   setFilterTag: (t: string) => void;
   setNotificationsEnabled: (v: boolean) => void;
+  setNotificationMode: (m: 'every' | 'inactive' | 'never') => void;
   setTtsEnabled: (v: boolean) => void;
   setTtsVoice: (v: string) => void;
 
