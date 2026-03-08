@@ -26,6 +26,7 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
     notificationsEnabled, setNotificationsEnabled, ttsEnabled, setTtsEnabled,
     notificationMode, setNotificationMode,
     memories, addMemory, removeMemory,
+    modelIcons, setModelIcon,
   } = useAppStore();
 
   const [tab, setTab] = useState<Tab>('Profile');
