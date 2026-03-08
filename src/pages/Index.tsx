@@ -44,6 +44,12 @@ const Index = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (!authLoading && !authUser) {
+      navigate('/auth');
+    }
+  }, [authLoading, authUser, navigate]);
+
   const handleCheckout = (type: 'plan' | 'credits', value: string | number, cost: string) => {
     setPricingOpen(false);
     setCheckout({ open: true, title: type === 'plan' ? 'Upgrade Plan' : 'Buy Credits', cost, type, value });
@@ -61,15 +67,6 @@ const Index = () => {
       window.location.reload();
     }
   };
-
-  if (authLoading) return null;
-
-  // If no auth user, redirect to auth page
-  useEffect(() => {
-    if (!authLoading && !authUser) {
-      navigate('/auth');
-    }
-  }, [authLoading, authUser, navigate]);
 
   if (authLoading || !authUser) return null;
 
