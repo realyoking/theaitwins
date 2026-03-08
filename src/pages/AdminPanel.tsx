@@ -4,9 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import {
   Shield, Users, ArrowLeft, Trash2, Plus, RefreshCw, Megaphone, Cpu, Plug, Eye,
   ChevronLeft, MessageSquare, Settings, CreditCard, Upload, X, ToggleLeft, ToggleRight,
-  Search, UserCheck, UserX, Edit, Save, ExternalLink
+  Search, UserCheck, UserX, Edit, Save, ExternalLink, FileText, RotateCcw
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { SYSTEM_PROMPTS } from '@/lib/prompts';
 
 // ─── Types ───
 type Profile = { id: string; email: string; display_name: string; avatar_url: string | null; created_at: string };
@@ -17,7 +18,7 @@ type Announcement = { id: string; title: string; subtitle: string; body: string;
 type CustomModel = { id: string; name: string; model_id: string; description: string; icon: string; enabled: boolean; created_at: string };
 type AdminPlugin = { id: string; name: string; description: string; icon: string; slash_command: string; code: string; enabled: boolean; created_at: string };
 
-type Tab = 'dashboard' | 'users' | 'announcements' | 'models' | 'plugins';
+type Tab = 'dashboard' | 'users' | 'announcements' | 'models' | 'prompts' | 'plugins';
 
 const AdminPanel = () => {
   const [tab, setTab] = useState<Tab>('dashboard');
@@ -47,7 +48,30 @@ const AdminPanel = () => {
   // Plugin form
   const [pluginForm, setPluginForm] = useState({ name: '', description: '', icon: '🔌', slash_command: '', code: '' });
 
+  // Prompt editing
+  const [promptModel, setPromptModel] = useState<'anson67' | 'gemini' | 'chester'>('anson67');
+  const [promptText, setPromptText] = useState('');
+  const [promptsLoaded, setPromptsLoaded] = useState(false);
+  const [savedPrompts, setSavedPrompts] = useState<Record<string, string>>({});
+
+  const loadPrompts = async () => {
+    const { data } = await supabase.from('admin_settings').select('key, value').like('key', 'prompt_%');
+    const prompts: Record<string, string> = {};
+    (data || []).forEach(row => { prompts[row.key.replace('prompt_', '')] = row.value; });
+    setSavedPrompts(prompts);
+    setPromptText(prompts[promptModel] || '');
+    setPromptsLoaded(true);
+  };
+
   useEffect(() => { checkAdmin(); }, []);
+
+  useEffect(() => {
+    if (tab === 'prompts' && !promptsLoaded && isAdmin) loadPrompts();
+  }, [tab, isAdmin]);
+
+  useEffect(() => {
+    setPromptText(savedPrompts[promptModel] || '');
+  }, [promptModel]);
 
   const checkAdmin = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -229,10 +253,26 @@ const AdminPanel = () => {
     </div>
   );
 
+  const savePrompt = async (model: string, text: string) => {
+    const key = `prompt_${model}`;
+    if (text.trim()) {
+      await supabase.from('admin_settings').upsert({ key, value: text, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+    } else {
+      await supabase.from('admin_settings').delete().eq('key', key);
+    }
+    toast({ title: `Prompt for ${model} saved` });
+    setSavedPrompts(p => ({ ...p, [model]: text }));
+  };
+
+  const resetPrompt = (model: string) => {
+    setPromptText(SYSTEM_PROMPTS[model] || '');
+  };
+
   const tabs: { id: Tab; label: string; icon: any }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: Shield },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'announcements', label: 'Announcements', icon: Megaphone },
+    { id: 'prompts', label: 'Prompts', icon: FileText },
     { id: 'models', label: 'Models', icon: Cpu },
     { id: 'plugins', label: 'Plugins', icon: Plug },
   ];
@@ -461,6 +501,55 @@ const AdminPanel = () => {
                 </div>
               ))}
               {announcements.length === 0 && <p className="text-xs text-muted-foreground text-center py-8">No announcements yet.</p>}
+            </div>
+          </div>
+        )}
+
+        {/* ═══ PROMPTS ═══ */}
+        {tab === 'prompts' && (
+          <div className="space-y-4">
+            <h2 className="text-sm font-bold">Global System Prompts</h2>
+            <p className="text-xs text-muted-foreground">These prompts apply to ALL users. Users can still override them in their own settings.</p>
+
+            <div className="flex gap-2">
+              {(['anson67', 'gemini', 'chester'] as const).map(m => (
+                <button key={m} onClick={() => setPromptModel(m)}
+                  className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-bold border transition-all capitalize ${
+                    promptModel === m ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted border-border hover:bg-accent'}`}>
+                  {m === 'anson67' ? '👻 Anson67' : m === 'gemini' ? '🤖 Gemini' : '💀 Chester'}
+                </button>
+              ))}
+            </div>
+
+            <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase">System Prompt for {promptModel}</label>
+                <span className="text-[10px] text-muted-foreground">{savedPrompts[promptModel] ? 'Custom' : 'Using default'}</span>
+              </div>
+              <textarea value={promptText} onChange={e => setPromptText(e.target.value)}
+                placeholder={SYSTEM_PROMPTS[promptModel] || 'Enter system prompt...'}
+                rows={10} className={inputClass + ' resize-none font-mono text-xs'} />
+              <div className="flex gap-2">
+                <button onClick={() => savePrompt(promptModel, promptText)}
+                  className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-bold flex items-center justify-center gap-2">
+                  <Save className="w-4 h-4" /> Save
+                </button>
+                <button onClick={() => resetPrompt(promptModel)}
+                  className="px-4 py-2.5 bg-muted rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-accent">
+                  <RotateCcw className="w-4 h-4" /> Load Default
+                </button>
+                <button onClick={() => { setPromptText(''); savePrompt(promptModel, ''); }}
+                  className="px-4 py-2.5 bg-destructive/10 text-destructive rounded-lg text-sm font-bold hover:bg-destructive/20">
+                  Clear
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-muted p-4 rounded-xl">
+              <h3 className="text-[10px] font-bold text-muted-foreground uppercase mb-2">Default Prompt Preview</h3>
+              <pre className="text-[10px] font-mono whitespace-pre-wrap max-h-40 overflow-y-auto text-muted-foreground">
+                {SYSTEM_PROMPTS[promptModel] || 'No default prompt defined.'}
+              </pre>
             </div>
           </div>
         )}

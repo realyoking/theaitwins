@@ -85,6 +85,8 @@ interface AppState {
   canvasCode: string;
   isGenerating: boolean;
   modelPrompts: Record<AIModel, string>;
+  globalPrompts: Record<string, string>;
+  modelIcons: Record<string, string>;
   language: string;
   sidebarOpen: boolean;
   searchQuery: string;
@@ -133,6 +135,8 @@ interface AppState {
   deductCredits: () => boolean;
   setSidebarOpen: (v: boolean) => void;
   setModelPrompt: (model: AIModel, prompt: string) => void;
+  loadGlobalPrompts: () => void;
+  setModelIcon: (model: string, icon: string) => void;
   setLanguage: (l: string) => void;
   checkDailyReset: () => void;
   updateUser: (partial: Partial<UserProfile>) => void;
@@ -299,6 +303,8 @@ export const useAppStore = create<AppState>((set, get) => {
     canvasCode: '',
     isGenerating: false,
     modelPrompts: loadFromLS('tat_model_prompts', { anson67: '', gemini: '', chester: '' }),
+    globalPrompts: {},
+    modelIcons: loadFromLS('tat_model_icons', {}),
     language: localStorage.getItem('tat_lang') || 'en',
     sidebarOpen: false,
     searchQuery: '',
@@ -436,6 +442,22 @@ export const useAppStore = create<AppState>((set, get) => {
       const prompts = { ...get().modelPrompts, [model]: prompt };
       set({ modelPrompts: prompts });
       localStorage.setItem('tat_model_prompts', JSON.stringify(prompts));
+    },
+    loadGlobalPrompts: () => {
+      import('@/integrations/supabase/client').then(({ supabase }) => {
+        supabase.from('admin_settings').select('key, value').like('key', 'prompt_%').then(({ data }) => {
+          if (data) {
+            const gp: Record<string, string> = {};
+            data.forEach(row => { gp[row.key.replace('prompt_', '')] = row.value; });
+            set({ globalPrompts: gp });
+          }
+        });
+      });
+    },
+    setModelIcon: (model, icon) => {
+      const icons = { ...get().modelIcons, [model]: icon };
+      set({ modelIcons: icons });
+      localStorage.setItem('tat_model_icons', JSON.stringify(icons));
     },
     setLanguage: (l) => { set({ language: l }); localStorage.setItem('tat_lang', l); },
     updateUser: (partial) => {

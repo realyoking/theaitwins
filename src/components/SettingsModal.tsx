@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { subscribeToPush, unsubscribeFromPush } from '@/lib/push-notifications';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Settings as SettingsIcon, Trash2, Ghost, Cpu, Skull, Palette, Brain, Users, Bell, Volume2, Type, Image, Sparkles, Upload, Check, Copy } from 'lucide-react';
+import { X, Settings as SettingsIcon, Trash2, Ghost, Cpu, Skull, Palette, Brain, Users, Bell, Volume2, Type, Image, Sparkles, Upload, Check, Copy, Camera } from 'lucide-react';
 import { useAppStore, type AIModel, type CustomPersona, THEME_PRESETS, WALLPAPERS } from '@/lib/store';
 import { SYSTEM_PROMPTS } from '@/lib/prompts';
 import { EXTRA_WALLPAPERS } from './WallpaperPicker';
@@ -26,6 +26,7 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
     notificationsEnabled, setNotificationsEnabled, ttsEnabled, setTtsEnabled,
     notificationMode, setNotificationMode,
     memories, addMemory, removeMemory,
+    modelIcons, setModelIcon,
   } = useAppStore();
 
   const [tab, setTab] = useState<Tab>('Profile');
@@ -39,10 +40,20 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
   const [newPersonaName, setNewPersonaName] = useState('');
   const [newPersonaPrompt, setNewPersonaPrompt] = useState('');
   const [newMemory, setNewMemory] = useState('');
-
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [modelIconEditing, setModelIconEditing] = useState<AIModel | null>(null);
   useEffect(() => {
     if (open && user) {
       setName(user.name); setAge(user.age); setGender(user.gender); setHobbies(user.hobbies); setLang(language);
+      // Load avatar
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          supabase.from('profiles').select('avatar_url').eq('id', session.user.id).single().then(({ data }) => {
+            setAvatarUrl(data?.avatar_url || '');
+          });
+        }
+      });
     }
   }, [open]);
 
@@ -90,7 +101,7 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
   const { customFont, setCustomFont } = useAppStore();
 
   const inputClass = "w-full mt-1 px-3 py-2 bg-muted rounded-lg outline-none border border-transparent focus:border-muted-foreground/30 text-sm";
-  const modelIcons: Record<AIModel, any> = { anson67: Ghost, gemini: Cpu, chester: Skull };
+  const modelIconComponents: Record<AIModel, any> = { anson67: Ghost, gemini: Cpu, chester: Skull };
   const modelNames: Record<AIModel, string> = { anson67: 'Anson67', gemini: 'Gemini', chester: 'Chester' };
 
   const toggleItem = (label: string, value: boolean, setter: (v: boolean) => void) => (
@@ -194,6 +205,40 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
             {/* Profile */}
             {tab === 'Profile' && (
               <div className="space-y-4">
+                {/* Avatar */}
+                <div className="flex items-center gap-4">
+                  <div className="relative group">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="Avatar" className="w-16 h-16 rounded-full object-cover border-2 border-border" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-xl font-bold">
+                        {user?.name?.charAt(0)?.toUpperCase() || '?'}
+                      </div>
+                    )}
+                    <label className="absolute inset-0 flex items-center justify-center bg-background/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                      <Camera className="w-5 h-5" />
+                      <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        setAvatarUploading(true);
+                        const { data: { session } } = await supabase.auth.getSession();
+                        if (!session?.user) { setAvatarUploading(false); return; }
+                        const path = `${session.user.id}/${Date.now()}.${file.name.split('.').pop()}`;
+                        const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
+                        if (error) { setAvatarUploading(false); return; }
+                        const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
+                        await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', session.user.id);
+                        setAvatarUrl(publicUrl);
+                        setAvatarUploading(false);
+                      }} />
+                    </label>
+                    {avatarUploading && <div className="absolute inset-0 flex items-center justify-center bg-background/60 rounded-full"><Upload className="w-4 h-4 animate-pulse" /></div>}
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold">Profile Picture</p>
+                    <p className="text-[10px] text-muted-foreground">Click to upload</p>
+                  </div>
+                </div>
                 <div>
                   <label className="text-[10px] font-bold text-muted-foreground uppercase">Nickname</label>
                   <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
@@ -259,12 +304,12 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                   <label className="text-[10px] font-bold text-muted-foreground uppercase mb-2 block">Select Model</label>
                   <div className="flex gap-2">
                     {(['anson67', 'gemini', 'chester'] as AIModel[]).map(m => {
-                      const Icon = modelIcons[m];
+                      const Icon = modelIconComponents[m];
                       return (
                         <button key={m} onClick={() => setEditingModel(m)}
                           className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition-all border ${
                             editingModel === m ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted border-border hover:bg-accent'}`}>
-                          <Icon className="w-4 h-4" /> {modelNames[m]}
+                          {modelIcons[m] ? <span className="text-base">{modelIcons[m]}</span> : <Icon className="w-4 h-4" />} {modelNames[m]}
                         </button>
                       );
                     })}
@@ -305,6 +350,34 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                   <button onClick={handleAddPersona} className="w-full py-2 bg-muted hover:bg-accent rounded-lg text-xs font-bold">
                     + Add Persona
                   </button>
+                </div>
+
+                {/* Model Icons */}
+                <div className="border-t border-border pt-4">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase mb-2 block flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" /> Custom Model Icons
+                  </label>
+                  <p className="text-[9px] text-muted-foreground mb-2">Set an emoji icon for each model</p>
+                  <div className="space-y-2">
+                    {(['anson67', 'gemini', 'chester'] as AIModel[]).map(m => (
+                      <div key={m} className="flex items-center gap-3 bg-muted px-3 py-2 rounded-lg">
+                        <span className="text-lg">{modelIcons[m] || (m === 'anson67' ? '👻' : m === 'gemini' ? '🤖' : '💀')}</span>
+                        <span className="text-xs font-bold flex-1 capitalize">{modelNames[m]}</span>
+                        <input
+                          value={modelIcons[m] || ''}
+                          onChange={(e) => setModelIcon(m, e.target.value)}
+                          placeholder="emoji"
+                          className="w-16 px-2 py-1 bg-background rounded text-center text-sm border border-border"
+                          maxLength={2}
+                        />
+                        {modelIcons[m] && (
+                          <button onClick={() => setModelIcon(m, '')} className="text-muted-foreground hover:text-destructive p-0.5">
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
