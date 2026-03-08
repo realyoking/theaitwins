@@ -10,10 +10,7 @@ import SettingsModal from '@/components/SettingsModal';
 import PricingModal from '@/components/PricingModal';
 import CheckoutModal from '@/components/CheckoutModal';
 import AnalyticsModal from '@/components/AnalyticsModal';
-import ThemeStudio from '@/components/ThemeStudio';
 import PluginSystem from '@/components/PluginSystem';
-import FontPicker from '@/components/FontPicker';
-import WallpaperPicker from '@/components/WallpaperPicker';
 
 const Index = () => {
   const { user, theme, checkDailyReset, checkStreak, customThemeId, setCustomThemeId, customFont, plugins, setPlugins, setCustomFont } = useAppStore();
