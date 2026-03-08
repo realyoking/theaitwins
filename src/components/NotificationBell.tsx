@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, X, MessageSquare, Info } from 'lucide-react';
+import { Bell, X, MessageSquare, Info, AtSign, Megaphone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Notification {
@@ -97,12 +97,12 @@ const NotificationBell = () => {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 z-50 w-72 bg-card border border-border rounded-xl shadow-xl overflow-hidden">
-            <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+          <div className="fixed left-2 right-2 top-14 z-50 md:absolute md:left-auto md:right-0 md:top-full md:mt-2 md:w-80 bg-card border border-border rounded-xl shadow-xl overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2.5 border-b border-border">
               <span className="text-xs font-bold">Notifications</span>
-              <div className="flex gap-1">
+              <div className="flex gap-2 items-center">
                 {unreadCount > 0 && (
-                  <button onClick={markAllRead} className="text-[10px] text-primary hover:underline">
+                  <button onClick={markAllRead} className="text-[10px] text-primary hover:underline font-bold">
                     Mark all read
                   </button>
                 )}
@@ -111,33 +111,39 @@ const NotificationBell = () => {
                 </button>
               </div>
             </div>
-            <div className="max-h-72 overflow-y-auto">
+            <div className="max-h-[60vh] overflow-y-auto">
               {notifications.length === 0 ? (
-                <p className="text-xs text-muted-foreground p-4 text-center">No notifications yet</p>
+                <p className="text-xs text-muted-foreground p-6 text-center">No notifications yet</p>
               ) : (
                 notifications.map(n => (
                   <button
                     key={n.id}
                     onClick={() => handleClick(n)}
-                    className={`w-full text-left px-3 py-2.5 flex gap-2 hover:bg-accent transition-colors border-b border-border/50 last:border-0 ${
+                    className={`w-full text-left px-3 py-2.5 flex gap-2.5 hover:bg-accent transition-colors border-b border-border/50 last:border-0 ${
                       !n.read ? 'bg-primary/5' : ''
                     }`}
                   >
                     <div className="shrink-0 mt-0.5">
                       {n.type === 'group_message' ? (
                         <MessageSquare className="w-3.5 h-3.5 text-primary" />
+                      ) : n.type === 'mention' ? (
+                        <AtSign className="w-3.5 h-3.5 text-chart-2" />
+                      ) : n.type === 'admin' ? (
+                        <Megaphone className="w-3.5 h-3.5 text-destructive" />
                       ) : (
                         <Info className="w-3.5 h-3.5 text-muted-foreground" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-[11px] truncate ${!n.read ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>
+                      <p className={`text-[11px] ${!n.read ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>
                         {n.title}
                       </p>
-                      <p className="text-[10px] text-muted-foreground truncate">{n.body}</p>
+                      <p className="text-[10px] text-muted-foreground line-clamp-2">{n.body}</p>
                     </div>
-                    <span className="text-[9px] text-muted-foreground shrink-0">{timeAgo(n.created_at)}</span>
-                    {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-1" />}
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span className="text-[9px] text-muted-foreground">{timeAgo(n.created_at)}</span>
+                      {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
+                    </div>
                   </button>
                 ))
               )}

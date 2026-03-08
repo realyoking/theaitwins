@@ -339,11 +339,11 @@ const AdminPanel = () => {
       </header>
 
       {/* Tabs */}
-      <div className="flex border-b border-border bg-card overflow-x-auto">
+      <div className="flex border-b border-border bg-card overflow-x-auto" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
         {tabs.map(t => (
           <button key={t.id} onClick={() => { setTab(t.id); setSelectedUserId(null); }}
-            className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${tab === t.id ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
-            <t.icon className="w-4 h-4" /> {t.label}
+            className={`flex items-center gap-1.5 px-3 py-3 text-[11px] font-bold border-b-2 transition-colors whitespace-nowrap shrink-0 ${tab === t.id ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+            <t.icon className="w-3.5 h-3.5" /> {t.label}
           </button>
         ))}
       </div>
