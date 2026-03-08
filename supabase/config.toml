@@ -2,3 +2,6 @@ project_id = "vbrxknyugxoykmyfuejq"
 
 [functions.chat]
 verify_jwt = false
+
+[functions.draw]
+verify_jwt = false

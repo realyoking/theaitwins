@@ -18,7 +18,32 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
 
   const isDraw = userText.toLowerCase().startsWith('/draw');
   if (isDraw) {
-    store.addMessage({ role: 'bot', type: 'text', text: 'Image generation via /draw is not currently supported.' });
+    const drawPrompt = userText.slice(5).trim() || 'A beautiful landscape';
+    try {
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/draw`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ prompt: drawPrompt }),
+      });
+
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({}));
+        throw new Error(errData.error || `Error ${resp.status}`);
+      }
+
+      const data = await resp.json();
+      const imageUrl = data.images?.[0]?.image_url?.url;
+      if (imageUrl) {
+        store.addMessage({ role: 'bot', type: 'image', text: data.text || `Generated: "${drawPrompt}"`, image: imageUrl });
+      } else {
+        store.addMessage({ role: 'bot', type: 'text', text: data.text || 'Image generation returned no image.' });
+      }
+    } catch (e: any) {
+      store.addMessage({ role: 'bot', type: 'text', text: `⚠️ **Draw Error:** ${e.message}` });
+    }
     store.setIsGenerating(false);
     return;
   }

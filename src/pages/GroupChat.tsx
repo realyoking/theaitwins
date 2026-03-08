@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Send, Users, Copy, Link, Ghost, Cpu, Skull } from 'lucide-react';
+import VoiceChat from '@/components/VoiceChat';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
 
@@ -192,6 +193,13 @@ const GroupChat = () => {
           <Users className="w-4 h-4" />
         </button>
       </header>
+
+      {/* Voice Chat */}
+      {userId && groupId && (
+        <div className="shrink-0 px-4 py-2 border-b border-border">
+          <VoiceChat groupId={groupId} userId={userId} />
+        </div>
+      )}
 
       {showMembers && (
         <div className="border-b border-border bg-card px-4 py-3">
