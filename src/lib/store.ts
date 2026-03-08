@@ -6,6 +6,8 @@ export type UserProfile = {
   age: string;
   gender: string;
   hobbies: string;
+  referralCode?: string;
+  referredBy?: string;
 };
 
 export type ChatMessage = {
@@ -16,6 +18,9 @@ export type ChatMessage = {
   url?: string;
   timestamp?: number;
   reactions?: string[];
+  pinned?: boolean;
+  edited?: boolean;
+  responseTime?: number;
 };
 
 export type Conversation = {
@@ -25,10 +30,46 @@ export type Conversation = {
   model: AIModel;
   createdAt: number;
   pinned?: boolean;
+  archived?: boolean;
+  tags?: string[];
+  shared?: boolean;
 };
 
 export type AIModel = 'anson67' | 'gemini' | 'chester';
 export type ChatMode = 'fast' | 'thinking' | 'pro';
+
+export type CustomPersona = {
+  id: string;
+  name: string;
+  icon: string;
+  prompt: string;
+};
+
+export type PromptTemplate = {
+  id: string;
+  name: string;
+  prompt: string;
+  category: string;
+};
+
+export type ThemePreset = {
+  id: string;
+  name: string;
+  bg: string;
+  fg: string;
+  primary: string;
+  card: string;
+  muted: string;
+};
+
+export type AnalyticsData = {
+  totalMessages: number;
+  totalConversations: number;
+  creditsUsed: number;
+  modelUsage: Record<string, number>;
+  modeUsage: Record<string, number>;
+  dailyMessages: Record<string, number>;
+};
 
 interface AppState {
   user: UserProfile | null;
@@ -55,6 +96,25 @@ interface AppState {
   autoScroll: boolean;
   messageLimit: number;
 
+  // New feature state
+  chatSearchQuery: string;
+  focusMode: boolean;
+  wallpaper: string;
+  customThemeId: string;
+  autoDarkMode: boolean;
+  personas: CustomPersona[];
+  promptTemplates: PromptTemplate[];
+  analytics: AnalyticsData;
+  showArchived: boolean;
+  allTags: string[];
+  filterTag: string;
+  streak: number;
+  lastActiveDate: string;
+  notificationsEnabled: boolean;
+  ttsEnabled: boolean;
+  ttsVoice: string;
+  memories: string[];
+
   setUser: (user: UserProfile) => void;
   addMessage: (msg: ChatMessage) => void;
   clearMessages: () => void;
@@ -75,6 +135,11 @@ interface AppState {
   toggleReaction: (msgIndex: number, emoji: string) => void;
   stopGenerating: () => void;
 
+  // Message actions
+  pinMessage: (msgIndex: number) => void;
+  editMessage: (msgIndex: number, newText: string) => void;
+  deleteMessage: (msgIndex: number) => void;
+
   // Conversation management
   createConversation: (model?: AIModel) => string;
   setActiveConversation: (id: string) => void;
@@ -83,9 +148,14 @@ interface AppState {
   pinConversation: (id: string) => void;
   duplicateConversation: (id: string) => void;
   exportConversation: (id: string) => string;
+  archiveConversation: (id: string) => void;
+  addTagToConversation: (id: string, tag: string) => void;
+  removeTagFromConversation: (id: string, tag: string) => void;
+  shareConversation: (id: string) => string;
 
   // Settings
   setSearchQuery: (q: string) => void;
+  setChatSearchQuery: (q: string) => void;
   setFontSize: (s: 'sm' | 'base' | 'lg') => void;
   setSendOnEnter: (v: boolean) => void;
   setShowTimestamps: (v: boolean) => void;
@@ -94,6 +164,29 @@ interface AppState {
   setAutoScroll: (v: boolean) => void;
   setMessageLimit: (n: number) => void;
   addCredits: (n: number) => void;
+  setFocusMode: (v: boolean) => void;
+  setWallpaper: (w: string) => void;
+  setCustomThemeId: (id: string) => void;
+  setAutoDarkMode: (v: boolean) => void;
+  setShowArchived: (v: boolean) => void;
+  setFilterTag: (t: string) => void;
+  setNotificationsEnabled: (v: boolean) => void;
+  setTtsEnabled: (v: boolean) => void;
+  setTtsVoice: (v: string) => void;
+
+  // Personas & Templates
+  addPersona: (p: CustomPersona) => void;
+  removePersona: (id: string) => void;
+  addPromptTemplate: (t: PromptTemplate) => void;
+  removePromptTemplate: (id: string) => void;
+
+  // Analytics
+  trackMessage: (model: AIModel, mode: ChatMode) => void;
+  addMemory: (m: string) => void;
+  removeMemory: (i: number) => void;
+
+  // Streak
+  checkStreak: () => void;
 }
 
 function loadFromLS<T>(key: string, fallback: T): T {
@@ -110,6 +203,37 @@ function generateId() {
 function saveConversations(convos: Conversation[]) {
   localStorage.setItem('tat_convos', JSON.stringify(convos));
 }
+
+const DEFAULT_TEMPLATES: PromptTemplate[] = [
+  { id: '1', name: 'Summarize', prompt: 'Summarize the following text concisely:', category: 'Writing' },
+  { id: '2', name: 'Translate to English', prompt: 'Translate the following to English:', category: 'Language' },
+  { id: '3', name: 'Explain Simply', prompt: 'Explain this in simple terms a 10 year old would understand:', category: 'Learning' },
+  { id: '4', name: 'Debug Code', prompt: 'Find and fix bugs in this code:', category: 'Coding' },
+  { id: '5', name: 'Write Email', prompt: 'Write a professional email about:', category: 'Writing' },
+  { id: '6', name: 'Brainstorm Ideas', prompt: 'Give me 10 creative ideas for:', category: 'Creative' },
+  { id: '7', name: 'Pros & Cons', prompt: 'List the pros and cons of:', category: 'Analysis' },
+  { id: '8', name: 'Extract To-Dos', prompt: 'Extract all action items and to-dos from this text as a checklist:', category: 'Productivity' },
+];
+
+export const THEME_PRESETS: ThemePreset[] = [
+  { id: 'default-dark', name: 'Midnight', bg: '0 0% 4%', fg: '0 0% 95%', primary: '0 0% 98%', card: '0 0% 7%', muted: '0 0% 15%' },
+  { id: 'ocean', name: 'Ocean', bg: '220 25% 6%', fg: '210 40% 95%', primary: '210 100% 60%', card: '220 25% 9%', muted: '220 20% 15%' },
+  { id: 'forest', name: 'Forest', bg: '150 20% 5%', fg: '140 30% 95%', primary: '140 60% 50%', card: '150 20% 8%', muted: '150 15% 15%' },
+  { id: 'sunset', name: 'Sunset', bg: '15 20% 5%', fg: '30 40% 95%', primary: '25 95% 55%', card: '15 20% 8%', muted: '15 15% 15%' },
+  { id: 'purple', name: 'Amethyst', bg: '270 20% 5%', fg: '270 30% 95%', primary: '270 70% 60%', card: '270 20% 8%', muted: '270 15% 15%' },
+  { id: 'rose', name: 'Rose', bg: '340 20% 5%', fg: '340 30% 95%', primary: '340 80% 60%', card: '340 20% 8%', muted: '340 15% 15%' },
+  { id: 'cyber', name: 'Cyberpunk', bg: '260 30% 4%', fg: '180 100% 70%', primary: '300 100% 60%', card: '260 30% 7%', muted: '260 20% 14%' },
+  { id: 'mono', name: 'Monochrome', bg: '0 0% 3%', fg: '0 0% 80%', primary: '0 0% 70%', card: '0 0% 6%', muted: '0 0% 12%' },
+];
+
+export const WALLPAPERS = [
+  { id: 'none', name: 'None', css: '' },
+  { id: 'dots', name: 'Dots', css: 'radial-gradient(circle, hsl(var(--border)) 1px, transparent 1px)' },
+  { id: 'grid', name: 'Grid', css: 'linear-gradient(hsl(var(--border)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--border)) 1px, transparent 1px)' },
+  { id: 'gradient1', name: 'Aurora', css: 'radial-gradient(ellipse at 20% 50%, hsla(270,60%,30%,0.15), transparent 50%), radial-gradient(ellipse at 80% 50%, hsla(200,60%,30%,0.15), transparent 50%)' },
+  { id: 'gradient2', name: 'Glow', css: 'radial-gradient(ellipse at 50% 0%, hsla(var(--primary),0.08), transparent 70%)' },
+  { id: 'noise', name: 'Subtle', css: 'linear-gradient(135deg, hsla(var(--primary),0.03) 0%, transparent 50%, hsla(var(--primary),0.03) 100%)' },
+];
 
 export const useAppStore = create<AppState>((set, get) => {
   const savedConvos = loadFromLS<Conversation[]>('tat_convos', []);
@@ -158,6 +282,25 @@ export const useAppStore = create<AppState>((set, get) => {
     soundEnabled: loadFromLS('tat_sound', true),
     autoScroll: loadFromLS('tat_autoscroll', true),
     messageLimit: parseInt(localStorage.getItem('tat_msglimit') || '50') || 50,
+
+    // New features
+    chatSearchQuery: '',
+    focusMode: false,
+    wallpaper: localStorage.getItem('tat_wallpaper') || 'none',
+    customThemeId: localStorage.getItem('tat_custom_theme') || 'default-dark',
+    autoDarkMode: loadFromLS('tat_autodark', false),
+    personas: loadFromLS('tat_personas', []),
+    promptTemplates: loadFromLS('tat_templates', DEFAULT_TEMPLATES),
+    analytics: loadFromLS('tat_analytics', { totalMessages: 0, totalConversations: 0, creditsUsed: 0, modelUsage: {}, modeUsage: {}, dailyMessages: {} }),
+    showArchived: false,
+    allTags: loadFromLS('tat_tags', ['Work', 'Personal', 'Coding', 'Research', 'Fun']),
+    filterTag: '',
+    streak: parseInt(localStorage.getItem('tat_streak') || '0'),
+    lastActiveDate: localStorage.getItem('tat_last_active') || '',
+    notificationsEnabled: loadFromLS('tat_notif', false),
+    ttsEnabled: loadFromLS('tat_tts', false),
+    ttsVoice: localStorage.getItem('tat_tts_voice') || '',
+    memories: loadFromLS('tat_memories', []),
 
     setUser: (user) => { set({ user }); localStorage.setItem('tat_user', JSON.stringify(user)); },
 
@@ -261,14 +404,10 @@ export const useAppStore = create<AppState>((set, get) => {
       }
     },
 
-    stopGenerating: () => {
-      set({ isGenerating: false });
-    },
+    stopGenerating: () => set({ isGenerating: false }),
 
     toggleReaction: (msgIndex, emoji) => {
       const state = get();
-      const convo = state.conversations.find(c => c.id === state.activeConversationId);
-      if (!convo) return;
       const updated = state.conversations.map(c => {
         if (c.id !== state.activeConversationId) return c;
         const msgs = [...c.messages];
@@ -282,7 +421,41 @@ export const useAppStore = create<AppState>((set, get) => {
       saveConversations(updated);
     },
 
-    // Conversation management
+    pinMessage: (msgIndex) => {
+      const state = get();
+      const updated = state.conversations.map(c => {
+        if (c.id !== state.activeConversationId) return c;
+        const msgs = [...c.messages];
+        msgs[msgIndex] = { ...msgs[msgIndex], pinned: !msgs[msgIndex].pinned };
+        return { ...c, messages: msgs };
+      });
+      set({ conversations: updated });
+      saveConversations(updated);
+    },
+
+    editMessage: (msgIndex, newText) => {
+      const state = get();
+      const updated = state.conversations.map(c => {
+        if (c.id !== state.activeConversationId) return c;
+        const msgs = [...c.messages];
+        msgs[msgIndex] = { ...msgs[msgIndex], text: newText, edited: true };
+        return { ...c, messages: msgs };
+      });
+      set({ conversations: updated });
+      saveConversations(updated);
+    },
+
+    deleteMessage: (msgIndex) => {
+      const state = get();
+      const updated = state.conversations.map(c => {
+        if (c.id !== state.activeConversationId) return c;
+        const msgs = c.messages.filter((_, i) => i !== msgIndex);
+        return { ...c, messages: msgs };
+      });
+      set({ conversations: updated });
+      saveConversations(updated);
+    },
+
     createConversation: (model?: AIModel) => {
       const id = generateId();
       const convo: Conversation = {
@@ -339,7 +512,49 @@ export const useAppStore = create<AppState>((set, get) => {
       return convo.messages.map(m => `${m.role === 'user' ? 'You' : 'AI'}: ${m.text || '[Image]'}`).join('\n\n');
     },
 
+    archiveConversation: (id) => {
+      const updated = get().conversations.map(c => c.id === id ? { ...c, archived: !c.archived } : c);
+      set({ conversations: updated });
+      saveConversations(updated);
+    },
+
+    addTagToConversation: (id, tag) => {
+      const updated = get().conversations.map(c => {
+        if (c.id !== id) return c;
+        const tags = [...(c.tags || [])];
+        if (!tags.includes(tag)) tags.push(tag);
+        return { ...c, tags };
+      });
+      const allTags = get().allTags;
+      if (!allTags.includes(tag)) {
+        const newTags = [...allTags, tag];
+        set({ allTags: newTags });
+        localStorage.setItem('tat_tags', JSON.stringify(newTags));
+      }
+      set({ conversations: updated });
+      saveConversations(updated);
+    },
+
+    removeTagFromConversation: (id, tag) => {
+      const updated = get().conversations.map(c => {
+        if (c.id !== id) return c;
+        return { ...c, tags: (c.tags || []).filter(t => t !== tag) };
+      });
+      set({ conversations: updated });
+      saveConversations(updated);
+    },
+
+    shareConversation: (id) => {
+      const convo = get().conversations.find(c => c.id === id);
+      if (!convo) return '';
+      const data = btoa(encodeURIComponent(JSON.stringify({ name: convo.name, messages: convo.messages.map(m => ({ role: m.role, text: m.text })) })));
+      const url = `${window.location.origin}?shared=${data.slice(0, 100)}`;
+      navigator.clipboard.writeText(get().exportConversation(id));
+      return url;
+    },
+
     setSearchQuery: (q) => set({ searchQuery: q }),
+    setChatSearchQuery: (q) => set({ chatSearchQuery: q }),
     setFontSize: (s) => { set({ fontSize: s }); localStorage.setItem('tat_fontsize', s); },
     setSendOnEnter: (v) => { set({ sendOnEnter: v }); localStorage.setItem('tat_enter', JSON.stringify(v)); },
     setShowTimestamps: (v) => { set({ showTimestamps: v }); localStorage.setItem('tat_timestamps', JSON.stringify(v)); },
@@ -352,10 +567,85 @@ export const useAppStore = create<AppState>((set, get) => {
       set({ credits: next });
       localStorage.setItem('tat_credits', String(next));
     },
+    setFocusMode: (v) => set({ focusMode: v }),
+    setWallpaper: (w) => { set({ wallpaper: w }); localStorage.setItem('tat_wallpaper', w); },
+    setCustomThemeId: (id) => {
+      set({ customThemeId: id });
+      localStorage.setItem('tat_custom_theme', id);
+      const theme = THEME_PRESETS.find(t => t.id === id);
+      if (theme) {
+        const root = document.documentElement;
+        root.style.setProperty('--background', theme.bg);
+        root.style.setProperty('--foreground', theme.fg);
+        root.style.setProperty('--primary', theme.primary);
+        root.style.setProperty('--card', theme.card);
+        root.style.setProperty('--muted', theme.muted);
+      }
+    },
+    setAutoDarkMode: (v) => { set({ autoDarkMode: v }); localStorage.setItem('tat_autodark', JSON.stringify(v)); },
+    setShowArchived: (v) => set({ showArchived: v }),
+    setFilterTag: (t) => set({ filterTag: t }),
+    setNotificationsEnabled: (v) => { set({ notificationsEnabled: v }); localStorage.setItem('tat_notif', JSON.stringify(v)); },
+    setTtsEnabled: (v) => { set({ ttsEnabled: v }); localStorage.setItem('tat_tts', JSON.stringify(v)); },
+    setTtsVoice: (v) => { set({ ttsVoice: v }); localStorage.setItem('tat_tts_voice', v); },
+
+    addPersona: (p) => {
+      const next = [...get().personas, p];
+      set({ personas: next });
+      localStorage.setItem('tat_personas', JSON.stringify(next));
+    },
+    removePersona: (id) => {
+      const next = get().personas.filter(p => p.id !== id);
+      set({ personas: next });
+      localStorage.setItem('tat_personas', JSON.stringify(next));
+    },
+    addPromptTemplate: (t) => {
+      const next = [...get().promptTemplates, t];
+      set({ promptTemplates: next });
+      localStorage.setItem('tat_templates', JSON.stringify(next));
+    },
+    removePromptTemplate: (id) => {
+      const next = get().promptTemplates.filter(t => t.id !== id);
+      set({ promptTemplates: next });
+      localStorage.setItem('tat_templates', JSON.stringify(next));
+    },
+
+    trackMessage: (model, mode) => {
+      const a = { ...get().analytics };
+      a.totalMessages++;
+      a.modelUsage[model] = (a.modelUsage[model] || 0) + 1;
+      a.modeUsage[mode] = (a.modeUsage[mode] || 0) + 1;
+      const today = new Date().toISOString().slice(0, 10);
+      a.dailyMessages[today] = (a.dailyMessages[today] || 0) + 1;
+      a.creditsUsed += get().getCreditCost();
+      set({ analytics: a });
+      localStorage.setItem('tat_analytics', JSON.stringify(a));
+    },
+
+    addMemory: (m) => {
+      const next = [...get().memories, m];
+      set({ memories: next });
+      localStorage.setItem('tat_memories', JSON.stringify(next));
+    },
+    removeMemory: (i) => {
+      const next = get().memories.filter((_, idx) => idx !== i);
+      set({ memories: next });
+      localStorage.setItem('tat_memories', JSON.stringify(next));
+    },
+
+    checkStreak: () => {
+      const today = new Date().toDateString();
+      const { lastActiveDate, streak } = get();
+      if (lastActiveDate === today) return;
+      const yesterday = new Date(Date.now() - 86400000).toDateString();
+      const newStreak = lastActiveDate === yesterday ? streak + 1 : 1;
+      set({ streak: newStreak, lastActiveDate: today });
+      localStorage.setItem('tat_streak', String(newStreak));
+      localStorage.setItem('tat_last_active', today);
+    },
   };
 });
 
-// Selector to get current messages - use this in components
 export const useMessages = () => useAppStore((state) => {
   const convo = state.conversations.find(c => c.id === state.activeConversationId);
   return convo?.messages || [];
