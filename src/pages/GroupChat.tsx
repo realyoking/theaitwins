@@ -5,6 +5,8 @@ import { ArrowLeft, Send, Users, Copy, Link, Ghost, Cpu, Skull } from 'lucide-re
 import VoiceChat from '@/components/VoiceChat';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
+import { useAppStore } from '@/lib/store';
+import { SYSTEM_PROMPTS } from '@/lib/prompts';
 
 type GroupMessage = {
   id: string;
@@ -175,9 +177,9 @@ const GroupChat = () => {
   };
 
   const getModelPrompt = (model: string) => {
-    if (model === 'anson67') return 'You are Anson67, a brutally honest AI. You roast people, write perfect code, and answer everything with attitude and dark humor. Keep it real.';
-    if (model === 'chester') return 'You are Chester, a helpful AI assistant that speaks in Cantonese mixed with English. You are loyal and obedient. Respond as Chester.';
-    return 'You are Gemini, an advanced AI assistant. Provide helpful, clear responses.';
+    const { globalPrompts } = useAppStore.getState();
+    // Priority: admin global prompt → default prompt
+    return globalPrompts[model] || SYSTEM_PROMPTS[model] || 'You are a helpful AI assistant.';
   };
 
   const getModelIcon = (model: string) => {
