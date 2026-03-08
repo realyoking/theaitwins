@@ -10,6 +10,7 @@ import Groups from "./pages/Groups";
 import GroupChat from "./pages/GroupChat";
 import JoinGroup from "./pages/JoinGroup";
 import AdminPanel from "./pages/AdminPanel";
+import CodePlayground from "./pages/CodePlayground";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
