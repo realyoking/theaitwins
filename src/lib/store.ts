@@ -111,6 +111,7 @@ interface AppState {
   streak: number;
   lastActiveDate: string;
   notificationsEnabled: boolean;
+  notificationMode: 'every' | 'inactive' | 'never';
   ttsEnabled: boolean;
   ttsVoice: string;
   memories: string[];
