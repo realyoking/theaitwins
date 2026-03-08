@@ -380,6 +380,7 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                   </div>
                 </div>
               </div>
+            )}
 
             {/* Chat */}
             {tab === 'Chat' && (
