@@ -54,7 +54,24 @@ const AdminPanel = () => {
   const [promptsLoaded, setPromptsLoaded] = useState(false);
   const [savedPrompts, setSavedPrompts] = useState<Record<string, string>>({});
 
+  const loadPrompts = async () => {
+    const { data } = await supabase.from('admin_settings').select('key, value').like('key', 'prompt_%');
+    const prompts: Record<string, string> = {};
+    (data || []).forEach(row => { prompts[row.key.replace('prompt_', '')] = row.value; });
+    setSavedPrompts(prompts);
+    setPromptText(prompts[promptModel] || '');
+    setPromptsLoaded(true);
+  };
+
   useEffect(() => { checkAdmin(); }, []);
+
+  useEffect(() => {
+    if (tab === 'prompts' && !promptsLoaded && isAdmin) loadPrompts();
+  }, [tab, isAdmin]);
+
+  useEffect(() => {
+    setPromptText(savedPrompts[promptModel] || '');
+  }, [promptModel]);
 
   const checkAdmin = async () => {
     const { data: { user } } = await supabase.auth.getUser();
