@@ -364,6 +364,16 @@ export const useAppStore = create<AppState>((set, get) => {
 
       set({ conversations: updated, activeConversationId: convoId });
       saveConversations(updated);
+
+      // Fire browser notification for bot messages
+      if (msg.role === 'bot' && state.notificationsEnabled && state.notificationMode !== 'never') {
+        const shouldNotify = state.notificationMode === 'every' || (state.notificationMode === 'inactive' && document.hidden);
+        if (shouldNotify && 'Notification' in window && Notification.permission === 'granted') {
+          const title = 'Anson AI';
+          const body = msg.text?.slice(0, 120) || 'New response';
+          new Notification(title, { body, icon: '/pwa-192.png', tag: 'anson-msg-' + Date.now() });
+        }
+      }
     },
 
     clearMessages: () => {
