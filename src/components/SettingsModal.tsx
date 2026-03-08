@@ -205,6 +205,40 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
             {/* Profile */}
             {tab === 'Profile' && (
               <div className="space-y-4">
+                {/* Avatar */}
+                <div className="flex items-center gap-4">
+                  <div className="relative group">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="Avatar" className="w-16 h-16 rounded-full object-cover border-2 border-border" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-xl font-bold">
+                        {user?.name?.charAt(0)?.toUpperCase() || '?'}
+                      </div>
+                    )}
+                    <label className="absolute inset-0 flex items-center justify-center bg-background/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                      <Camera className="w-5 h-5" />
+                      <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        setAvatarUploading(true);
+                        const { data: { session } } = await supabase.auth.getSession();
+                        if (!session?.user) { setAvatarUploading(false); return; }
+                        const path = `${session.user.id}/${Date.now()}.${file.name.split('.').pop()}`;
+                        const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
+                        if (error) { setAvatarUploading(false); return; }
+                        const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
+                        await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', session.user.id);
+                        setAvatarUrl(publicUrl);
+                        setAvatarUploading(false);
+                      }} />
+                    </label>
+                    {avatarUploading && <div className="absolute inset-0 flex items-center justify-center bg-background/60 rounded-full"><Upload className="w-4 h-4 animate-pulse" /></div>}
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold">Profile Picture</p>
+                    <p className="text-[10px] text-muted-foreground">Click to upload</p>
+                  </div>
+                </div>
                 <div>
                   <label className="text-[10px] font-bold text-muted-foreground uppercase">Nickname</label>
                   <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
