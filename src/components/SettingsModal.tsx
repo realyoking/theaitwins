@@ -22,6 +22,7 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
     personas, addPersona, removePersona, customThemeId, setCustomThemeId,
     wallpaper, setWallpaper, autoDarkMode, setAutoDarkMode,
     notificationsEnabled, setNotificationsEnabled, ttsEnabled, setTtsEnabled,
+    notificationMode, setNotificationMode,
     memories, addMemory, removeMemory,
   } = useAppStore();
 
@@ -330,6 +331,30 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                   if (v && 'Notification' in window) Notification.requestPermission();
                   setNotificationsEnabled(v);
                 })}
+                {notificationsEnabled && (
+                  <div className="pl-2 pb-2">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase mb-1.5 block flex items-center gap-1">
+                      <Bell className="w-3 h-3" /> When to notify
+                    </label>
+                    <div className="flex flex-col gap-1">
+                      {([
+                        { value: 'every' as const, label: 'Every message', desc: 'Get notified for every AI response' },
+                        { value: 'inactive' as const, label: 'Only when inactive', desc: 'Only when the app is in background' },
+                        { value: 'never' as const, label: 'Never', desc: 'Disable all notifications' },
+                      ]).map(opt => (
+                        <button key={opt.value} onClick={() => setNotificationMode(opt.value)}
+                          className={`text-left px-3 py-2 rounded-lg border transition-all ${
+                            notificationMode === opt.value
+                              ? 'bg-primary/10 border-primary/30 text-foreground'
+                              : 'bg-muted border-transparent text-muted-foreground hover:bg-accent'
+                          }`}>
+                          <span className="text-xs font-bold block">{opt.label}</span>
+                          <span className="text-[9px] text-muted-foreground">{opt.desc}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {toggleItem('Auto Dark Mode', autoDarkMode, setAutoDarkMode)}
 
                 {/* Keyboard shortcuts reference */}

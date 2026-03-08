@@ -37,7 +37,7 @@ export default defineConfig(({ mode }) => ({
             type: "image/png",
           },
           {
-            src: "/pwa-192.png",
+            src: "/pwa-512.png",
             sizes: "512x512",
             type: "image/png",
           },

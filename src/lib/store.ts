@@ -111,6 +111,7 @@ interface AppState {
   streak: number;
   lastActiveDate: string;
   notificationsEnabled: boolean;
+  notificationMode: 'every' | 'inactive' | 'never';
   ttsEnabled: boolean;
   ttsVoice: string;
   memories: string[];
@@ -175,6 +176,7 @@ interface AppState {
   setShowArchived: (v: boolean) => void;
   setFilterTag: (t: string) => void;
   setNotificationsEnabled: (v: boolean) => void;
+  setNotificationMode: (m: 'every' | 'inactive' | 'never') => void;
   setTtsEnabled: (v: boolean) => void;
   setTtsVoice: (v: string) => void;
 
@@ -313,6 +315,7 @@ export const useAppStore = create<AppState>((set, get) => {
     streak: parseInt(localStorage.getItem('tat_streak') || '0'),
     lastActiveDate: localStorage.getItem('tat_last_active') || '',
     notificationsEnabled: loadFromLS('tat_notif', false),
+    notificationMode: (localStorage.getItem('tat_notif_mode') as any) || 'inactive',
     ttsEnabled: loadFromLS('tat_tts', false),
     ttsVoice: localStorage.getItem('tat_tts_voice') || '',
     memories: loadFromLS('tat_memories', []),
@@ -361,6 +364,16 @@ export const useAppStore = create<AppState>((set, get) => {
 
       set({ conversations: updated, activeConversationId: convoId });
       saveConversations(updated);
+
+      // Fire browser notification for bot messages
+      if (msg.role === 'bot' && state.notificationsEnabled && state.notificationMode !== 'never') {
+        const shouldNotify = state.notificationMode === 'every' || (state.notificationMode === 'inactive' && document.hidden);
+        if (shouldNotify && 'Notification' in window && Notification.permission === 'granted') {
+          const title = 'Anson AI';
+          const body = msg.text?.slice(0, 120) || 'New response';
+          new Notification(title, { body, icon: '/pwa-192.png', tag: 'anson-msg-' + Date.now() });
+        }
+      }
     },
 
     clearMessages: () => {
@@ -614,6 +627,7 @@ export const useAppStore = create<AppState>((set, get) => {
     setShowArchived: (v) => set({ showArchived: v }),
     setFilterTag: (t) => set({ filterTag: t }),
     setNotificationsEnabled: (v) => { set({ notificationsEnabled: v }); localStorage.setItem('tat_notif', JSON.stringify(v)); },
+    setNotificationMode: (m) => { set({ notificationMode: m }); localStorage.setItem('tat_notif_mode', m); },
     setTtsEnabled: (v) => { set({ ttsEnabled: v }); localStorage.setItem('tat_tts', JSON.stringify(v)); },
     setTtsVoice: (v) => { set({ ttsVoice: v }); localStorage.setItem('tat_tts_voice', v); },
 
