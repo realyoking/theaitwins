@@ -89,33 +89,36 @@ const Sidebar = ({ onOpenSettings, onOpenPricing, onOpenAnalytics, onOpenPlugins
       </button>
 
       {menuOpenId === c.id && (
-        <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[140px]">
-          <button onClick={() => startRename(c.id, c.name)} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-accent">
-            <Edit3 className="w-3 h-3" /> Rename
-          </button>
-          <button onClick={() => { pinConversation(c.id); setMenuOpenId(null); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-accent">
-            <Pin className="w-3 h-3" /> {c.pinned ? 'Unpin' : 'Pin'}
-          </button>
-          <button onClick={() => { setShowTagPicker(showTagPicker === c.id ? null : c.id); setMenuOpenId(null); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-accent">
-            <Tag className="w-3 h-3" /> Tags
-          </button>
-          <button onClick={() => { duplicateConversation(c.id); setMenuOpenId(null); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-accent">
-            <Copy className="w-3 h-3" /> Duplicate
-          </button>
-          <button onClick={() => handleShare(c.id)} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-accent">
-            <Users className="w-3 h-3" /> Share
-          </button>
-          <button onClick={() => handleExport(c.id)} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-accent">
-            <Download className="w-3 h-3" /> Export
-          </button>
-          <button onClick={() => { archiveConversation(c.id); setMenuOpenId(null); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-accent">
-            <Archive className="w-3 h-3" /> {c.archived ? 'Unarchive' : 'Archive'}
-          </button>
-          <div className="border-t border-border my-1" />
-          <button onClick={() => { deleteConversation(c.id); setMenuOpenId(null); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-destructive hover:bg-accent">
-            <Trash2 className="w-3 h-3" /> Delete
-          </button>
-        </div>
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setMenuOpenId(null)} />
+          <div className="absolute right-0 bottom-full mb-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[140px]">
+            <button onClick={() => startRename(c.id, c.name)} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-accent">
+              <Edit3 className="w-3 h-3" /> Rename
+            </button>
+            <button onClick={() => { pinConversation(c.id); setMenuOpenId(null); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-accent">
+              <Pin className="w-3 h-3" /> {c.pinned ? 'Unpin' : 'Pin'}
+            </button>
+            <button onClick={() => { setShowTagPicker(showTagPicker === c.id ? null : c.id); setMenuOpenId(null); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-accent">
+              <Tag className="w-3 h-3" /> Tags
+            </button>
+            <button onClick={() => { duplicateConversation(c.id); setMenuOpenId(null); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-accent">
+              <Copy className="w-3 h-3" /> Duplicate
+            </button>
+            <button onClick={() => handleShare(c.id)} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-accent">
+              <Users className="w-3 h-3" /> Share
+            </button>
+            <button onClick={() => handleExport(c.id)} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-accent">
+              <Download className="w-3 h-3" /> Export
+            </button>
+            <button onClick={() => { archiveConversation(c.id); setMenuOpenId(null); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-accent">
+              <Archive className="w-3 h-3" /> {c.archived ? 'Unarchive' : 'Archive'}
+            </button>
+            <div className="border-t border-border my-1" />
+            <button onClick={() => { deleteConversation(c.id); setMenuOpenId(null); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-destructive hover:bg-accent">
+              <Trash2 className="w-3 h-3" /> Delete
+            </button>
+          </div>
+        </>
       )}
 
       {/* Tag picker */}
