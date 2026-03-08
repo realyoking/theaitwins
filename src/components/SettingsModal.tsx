@@ -46,6 +46,14 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
   useEffect(() => {
     if (open && user) {
       setName(user.name); setAge(user.age); setGender(user.gender); setHobbies(user.hobbies); setLang(language);
+      // Load avatar
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          supabase.from('profiles').select('avatar_url').eq('id', session.user.id).single().then(({ data }) => {
+            setAvatarUrl(data?.avatar_url || '');
+          });
+        }
+      });
     }
   }, [open]);
 
