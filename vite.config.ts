@@ -17,9 +17,10 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "pwa-192.png"],
+      includeAssets: ["favicon.ico", "pwa-192.png", "pwa-512.png"],
       workbox: {
         navigateFallbackDenylist: [/^\/~oauth/],
+        importScripts: ['/push-handler.js'],
       },
       manifest: {
         name: "Anson AI - TheAiTwins",
