@@ -40,7 +40,9 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
   const [newPersonaName, setNewPersonaName] = useState('');
   const [newPersonaPrompt, setNewPersonaPrompt] = useState('');
   const [newMemory, setNewMemory] = useState('');
-
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [modelIconEditing, setModelIconEditing] = useState<AIModel | null>(null);
   useEffect(() => {
     if (open && user) {
       setName(user.name); setAge(user.age); setGender(user.gender); setHobbies(user.hobbies); setLang(language);
