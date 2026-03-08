@@ -9,13 +9,10 @@ interface SidebarProps {
   onOpenSettings: () => void;
   onOpenPricing: () => void;
   onOpenAnalytics: () => void;
-  onOpenThemeStudio: () => void;
   onOpenPlugins: () => void;
-  onOpenFonts: () => void;
-  onOpenWallpapers: () => void;
 }
 
-const Sidebar = ({ onOpenSettings, onOpenPricing, onOpenAnalytics, onOpenThemeStudio, onOpenPlugins, onOpenFonts, onOpenWallpapers }: SidebarProps) => {
+const Sidebar = ({ onOpenSettings, onOpenPricing, onOpenAnalytics, onOpenPlugins }: SidebarProps) => {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
   const {
