@@ -14,7 +14,13 @@ interface MessageBubbleProps {
   onQuickAction?: (action: string, text: string) => void;
 }
 
-const REACTION_EMOJIS = ['👍', '❤️', '😂', '💡', '🔥', '👀'];
+const REACTION_ICONS = [
+  { key: 'like', Icon: ThumbsUp, label: '👍' },
+  { key: 'love', Icon: Heart, label: '❤️' },
+  { key: 'laugh', Icon: Laugh, label: '😂' },
+  { key: 'idea', Icon: Lightbulb, label: '💡' },
+  { key: 'fire', Icon: Sparkles, label: '🔥' },
+];
 
 const MessageBubble = ({ msg, msgIndex, userInitial, model, onRenderCode, onQuickAction }: MessageBubbleProps) => {
   const isUser = msg.role === 'user';
