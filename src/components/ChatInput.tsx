@@ -233,8 +233,8 @@ const ChatInput = () => {
             value={text}
             onChange={(e) => { setText(e.target.value); autoResize(e.target); }}
             onKeyDown={handleKeyDown}
-            placeholder={isListening ? 'Listening...' : isRecording ? 'Recording...' : 'Message TheAiTwins...'}
-            className="flex-1 bg-transparent border-none outline-none py-2.5 px-3 text-[15px] font-medium resize-none min-h-[20px] max-h-[150px] custom-scrollbar placeholder:text-muted-foreground/50"
+            placeholder={isListening ? 'Listening...' : isRecording ? 'Recording...' : 'Message...'}
+            className="flex-1 bg-transparent border-none outline-none py-2 md:py-2.5 px-2 md:px-3 text-sm md:text-[15px] font-medium resize-none min-h-[20px] max-h-[120px] md:max-h-[150px] custom-scrollbar placeholder:text-muted-foreground/50"
             rows={1}
           />
 
