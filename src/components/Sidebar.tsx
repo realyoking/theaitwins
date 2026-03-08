@@ -4,6 +4,7 @@ import { Plus, Settings, Zap, Sun, Moon, X, Cpu, ChevronUp, MessageSquare, Pin, 
 import NotificationBell from './NotificationBell';
 import { useAppStore } from '@/lib/store';
 import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect } from 'react';
 
 interface SidebarProps {
   onOpenSettings: () => void;
