@@ -85,6 +85,8 @@ interface AppState {
   canvasCode: string;
   isGenerating: boolean;
   modelPrompts: Record<AIModel, string>;
+  globalPrompts: Record<string, string>;
+  modelIcons: Record<string, string>;
   language: string;
   sidebarOpen: boolean;
   searchQuery: string;
