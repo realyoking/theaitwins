@@ -83,6 +83,8 @@ const AnnouncementPopup = () => {
 
   if (!visible || !announcement) return null;
 
+  const buttons: AnnouncementButton[] = Array.isArray(announcement.buttons) ? announcement.buttons : [];
+
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-[100] bg-background/60 backdrop-blur-md flex items-center justify-center p-4" onClick={dismiss}>
@@ -92,7 +94,7 @@ const AnnouncementPopup = () => {
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           onClick={e => e.stopPropagation()}
-          className="w-full max-w-md bg-card border border-border rounded-3xl shadow-2xl overflow-hidden"
+          className="w-full max-w-md bg-card border border-border rounded-3xl shadow-2xl overflow-hidden relative"
         >
           {/* Image */}
           {announcement.image_url && (
