@@ -14,7 +14,13 @@ interface MessageBubbleProps {
   onQuickAction?: (action: string, text: string) => void;
 }
 
-const REACTION_EMOJIS = ['👍', '❤️', '😂', '💡', '🔥', '👀'];
+const REACTION_ICONS = [
+  { key: 'like', Icon: ThumbsUp, label: '👍' },
+  { key: 'love', Icon: Heart, label: '❤️' },
+  { key: 'laugh', Icon: Laugh, label: '😂' },
+  { key: 'idea', Icon: Lightbulb, label: '💡' },
+  { key: 'fire', Icon: Sparkles, label: '🔥' },
+];
 
 const MessageBubble = ({ msg, msgIndex, userInitial, model, onRenderCode, onQuickAction }: MessageBubbleProps) => {
   const isUser = msg.role === 'user';
@@ -157,12 +163,21 @@ const MessageBubble = ({ msg, msgIndex, userInitial, model, onRenderCode, onQuic
         {/* Reactions */}
         {msg.reactions && msg.reactions.length > 0 && (
           <div className="flex gap-1 mt-1">
-            {msg.reactions.map((r, i) => (
-              <span key={i} className="text-sm bg-muted px-1.5 py-0.5 rounded-full border border-border cursor-pointer hover:scale-110 transition-transform"
-                onClick={() => toggleReaction(msgIndex, r)}>
-                {r}
-              </span>
-            ))}
+            {msg.reactions.map((r, i) => {
+              const icon = REACTION_ICONS.find(ri => ri.key === r);
+              if (!icon) return (
+                <span key={i} className="text-sm bg-muted px-1.5 py-0.5 rounded-full border border-border cursor-pointer hover:scale-110 transition-transform"
+                  onClick={() => toggleReaction(msgIndex, r)}>
+                  {r}
+                </span>
+              );
+              return (
+                <button key={i} onClick={() => toggleReaction(msgIndex, r)}
+                  className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20 hover:scale-110 transition-transform text-[11px] font-bold">
+                  <icon.Icon className="w-3 h-3" />
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -180,14 +195,17 @@ const MessageBubble = ({ msg, msgIndex, userInitial, model, onRenderCode, onQuic
 
           {/* Reaction picker */}
           <div className="relative">
-            <button onClick={() => setShowReactions(!showReactions)} className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors text-xs">
-              😊
+            <button onClick={() => setShowReactions(!showReactions)} className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors" title="React">
+              <Heart className="w-3.5 h-3.5" />
             </button>
             {showReactions && (
-              <div className="absolute bottom-full mb-1 left-0 flex gap-1 bg-card border border-border rounded-full px-2 py-1 shadow-lg z-10">
-                {REACTION_EMOJIS.map(emoji => (
-                  <button key={emoji} onClick={() => { toggleReaction(msgIndex, emoji); setShowReactions(false); }}
-                    className="text-sm hover:scale-125 transition-transform">{emoji}</button>
+              <div className="absolute bottom-full mb-1 left-0 flex gap-0.5 bg-card border border-border rounded-full px-2 py-1 shadow-lg z-10">
+                {REACTION_ICONS.map(({ key, Icon, label }) => (
+                  <button key={key} onClick={() => { toggleReaction(msgIndex, key); setShowReactions(false); }}
+                    className="p-1.5 hover:bg-accent rounded-full transition-colors hover:scale-125 text-muted-foreground hover:text-foreground"
+                    title={label}>
+                    <Icon className="w-4 h-4" />
+                  </button>
                 ))}
               </div>
             )}
