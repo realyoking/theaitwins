@@ -65,10 +65,13 @@ const Index = () => {
   if (authLoading) return null;
 
   // If no auth user, redirect to auth page
-  if (!authUser) {
-    navigate('/auth');
-    return null;
-  }
+  useEffect(() => {
+    if (!authLoading && !authUser) {
+      navigate('/auth');
+    }
+  }, [authLoading, authUser, navigate]);
+
+  if (authLoading || !authUser) return null;
 
   if (!user) return <Onboarding />;
 
