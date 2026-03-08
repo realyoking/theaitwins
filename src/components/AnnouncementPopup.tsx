@@ -55,7 +55,7 @@ const AnnouncementPopup = () => {
     // Find first unread announcement
     const unread = announcements.find(a => !readIds.has(a.id));
     if (unread) {
-      setAnnouncement(unread as Announcement);
+      setAnnouncement(unread as unknown as Announcement);
       setVisible(true);
     }
   };
