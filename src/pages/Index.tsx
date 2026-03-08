@@ -7,11 +7,13 @@ import CodeCanvas from '@/components/CodeCanvas';
 import SettingsModal from '@/components/SettingsModal';
 import PricingModal from '@/components/PricingModal';
 import CheckoutModal from '@/components/CheckoutModal';
+import AnalyticsModal from '@/components/AnalyticsModal';
 
 const Index = () => {
-  const { user, theme, checkDailyReset } = useAppStore();
+  const { user, theme, checkDailyReset, checkStreak, customThemeId, setCustomThemeId } = useAppStore();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pricingOpen, setPricingOpen] = useState(false);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [checkout, setCheckout] = useState<{ open: boolean; title: string; cost: string; type: 'plan' | 'credits'; value: string | number }>({
     open: false, title: '', cost: '', type: 'plan', value: ''
   });
@@ -19,6 +21,11 @@ const Index = () => {
   useEffect(() => {
     document.documentElement.className = theme;
     checkDailyReset();
+    checkStreak();
+    // Apply saved theme
+    if (customThemeId && customThemeId !== 'default-dark') {
+      setCustomThemeId(customThemeId);
+    }
   }, []);
 
   const handleCheckout = (type: 'plan' | 'credits', value: string | number, cost: string) => {
@@ -43,7 +50,11 @@ const Index = () => {
 
   return (
     <div className="h-[100dvh] overflow-hidden flex">
-      <Sidebar onOpenSettings={() => setSettingsOpen(true)} onOpenPricing={() => setPricingOpen(true)} />
+      <Sidebar
+        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenPricing={() => setPricingOpen(true)}
+        onOpenAnalytics={() => setAnalyticsOpen(true)}
+      />
       <ChatArea />
       <CodeCanvas />
 
@@ -56,6 +67,7 @@ const Index = () => {
         cost={checkout.cost}
         onSuccess={handleCheckoutSuccess}
       />
+      <AnalyticsModal open={analyticsOpen} onClose={() => setAnalyticsOpen(false)} />
     </div>
   );
 };

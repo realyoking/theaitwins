@@ -1,21 +1,26 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, ImageIcon, X, Zap, Mic, MicOff, Square } from 'lucide-react';
+import { Send, ImageIcon, X, Zap, Mic, MicOff, Square, Circle } from 'lucide-react';
 import { useAppStore, type ChatMode } from '@/lib/store';
 import { sendChatMessage, abortChat } from '@/lib/chat-api';
 
 const ChatInput = () => {
-  const { mode, setMode, isGenerating, addMessage, deductCredits, setIsGenerating, sendOnEnter, stopGenerating } = useAppStore();
+  const { mode, setMode, isGenerating, addMessage, deductCredits, setIsGenerating, sendOnEnter, stopGenerating, trackMessage, model } = useAppStore();
   const [text, setText] = useState('');
   const [imageData, setImageData] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const costMap: Record<ChatMode, number> = { fast: 1, thinking: 3, pro: 5 };
   const modeLabels: Record<ChatMode, string> = { fast: '⚡ Fast', thinking: '🧠 Thinking', pro: '💎 Pro' };
 
-  // Voice input
+  // Speech recognition for live transcription
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SpeechRecognition) {
@@ -46,27 +51,83 @@ const ChatInput = () => {
     }
   };
 
+  // Mic recording
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+      mediaRecorder.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64 = reader.result as string;
+          addMessage({ role: 'user', text: '🎤 Voice message recorded', image: undefined });
+          // Use speech recognition result if available
+          if (text.trim()) {
+            handleSendText(text.trim());
+          }
+        };
+        reader.readAsDataURL(audioBlob);
+        if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+        setRecordingTime(0);
+      };
+      mediaRecorder.start();
+      mediaRecorderRef.current = mediaRecorder;
+      setIsRecording(true);
+      setRecordingTime(0);
+      recordingTimerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
+
+      // Also start speech recognition for transcription
+      if (recognitionRef.current && !isListening) {
+        try {
+          recognitionRef.current.start();
+          setIsListening(true);
+        } catch {}
+      }
+    } catch (err) {
+      console.error('Failed to start recording:', err);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (isListening) {
+        recognitionRef.current?.stop();
+        setIsListening(false);
+      }
+    }
+  };
+
   const handleStop = () => {
     abortChat();
     stopGenerating();
   };
 
-  const handleSend = async () => {
-    if ((!text.trim() && !imageData) || isGenerating) return;
+  const handleSendText = async (userText: string) => {
     if (!deductCredits()) return;
-
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
-    }
-
-    addMessage({ role: 'user', text: text.trim(), image: imageData || undefined });
-    const userText = text.trim();
+    addMessage({ role: 'user', text: userText, image: imageData || undefined });
     setText('');
     setImageData(null);
     if (textareaRef.current) textareaRef.current.style.height = '20px';
     setIsGenerating(true);
+    trackMessage(model, mode);
     await sendChatMessage(userText, imageData);
+  };
+
+  const handleSend = async () => {
+    if ((!text.trim() && !imageData) || isGenerating) return;
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    }
+    await handleSendText(text.trim());
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -86,6 +147,8 @@ const ChatInput = () => {
     el.style.height = '20px';
     el.style.height = Math.min(el.scrollHeight, 150) + 'px';
   };
+
+  const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   return (
     <div className="shrink-0 p-4 md:px-20 bg-background border-t border-border z-20">
@@ -116,6 +179,17 @@ const ChatInput = () => {
           </div>
         )}
 
+        {/* Recording indicator */}
+        {isRecording && (
+          <div className="mb-2 flex items-center gap-2 px-3 py-2 bg-destructive/10 rounded-xl border border-destructive/30">
+            <Circle className="w-3 h-3 text-destructive fill-destructive animate-pulse" />
+            <span className="text-xs font-bold text-destructive">Recording {formatTime(recordingTime)}</span>
+            <button onClick={stopRecording} className="ml-auto px-2 py-1 bg-destructive text-destructive-foreground rounded-lg text-[10px] font-bold">
+              Stop
+            </button>
+          </div>
+        )}
+
         <div className="bg-muted/90 backdrop-blur-xl rounded-3xl border border-border/50 shadow-lg focus-within:ring-1 ring-ring/30 transition-all flex items-end p-1.5">
           <button onClick={() => fileRef.current?.click()}
             className="p-2 mb-0.5 ml-1 text-muted-foreground hover:text-foreground hover:bg-card rounded-full transition-colors shrink-0">
@@ -123,10 +197,21 @@ const ChatInput = () => {
           </button>
           <input type="file" ref={fileRef} className="hidden" accept="image/*" onChange={handleImage} />
 
+          {/* Voice buttons */}
           {recognitionRef.current && (
             <button onClick={toggleVoice}
-              className={`p-2 mb-0.5 rounded-full transition-colors shrink-0 ${isListening ? 'text-destructive bg-destructive/10 animate-pulse' : 'text-muted-foreground hover:text-foreground hover:bg-card'}`}>
+              className={`p-2 mb-0.5 rounded-full transition-colors shrink-0 ${isListening ? 'text-destructive bg-destructive/10 animate-pulse' : 'text-muted-foreground hover:text-foreground hover:bg-card'}`}
+              title="Voice to text">
               {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+            </button>
+          )}
+
+          {/* Mic recording button */}
+          {!isRecording && (
+            <button onClick={startRecording}
+              className="p-2 mb-0.5 text-muted-foreground hover:text-foreground hover:bg-card rounded-full transition-colors shrink-0"
+              title="Record voice">
+              <Circle className="w-4 h-4" />
             </button>
           )}
 
@@ -135,7 +220,7 @@ const ChatInput = () => {
             value={text}
             onChange={(e) => { setText(e.target.value); autoResize(e.target); }}
             onKeyDown={handleKeyDown}
-            placeholder={isListening ? 'Listening...' : 'Message TheAiTwins...'}
+            placeholder={isListening ? 'Listening...' : isRecording ? 'Recording...' : 'Message TheAiTwins...'}
             className="flex-1 bg-transparent border-none outline-none py-2.5 px-3 text-[15px] font-medium resize-none min-h-[20px] max-h-[150px] custom-scrollbar placeholder:text-muted-foreground/50"
             rows={1}
           />

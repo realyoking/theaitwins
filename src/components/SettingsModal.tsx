@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Settings as SettingsIcon, Trash2, Ghost, Cpu, Skull } from 'lucide-react';
-import { useAppStore, type AIModel } from '@/lib/store';
+import { X, Settings as SettingsIcon, Trash2, Ghost, Cpu, Skull, Palette, Brain, Users, Bell, Volume2 } from 'lucide-react';
+import { useAppStore, type AIModel, type CustomPersona, THEME_PRESETS, WALLPAPERS } from '@/lib/store';
 import { SYSTEM_PROMPTS } from '@/lib/prompts';
 
 interface SettingsModalProps {
@@ -9,7 +9,7 @@ interface SettingsModalProps {
   onClose: () => void;
 }
 
-const tabs = ['Profile', 'Models', 'Chat', 'Data'] as const;
+const tabs = ['Profile', 'Models', 'Chat', 'Appearance', 'Data'] as const;
 type Tab = typeof tabs[number];
 
 const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
@@ -18,6 +18,10 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
     fontSize, setFontSize, sendOnEnter, setSendOnEnter,
     showTimestamps, setShowTimestamps, compactMode, setCompactMode,
     soundEnabled, setSoundEnabled, autoScroll, setAutoScroll,
+    personas, addPersona, removePersona, customThemeId, setCustomThemeId,
+    wallpaper, setWallpaper, autoDarkMode, setAutoDarkMode,
+    notificationsEnabled, setNotificationsEnabled, ttsEnabled, setTtsEnabled,
+    memories, addMemory, removeMemory,
   } = useAppStore();
 
   const [tab, setTab] = useState<Tab>('Profile');
@@ -26,17 +30,15 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
   const [gender, setGender] = useState(user?.gender || '');
   const [hobbies, setHobbies] = useState(user?.hobbies || '');
   const [lang, setLang] = useState(language);
-
   const [editingModel, setEditingModel] = useState<AIModel>('anson67');
   const [promptText, setPromptText] = useState('');
+  const [newPersonaName, setNewPersonaName] = useState('');
+  const [newPersonaPrompt, setNewPersonaPrompt] = useState('');
+  const [newMemory, setNewMemory] = useState('');
 
   useEffect(() => {
     if (open && user) {
-      setName(user.name);
-      setAge(user.age);
-      setGender(user.gender);
-      setHobbies(user.hobbies);
-      setLang(language);
+      setName(user.name); setAge(user.age); setGender(user.gender); setHobbies(user.hobbies); setLang(language);
     }
   }, [open]);
 
@@ -44,60 +46,79 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
     setPromptText(modelPrompts[editingModel] || SYSTEM_PROMPTS[editingModel] || '');
   }, [editingModel, open]);
 
-  const handleSaveProfile = () => {
-    updateUser({ name, age, gender, hobbies });
-    setLanguage(lang);
-    onClose();
-  };
+  // Auto dark mode
+  useEffect(() => {
+    if (autoDarkMode) {
+      const mq = window.matchMedia('(prefers-color-scheme: dark)');
+      const handler = (e: MediaQueryListEvent) => useAppStore.getState().setTheme(e.matches ? 'dark' : 'light');
+      mq.addEventListener('change', handler);
+      useAppStore.getState().setTheme(mq.matches ? 'dark' : 'light');
+      return () => mq.removeEventListener('change', handler);
+    }
+  }, [autoDarkMode]);
 
-  const handleSavePrompt = () => {
-    setModelPrompt(editingModel, promptText);
-  };
+  const handleSaveProfile = () => { updateUser({ name, age, gender, hobbies }); setLanguage(lang); onClose(); };
+  const handleSavePrompt = () => setModelPrompt(editingModel, promptText);
+  const handleResetPrompt = () => { setPromptText(SYSTEM_PROMPTS[editingModel] || ''); setModelPrompt(editingModel, ''); };
+  const handleResetAll = () => { if (confirm('Delete ALL data?')) { localStorage.clear(); window.location.reload(); } };
 
-  const handleResetPrompt = () => {
-    setPromptText(SYSTEM_PROMPTS[editingModel] || '');
-    setModelPrompt(editingModel, '');
-  };
-
-  const handleResetAll = () => {
-    if (confirm('Are you sure? This will delete ALL data and restart the app.')) {
-      localStorage.clear();
-      window.location.reload();
+  const handleAddPersona = () => {
+    if (newPersonaName.trim() && newPersonaPrompt.trim()) {
+      addPersona({ id: Date.now().toString(), name: newPersonaName.trim(), icon: '🤖', prompt: newPersonaPrompt.trim() });
+      setNewPersonaName(''); setNewPersonaPrompt('');
     }
   };
 
-  const inputClass = "w-full mt-1 px-3 py-2 bg-muted rounded-lg outline-none border border-transparent focus:border-muted-foreground/30 text-sm";
+  const handleAddMemory = () => {
+    if (newMemory.trim()) { addMemory(newMemory.trim()); setNewMemory(''); }
+  };
 
+  const handleExportPDF = () => {
+    const state = useAppStore.getState();
+    const convo = state.conversations.find(c => c.id === state.activeConversationId);
+    if (!convo) return;
+    const content = convo.messages.map(m => `${m.role === 'user' ? 'You' : 'AI'}: ${m.text || '[Image]'}`).join('\n\n');
+    const blob = new Blob([content], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = `${convo.name}.txt`; a.click();
+  };
+
+  const inputClass = "w-full mt-1 px-3 py-2 bg-muted rounded-lg outline-none border border-transparent focus:border-muted-foreground/30 text-sm";
   const modelIcons: Record<AIModel, any> = { anson67: Ghost, gemini: Cpu, chester: Skull };
   const modelNames: Record<AIModel, string> = { anson67: 'Anson67', gemini: 'Gemini', chester: 'Chester' };
+
+  const toggleItem = (label: string, value: boolean, setter: (v: boolean) => void) => (
+    <div key={label} className="flex items-center justify-between py-2">
+      <span className="text-sm font-medium">{label}</span>
+      <button onClick={() => setter(!value)}
+        className={`w-10 h-6 rounded-full transition-colors relative ${value ? 'bg-primary' : 'bg-muted border border-border'}`}>
+        <div className={`w-4 h-4 rounded-full bg-primary-foreground absolute top-1 transition-transform ${value ? 'left-5' : 'left-1'}`} />
+      </button>
+    </div>
+  );
 
   return (
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-50 bg-background/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg bg-card p-6 rounded-3xl shadow-2xl border border-border relative max-h-[90vh] overflow-y-auto custom-scrollbar"
-          >
+            className="w-full max-w-lg bg-card p-6 rounded-3xl shadow-2xl border border-border relative max-h-[90vh] overflow-y-auto custom-scrollbar">
             <button onClick={onClose} className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-foreground bg-muted rounded-full">
               <X className="w-4 h-4" />
             </button>
             <h2 className="text-lg font-bold mb-4 flex items-center gap-2"><SettingsIcon className="w-5 h-5" /> Settings</h2>
 
-            {/* Tabs */}
-            <div className="flex gap-1 bg-muted p-1 rounded-lg mb-5">
+            <div className="flex gap-1 bg-muted p-1 rounded-lg mb-5 overflow-x-auto">
               {tabs.map(t => (
                 <button key={t} onClick={() => setTab(t)}
-                  className={`flex-1 px-3 py-1.5 text-[11px] font-bold rounded-md transition-all ${tab === t ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
+                  className={`shrink-0 px-3 py-1.5 text-[11px] font-bold rounded-md transition-all ${tab === t ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
                   {t}
                 </button>
               ))}
             </div>
 
-            {/* Profile Tab */}
+            {/* Profile */}
             {tab === 'Profile' && (
               <div className="space-y-4">
                 <div>
@@ -112,9 +133,7 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                   <div>
                     <label className="text-[10px] font-bold text-muted-foreground uppercase">Gender</label>
                     <select value={gender} onChange={(e) => setGender(e.target.value)} className={inputClass + ' appearance-none'}>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
+                      <option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option>
                     </select>
                   </div>
                 </div>
@@ -125,10 +144,34 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                 <div>
                   <label className="text-[10px] font-bold text-muted-foreground uppercase">App Language</label>
                   <select value={lang} onChange={(e) => setLang(e.target.value)} className={inputClass + ' appearance-none'}>
-                    <option value="en">English</option>
-                    <option value="zh">Chinese (Traditional)</option>
+                    <option value="en">English</option><option value="zh">Chinese (Traditional)</option>
+                    <option value="ja">Japanese</option><option value="ko">Korean</option>
                   </select>
                 </div>
+
+                {/* AI Memory */}
+                <div>
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase mb-2 block flex items-center gap-1">
+                    <Brain className="w-3 h-3" /> AI Memory
+                  </label>
+                  <p className="text-[9px] text-muted-foreground mb-2">Facts the AI remembers about you across sessions</p>
+                  <div className="space-y-1 mb-2 max-h-24 overflow-y-auto custom-scrollbar">
+                    {memories.map((m, i) => (
+                      <div key={i} className="flex items-center justify-between bg-muted px-2 py-1 rounded-lg">
+                        <span className="text-xs truncate flex-1">{m}</span>
+                        <button onClick={() => removeMemory(i)} className="text-muted-foreground hover:text-destructive p-0.5">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <input value={newMemory} onChange={(e) => setNewMemory(e.target.value)} placeholder="e.g. I prefer Python"
+                      className={inputClass} onKeyDown={(e) => e.key === 'Enter' && handleAddMemory()} />
+                    <button onClick={handleAddMemory} className="px-3 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-bold shrink-0">+</button>
+                  </div>
+                </div>
+
                 <button onClick={handleSaveProfile}
                   className="w-full py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-bold shadow-md hover:scale-[1.02] transition-transform">
                   Save Profile
@@ -136,19 +179,18 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
               </div>
             )}
 
-            {/* Models Tab */}
+            {/* Models */}
             {tab === 'Models' && (
               <div className="space-y-4">
                 <div>
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase mb-2 block">Select Model to Edit</label>
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase mb-2 block">Select Model</label>
                   <div className="flex gap-2">
                     {(['anson67', 'gemini', 'chester'] as AIModel[]).map(m => {
                       const Icon = modelIcons[m];
                       return (
                         <button key={m} onClick={() => setEditingModel(m)}
                           className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition-all border ${
-                            editingModel === m ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted border-border hover:bg-accent'
-                          }`}>
+                            editingModel === m ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted border-border hover:bg-accent'}`}>
                           <Icon className="w-4 h-4" /> {modelNames[m]}
                         </button>
                       );
@@ -157,23 +199,44 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-muted-foreground uppercase">System Prompt for {modelNames[editingModel]}</label>
-                  <textarea value={promptText} onChange={(e) => setPromptText(e.target.value)} rows={8}
+                  <textarea value={promptText} onChange={(e) => setPromptText(e.target.value)} rows={6}
                     className={inputClass + ' custom-scrollbar resize-none font-mono text-xs'} />
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={handleSavePrompt}
-                    className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-bold shadow-md hover:scale-[1.02] transition-transform">
-                    Save Prompt
-                  </button>
-                  <button onClick={handleResetPrompt}
-                    className="px-4 py-2.5 bg-muted rounded-lg text-sm font-bold hover:bg-accent transition-colors">
-                    Reset Default
+                  <button onClick={handleSavePrompt} className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-bold">Save</button>
+                  <button onClick={handleResetPrompt} className="px-4 py-2.5 bg-muted rounded-lg text-sm font-bold hover:bg-accent">Reset</button>
+                </div>
+
+                {/* Custom Personas */}
+                <div className="border-t border-border pt-4">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase mb-2 block flex items-center gap-1">
+                    <Users className="w-3 h-3" /> Custom Personas
+                  </label>
+                  <div className="space-y-2 mb-3 max-h-32 overflow-y-auto custom-scrollbar">
+                    {personas.map(p => (
+                      <div key={p.id} className="flex items-center justify-between bg-muted px-3 py-2 rounded-lg">
+                        <div>
+                          <span className="text-xs font-bold">{p.icon} {p.name}</span>
+                          <p className="text-[9px] text-muted-foreground truncate max-w-[200px]">{p.prompt}</p>
+                        </div>
+                        <button onClick={() => removePersona(p.id)} className="text-muted-foreground hover:text-destructive p-1">
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <input value={newPersonaName} onChange={(e) => setNewPersonaName(e.target.value)} placeholder="Persona name"
+                    className={inputClass + ' mb-2'} />
+                  <textarea value={newPersonaPrompt} onChange={(e) => setNewPersonaPrompt(e.target.value)} placeholder="System prompt..."
+                    rows={2} className={inputClass + ' resize-none mb-2'} />
+                  <button onClick={handleAddPersona} className="w-full py-2 bg-muted hover:bg-accent rounded-lg text-xs font-bold">
+                    + Add Persona
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Chat Tab */}
+            {/* Chat */}
             {tab === 'Chat' && (
               <div className="space-y-4">
                 <div>
@@ -187,25 +250,76 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                     ))}
                   </div>
                 </div>
-                {[
-                  { label: 'Send on Enter', value: sendOnEnter, setter: setSendOnEnter },
-                  { label: 'Show Timestamps', value: showTimestamps, setter: setShowTimestamps },
-                  { label: 'Compact Mode', value: compactMode, setter: setCompactMode },
-                  { label: 'Sound Effects', value: soundEnabled, setter: setSoundEnabled },
-                  { label: 'Auto Scroll', value: autoScroll, setter: setAutoScroll },
-                ].map(({ label, value, setter }) => (
-                  <div key={label} className="flex items-center justify-between py-2">
-                    <span className="text-sm font-medium">{label}</span>
-                    <button onClick={() => setter(!value)}
-                      className={`w-10 h-6 rounded-full transition-colors relative ${value ? 'bg-primary' : 'bg-muted border border-border'}`}>
-                      <div className={`w-4 h-4 rounded-full bg-primary-foreground absolute top-1 transition-transform ${value ? 'left-5' : 'left-1'}`} />
-                    </button>
+                {toggleItem('Send on Enter', sendOnEnter, setSendOnEnter)}
+                {toggleItem('Show Timestamps', showTimestamps, setShowTimestamps)}
+                {toggleItem('Compact Mode', compactMode, setCompactMode)}
+                {toggleItem('Sound Effects', soundEnabled, setSoundEnabled)}
+                {toggleItem('Auto Scroll', autoScroll, setAutoScroll)}
+                {toggleItem('Text-to-Speech', ttsEnabled, setTtsEnabled)}
+                {toggleItem('Notifications', notificationsEnabled, (v) => {
+                  if (v && 'Notification' in window) Notification.requestPermission();
+                  setNotificationsEnabled(v);
+                })}
+                {toggleItem('Auto Dark Mode', autoDarkMode, setAutoDarkMode)}
+
+                {/* Keyboard shortcuts reference */}
+                <div className="bg-muted p-3 rounded-xl border border-border">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase block mb-2">⌨️ Shortcuts</span>
+                  <div className="grid grid-cols-2 gap-1 text-[10px]">
+                    {[
+                      ['Ctrl+K', 'Search'],
+                      ['Ctrl+N', 'New Chat'],
+                      ['Ctrl+B', 'Sidebar'],
+                      ['Ctrl+Shift+F', 'Focus Mode'],
+                      ['Ctrl+/', 'Templates'],
+                      ['Escape', 'Close'],
+                    ].map(([key, desc]) => (
+                      <div key={key} className="flex justify-between">
+                        <kbd className="bg-background px-1.5 py-0.5 rounded font-mono text-muted-foreground">{key}</kbd>
+                        <span className="text-muted-foreground">{desc}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
               </div>
             )}
 
-            {/* Data Tab */}
+            {/* Appearance */}
+            {tab === 'Appearance' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase mb-2 block flex items-center gap-1">
+                    <Palette className="w-3 h-3" /> Theme
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {THEME_PRESETS.map(t => (
+                      <button key={t.id} onClick={() => setCustomThemeId(t.id)}
+                        className={`p-2 rounded-xl border text-center transition-all ${customThemeId === t.id ? 'ring-2 ring-ring border-transparent' : 'border-border hover:border-muted-foreground/30'}`}>
+                        <div className="w-full h-6 rounded-lg mb-1" style={{ background: `hsl(${t.bg})` }}>
+                          <div className="w-3 h-3 rounded-full ml-auto mr-1 mt-0.5" style={{ background: `hsl(${t.primary})` }} />
+                        </div>
+                        <span className="text-[9px] font-bold">{t.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase mb-2 block">Chat Wallpaper</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {WALLPAPERS.map(w => (
+                      <button key={w.id} onClick={() => setWallpaper(w.id)}
+                        className={`p-3 rounded-xl border text-center transition-all h-16 ${wallpaper === w.id ? 'ring-2 ring-ring border-transparent' : 'border-border'}`}
+                        style={w.css ? { backgroundImage: w.css, backgroundSize: w.id === 'dots' || w.id === 'grid' ? '20px 20px' : undefined } : {}}>
+                        <span className="text-[9px] font-bold bg-card/80 px-1.5 py-0.5 rounded">{w.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Data */}
             {tab === 'Data' && (
               <div className="space-y-4">
                 <div className="bg-muted p-4 rounded-xl border border-border">
@@ -215,19 +329,17 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                   </p>
                 </div>
                 <button onClick={() => {
-                  const data = JSON.stringify({ conversations: useAppStore.getState().conversations, user: useAppStore.getState().user });
+                  const data = JSON.stringify({ conversations: useAppStore.getState().conversations, user: useAppStore.getState().user, memories: useAppStore.getState().memories });
                   const blob = new Blob([data], { type: 'application/json' });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url; a.download = 'theaitwins-backup.json'; a.click();
-                }}
-                  className="w-full py-2.5 bg-muted rounded-lg text-sm font-bold hover:bg-accent transition-colors">
+                  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'theaitwins-backup.json'; a.click();
+                }} className="w-full py-2.5 bg-muted rounded-lg text-sm font-bold hover:bg-accent transition-colors">
                   📦 Export All Data
                 </button>
+                <button onClick={handleExportPDF} className="w-full py-2.5 bg-muted rounded-lg text-sm font-bold hover:bg-accent transition-colors">
+                  🖨️ Export Current Chat
+                </button>
                 <button onClick={() => {
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.accept = '.json';
+                  const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
                   input.onchange = (e) => {
                     const file = (e.target as HTMLInputElement).files?.[0];
                     if (file) {
@@ -237,15 +349,15 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                           const data = JSON.parse(ev.target?.result as string);
                           if (data.conversations) localStorage.setItem('tat_convos', JSON.stringify(data.conversations));
                           if (data.user) localStorage.setItem('tat_user', JSON.stringify(data.user));
+                          if (data.memories) localStorage.setItem('tat_memories', JSON.stringify(data.memories));
                           window.location.reload();
-                        } catch { alert('Invalid backup file'); }
+                        } catch { alert('Invalid file'); }
                       };
                       reader.readAsText(file);
                     }
                   };
                   input.click();
-                }}
-                  className="w-full py-2.5 bg-muted rounded-lg text-sm font-bold hover:bg-accent transition-colors">
+                }} className="w-full py-2.5 bg-muted rounded-lg text-sm font-bold hover:bg-accent transition-colors">
                   📥 Import Data
                 </button>
                 <button onClick={handleResetAll}
