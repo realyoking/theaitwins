@@ -1,12 +1,13 @@
 import { useRef, useEffect } from 'react';
 import { Ghost, Cpu, Menu, Code, Skull } from 'lucide-react';
-import { useAppStore, type AIModel } from '@/lib/store';
+import { useAppStore, useMessages, type AIModel } from '@/lib/store';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
 import ChatInput from './ChatInput';
 
 const ChatArea = () => {
-  const { messages, model, setModel, isGenerating, user, isCanvasOpen, setCanvasOpen, setCanvasCode, setSidebarOpen, autoScroll } = useAppStore();
+  const messages = useMessages();
+  const { model, setModel, isGenerating, user, isCanvasOpen, setCanvasOpen, setCanvasCode, setSidebarOpen, autoScroll } = useAppStore();
   const feedRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -54,12 +55,19 @@ const ChatArea = () => {
             {modelBtn('chester', 'Chester')}
           </div>
         </div>
-        <button onClick={() => setCanvasOpen(!isCanvasOpen)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${isCanvasOpen
-            ? 'bg-primary text-primary-foreground'
-            : 'text-muted-foreground hover:bg-muted'}`}>
-          <Code className="w-3.5 h-3.5" /> Canvas
-        </button>
+        <div className="flex items-center gap-2">
+          {messages.length > 0 && (
+            <span className="text-[10px] text-muted-foreground font-medium bg-muted px-2 py-1 rounded-md">
+              {messages.length} msgs · {messages.reduce((a, m) => a + (m.text?.split(/\s+/).length || 0), 0)} words
+            </span>
+          )}
+          <button onClick={() => setCanvasOpen(!isCanvasOpen)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${isCanvasOpen
+              ? 'bg-primary text-primary-foreground'
+              : 'text-muted-foreground hover:bg-muted'}`}>
+            <Code className="w-3.5 h-3.5" /> Canvas
+          </button>
+        </div>
       </header>
 
       <div ref={feedRef} className="flex-1 overflow-y-auto px-4 md:px-20 py-6 custom-scrollbar scroll-smooth">
@@ -70,10 +78,21 @@ const ChatArea = () => {
             </div>
             <h2 className="text-2xl font-bold mb-2">{greeting.title}</h2>
             <p className="text-muted-foreground text-sm mb-10">{greeting.sub}</p>
+            <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
+              {['Write me a poem', 'Explain quantum physics', 'Help me code', 'Tell me a joke'].map(q => (
+                <button key={q} onClick={() => {
+                  const input = document.querySelector('textarea') as HTMLTextAreaElement;
+                  if (input) { input.value = q; input.dispatchEvent(new Event('input', { bubbles: true })); }
+                }}
+                  className="px-3 py-2.5 bg-muted hover:bg-accent rounded-xl text-xs font-medium text-muted-foreground hover:text-foreground transition-colors text-left">
+                  {q}
+                </button>
+              ))}
+            </div>
           </div>
         ) : (
           messages.map((msg, i) => (
-            <MessageBubble key={i} msg={msg} userInitial={user?.initial || 'U'} model={model} onRenderCode={handleRenderCode} />
+            <MessageBubble key={i} msg={msg} msgIndex={i} userInitial={user?.initial || 'U'} model={model} onRenderCode={handleRenderCode} />
           ))
         )}
         {isGenerating && <TypingIndicator model={model} />}

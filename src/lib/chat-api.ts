@@ -3,17 +3,27 @@ import { useAppStore } from './store';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
+let abortController: AbortController | null = null;
+
+export function abortChat() {
+  if (abortController) {
+    abortController.abort();
+    abortController = null;
+  }
+}
+
 export async function sendChatMessage(userText: string, imageData?: string | null) {
   const store = useAppStore.getState();
   const { model, mode, user, modelPrompts, language } = store;
 
   const isDraw = userText.toLowerCase().startsWith('/draw');
-
   if (isDraw) {
     store.addMessage({ role: 'bot', type: 'text', text: 'Image generation via /draw is not currently supported.' });
     store.setIsGenerating(false);
     return;
   }
+
+  abortController = new AbortController();
 
   try {
     let finalSysPrompt = modelPrompts[model] || SYSTEM_PROMPTS[model] || SYSTEM_PROMPTS.gemini;
@@ -23,8 +33,11 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
     if (mode === 'thinking') finalSysPrompt += '\nMODE: THINKING. Think step-by-step logically before answering.';
     if (mode === 'pro') finalSysPrompt += '\nMODE: PRO. Provide an extremely exhaustive, expert-level response.';
 
-    const messages = useAppStore.getState().messages;
-    const history = messages.slice(-12).map((m) => ({
+    // Get messages from active conversation
+    const state = useAppStore.getState();
+    const convo = state.conversations.find(c => c.id === state.activeConversationId);
+    const msgs = convo?.messages || [];
+    const history = msgs.slice(-12).map((m) => ({
       role: m.role === 'bot' ? 'assistant' : 'user',
       content: m.text || '[Image]',
     }));
@@ -36,6 +49,7 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
       },
       body: JSON.stringify({ messages: history, systemPrompt: finalSysPrompt, mode }),
+      signal: abortController.signal,
     });
 
     if (!resp.ok) {
@@ -78,9 +92,9 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
               messageAdded = true;
             } else {
               // Update the last message in the active conversation
-              const convos = useAppStore.getState().conversations;
-              const activeId = useAppStore.getState().activeConversationId;
-              const updated = convos.map(c => {
+              const currentState = useAppStore.getState();
+              const activeId = currentState.activeConversationId;
+              const updated = currentState.conversations.map(c => {
                 if (c.id !== activeId) return c;
                 const msgs = [...c.messages];
                 msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], text: fullText };
@@ -101,8 +115,13 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
       store.addMessage({ role: 'bot', type: 'text', text: 'No response from API.' });
     }
   } catch (e: any) {
-    store.addMessage({ role: 'bot', type: 'text', text: `⚠️ **Error:** ${e.message}` });
+    if (e.name === 'AbortError') {
+      // User stopped generation
+    } else {
+      store.addMessage({ role: 'bot', type: 'text', text: `⚠️ **Error:** ${e.message}` });
+    }
   } finally {
+    abortController = null;
     store.setIsGenerating(false);
   }
 }

@@ -1,21 +1,64 @@
-import { useState, useRef } from 'react';
-import { Send, ImageIcon, X, Zap } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Send, ImageIcon, X, Zap, Mic, MicOff, Square } from 'lucide-react';
 import { useAppStore, type ChatMode } from '@/lib/store';
-import { sendChatMessage } from '@/lib/chat-api';
+import { sendChatMessage, abortChat } from '@/lib/chat-api';
 
 const ChatInput = () => {
-  const { mode, setMode, isGenerating, addMessage, deductCredits, setIsGenerating, sendOnEnter } = useAppStore();
+  const { mode, setMode, isGenerating, addMessage, deductCredits, setIsGenerating, sendOnEnter, stopGenerating } = useAppStore();
   const [text, setText] = useState('');
   const [imageData, setImageData] = useState<string | null>(null);
+  const [isListening, setIsListening] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   const costMap: Record<ChatMode, number> = { fast: 1, thinking: 3, pro: 5 };
   const modeLabels: Record<ChatMode, string> = { fast: '⚡ Fast', thinking: '🧠 Thinking', pro: '💎 Pro' };
 
+  // Voice input
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.onresult = (e: any) => {
+        let transcript = '';
+        for (let i = 0; i < e.results.length; i++) {
+          transcript += e.results[i][0].transcript;
+        }
+        setText(transcript);
+      };
+      recognition.onend = () => setIsListening(false);
+      recognitionRef.current = recognition;
+    }
+    return () => { recognitionRef.current?.stop(); };
+  }, []);
+
+  const toggleVoice = () => {
+    if (!recognitionRef.current) return;
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
+
+  const handleStop = () => {
+    abortChat();
+    stopGenerating();
+  };
+
   const handleSend = async () => {
     if ((!text.trim() && !imageData) || isGenerating) return;
     if (!deductCredits()) return;
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    }
 
     addMessage({ role: 'user', text: text.trim(), image: imageData || undefined });
     const userText = text.trim();
@@ -80,20 +123,40 @@ const ChatInput = () => {
           </button>
           <input type="file" ref={fileRef} className="hidden" accept="image/*" onChange={handleImage} />
 
+          {recognitionRef.current && (
+            <button onClick={toggleVoice}
+              className={`p-2 mb-0.5 rounded-full transition-colors shrink-0 ${isListening ? 'text-destructive bg-destructive/10 animate-pulse' : 'text-muted-foreground hover:text-foreground hover:bg-card'}`}>
+              {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+            </button>
+          )}
+
           <textarea
             ref={textareaRef}
             value={text}
             onChange={(e) => { setText(e.target.value); autoResize(e.target); }}
             onKeyDown={handleKeyDown}
-            placeholder="Message TheAiTwins..."
+            placeholder={isListening ? 'Listening...' : 'Message TheAiTwins...'}
             className="flex-1 bg-transparent border-none outline-none py-2.5 px-3 text-[15px] font-medium resize-none min-h-[20px] max-h-[150px] custom-scrollbar placeholder:text-muted-foreground/50"
             rows={1}
           />
 
-          <button onClick={handleSend} disabled={isGenerating || (!text.trim() && !imageData)}
-            className="p-2 mb-0.5 mr-0.5 bg-primary text-primary-foreground rounded-full hover:scale-105 disabled:opacity-20 disabled:hover:scale-100 transition-all shrink-0">
-            <Send className="w-4 h-4" />
-          </button>
+          {isGenerating ? (
+            <button onClick={handleStop}
+              className="p-2 mb-0.5 mr-0.5 bg-destructive text-destructive-foreground rounded-full hover:scale-105 transition-all shrink-0">
+              <Square className="w-4 h-4" />
+            </button>
+          ) : (
+            <button onClick={handleSend} disabled={!text.trim() && !imageData}
+              className="p-2 mb-0.5 mr-0.5 bg-primary text-primary-foreground rounded-full hover:scale-105 disabled:opacity-20 disabled:hover:scale-100 transition-all shrink-0">
+              <Send className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center justify-center mt-2 gap-3">
+          <span className="text-[9px] text-muted-foreground">
+            {text.trim().split(/\s+/).filter(Boolean).length} words · {text.length} chars
+          </span>
         </div>
       </div>
     </div>
