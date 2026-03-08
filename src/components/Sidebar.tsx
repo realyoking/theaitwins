@@ -32,6 +32,15 @@ const Sidebar = ({ onOpenSettings, onOpenPricing, onOpenAnalytics }: SidebarProp
 
   if (!user) return null;
 
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user: authUser } }) => {
+      if (!authUser) return;
+      supabase.rpc('has_role', { _user_id: authUser.id, _role: 'admin' }).then(({ data }) => {
+        setIsAdmin(!!data);
+      });
+    });
+  }, []);
+
   const filtered = conversations.filter(c => {
     if (!showArchived && c.archived) return false;
     if (showArchived && !c.archived) return false;
