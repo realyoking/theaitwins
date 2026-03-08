@@ -29,8 +29,6 @@ const Sidebar = ({ onOpenSettings, onOpenPricing, onOpenAnalytics }: SidebarProp
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [showTagPicker, setShowTagPicker] = useState<string | null>(null);
 
-  if (!user) return null;
-
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user: authUser } }) => {
       if (!authUser) return;
@@ -39,6 +37,8 @@ const Sidebar = ({ onOpenSettings, onOpenPricing, onOpenAnalytics }: SidebarProp
       });
     });
   }, []);
+
+  if (!user) return null;
 
   const filtered = conversations.filter(c => {
     if (!showArchived && c.archived) return false;
