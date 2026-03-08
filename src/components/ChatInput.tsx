@@ -210,10 +210,10 @@ const ChatInput = () => {
           </button>
           <input type="file" ref={fileRef} className="hidden" accept="image/*" onChange={handleImage} />
 
-          {/* Voice buttons */}
+          {/* Voice buttons - hidden on small screens for cleaner UI */}
           {recognitionRef.current && (
             <button onClick={toggleVoice}
-              className={`p-2 mb-0.5 rounded-full transition-colors shrink-0 ${isListening ? 'text-destructive bg-destructive/10 animate-pulse' : 'text-muted-foreground hover:text-foreground hover:bg-card'}`}
+              className={`p-2 mb-0.5 rounded-full transition-colors shrink-0 hidden md:flex ${isListening ? 'text-destructive bg-destructive/10 animate-pulse' : 'text-muted-foreground hover:text-foreground hover:bg-card'}`}
               title="Voice to text">
               {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
             </button>
@@ -222,7 +222,7 @@ const ChatInput = () => {
           {/* Mic recording button */}
           {!isRecording && (
             <button onClick={startRecording}
-              className="p-2 mb-0.5 text-muted-foreground hover:text-foreground hover:bg-card rounded-full transition-colors shrink-0"
+              className="p-2 mb-0.5 text-muted-foreground hover:text-foreground hover:bg-card rounded-full transition-colors shrink-0 hidden md:flex"
               title="Record voice">
               <Circle className="w-4 h-4" />
             </button>
