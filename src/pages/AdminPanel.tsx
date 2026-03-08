@@ -253,15 +253,6 @@ const AdminPanel = () => {
     </div>
   );
 
-  const loadPrompts = async () => {
-    const { data } = await supabase.from('admin_settings').select('key, value').like('key', 'prompt_%');
-    const prompts: Record<string, string> = {};
-    (data || []).forEach(row => { prompts[row.key.replace('prompt_', '')] = row.value; });
-    setSavedPrompts(prompts);
-    setPromptText(prompts[promptModel] || '');
-    setPromptsLoaded(true);
-  };
-
   const savePrompt = async (model: string, text: string) => {
     const key = `prompt_${model}`;
     if (text.trim()) {
@@ -276,14 +267,6 @@ const AdminPanel = () => {
   const resetPrompt = (model: string) => {
     setPromptText(SYSTEM_PROMPTS[model] || '');
   };
-
-  useEffect(() => {
-    if (tab === 'prompts' && !promptsLoaded) loadPrompts();
-  }, [tab]);
-
-  useEffect(() => {
-    setPromptText(savedPrompts[promptModel] || '');
-  }, [promptModel]);
 
   const tabs: { id: Tab; label: string; icon: any }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: Shield },
