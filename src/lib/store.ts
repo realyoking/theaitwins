@@ -220,8 +220,15 @@ function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
 }
 
+let syncTimer: ReturnType<typeof setTimeout> | null = null;
+
 function saveConversations(convos: Conversation[]) {
   localStorage.setItem('tat_convos', JSON.stringify(convos));
+  // Debounced cloud sync
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    try { useAppStore.getState().syncToCloud(); } catch {}
+  }, 5000);
 }
 
 const DEFAULT_TEMPLATES: PromptTemplate[] = [
