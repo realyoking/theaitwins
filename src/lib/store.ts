@@ -316,6 +316,19 @@ export const useAppStore = create<AppState>((set, get) => {
     ttsEnabled: loadFromLS('tat_tts', false),
     ttsVoice: localStorage.getItem('tat_tts_voice') || '',
     memories: loadFromLS('tat_memories', []),
+    customFont: localStorage.getItem('tat_font') || 'Inter',
+    plugins: loadFromLS('tat_plugins', [
+      { id: 'calculator', name: 'Calculator', description: 'Evaluate math expressions. Type /calc 2+2', icon: '🧮', enabled: false, type: 'builtin' },
+      { id: 'translator', name: 'Quick Translate', description: 'Translate text. Type /translate [lang] [text]', icon: '🌐', enabled: false, type: 'builtin' },
+      { id: 'timestamp', name: 'Timestamp', description: 'Insert date/time. Type /now', icon: '🕐', enabled: false, type: 'builtin' },
+      { id: 'wordcount', name: 'Word Counter', description: 'Count words. Type /count [text]', icon: '📊', enabled: false, type: 'builtin' },
+      { id: 'lorem', name: 'Lorem Generator', description: 'Placeholder text. Type /lorem [words]', icon: '📝', enabled: false, type: 'builtin' },
+      { id: 'color', name: 'Color Picker', description: 'Convert colors. Type /color #ff0000', icon: '🎨', enabled: false, type: 'builtin' },
+      { id: 'uuid', name: 'UUID Generator', description: 'Generate UUIDs. Type /uuid', icon: '🔑', enabled: false, type: 'builtin' },
+      { id: 'base64', name: 'Base64 Encoder', description: 'Encode base64. Type /base64 [text]', icon: '🔐', enabled: false, type: 'builtin' },
+    ]),
+    workspaceTabs: [],
+    activeTabId: '',
 
     setUser: (user) => { set({ user }); localStorage.setItem('tat_user', JSON.stringify(user)); },
 
