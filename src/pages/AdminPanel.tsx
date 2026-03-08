@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Shield, Users, ArrowLeft, Trash2, Plus, RefreshCw, Megaphone, Cpu, Plug, Eye,
   ChevronLeft, MessageSquare, Settings, CreditCard, Upload, X, ToggleLeft, ToggleRight,
-  Search, UserCheck, UserX, Edit, Save, ExternalLink
+  Search, UserCheck, UserX, Edit, Save, ExternalLink, FileText, RotateCcw
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
