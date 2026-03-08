@@ -204,6 +204,9 @@ interface AppState {
 
   // Streak
   checkStreak: () => void;
+
+  // Cloud sync
+  syncToCloud: () => void;
 }
 
 function loadFromLS<T>(key: string, fallback: T): T {
