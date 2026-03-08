@@ -13,7 +13,7 @@ import AnalyticsModal from '@/components/AnalyticsModal';
 import PluginSystem from '@/components/PluginSystem';
 
 const Index = () => {
-  const { user, theme, checkDailyReset, checkStreak, customThemeId, setCustomThemeId, customFont, plugins, setPlugins, setCustomFont } = useAppStore();
+  const { user, theme, checkDailyReset, checkStreak, customThemeId, setCustomThemeId, customFont, plugins, setPlugins } = useAppStore();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pricingOpen, setPricingOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
