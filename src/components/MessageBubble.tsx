@@ -163,12 +163,21 @@ const MessageBubble = ({ msg, msgIndex, userInitial, model, onRenderCode, onQuic
         {/* Reactions */}
         {msg.reactions && msg.reactions.length > 0 && (
           <div className="flex gap-1 mt-1">
-            {msg.reactions.map((r, i) => (
-              <span key={i} className="text-sm bg-muted px-1.5 py-0.5 rounded-full border border-border cursor-pointer hover:scale-110 transition-transform"
-                onClick={() => toggleReaction(msgIndex, r)}>
-                {r}
-              </span>
-            ))}
+            {msg.reactions.map((r, i) => {
+              const icon = REACTION_ICONS.find(ri => ri.key === r);
+              if (!icon) return (
+                <span key={i} className="text-sm bg-muted px-1.5 py-0.5 rounded-full border border-border cursor-pointer hover:scale-110 transition-transform"
+                  onClick={() => toggleReaction(msgIndex, r)}>
+                  {r}
+                </span>
+              );
+              return (
+                <button key={i} onClick={() => toggleReaction(msgIndex, r)}
+                  className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20 hover:scale-110 transition-transform text-[11px] font-bold">
+                  <icon.Icon className="w-3 h-3" />
+                </button>
+              );
+            })}
           </div>
         )}
 
