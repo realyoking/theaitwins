@@ -194,6 +194,13 @@ const GroupChat = () => {
         </button>
       </header>
 
+      {/* Voice Chat */}
+      {userId && groupId && (
+        <div className="shrink-0 px-4 py-2 border-b border-border">
+          <VoiceChat groupId={groupId} userId={userId} />
+        </div>
+      )}
+
       {showMembers && (
         <div className="border-b border-border bg-card px-4 py-3">
           <p className="text-[10px] font-bold text-muted-foreground uppercase mb-2">Members</p>
