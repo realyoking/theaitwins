@@ -48,6 +48,12 @@ const AdminPanel = () => {
   // Plugin form
   const [pluginForm, setPluginForm] = useState({ name: '', description: '', icon: '🔌', slash_command: '', code: '' });
 
+  // Prompt editing
+  const [promptModel, setPromptModel] = useState<'anson67' | 'gemini' | 'chester'>('anson67');
+  const [promptText, setPromptText] = useState('');
+  const [promptsLoaded, setPromptsLoaded] = useState(false);
+  const [savedPrompts, setSavedPrompts] = useState<Record<string, string>>({});
+
   useEffect(() => { checkAdmin(); }, []);
 
   const checkAdmin = async () => {
