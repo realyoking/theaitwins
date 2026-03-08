@@ -1,7 +1,15 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Cpu } from 'lucide-react';
+import { Cpu, Gift } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
+
+function generateReferralCode(name: string) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = name.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+  while (code.length < 3) code += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
 
 const Onboarding = () => {
   const setUser = useAppStore((s) => s.setUser);
@@ -9,10 +17,20 @@ const Onboarding = () => {
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
   const [hobbies, setHobbies] = useState('');
+  const [referredBy, setReferredBy] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setUser({ name, initial: name.charAt(0).toUpperCase(), age, gender, hobbies });
+    const referralCode = generateReferralCode(name);
+    setUser({
+      name,
+      initial: name.charAt(0).toUpperCase(),
+      age,
+      gender,
+      hobbies,
+      referralCode,
+      referredBy: referredBy.trim() || undefined,
+    });
   };
 
   return (
@@ -59,6 +77,16 @@ const Onboarding = () => {
             <input value={hobbies} onChange={(e) => setHobbies(e.target.value)} required
               className="w-full mt-1 px-4 py-3 bg-muted rounded-xl outline-none border border-transparent focus:border-muted-foreground/30 transition-all text-sm font-semibold"
               placeholder="Coding, Gaming, Music..." />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1 flex items-center gap-1">
+              <Gift className="w-3 h-3" /> Referral Code <span className="text-muted-foreground/60">(optional)</span>
+            </label>
+            <input value={referredBy} onChange={(e) => setReferredBy(e.target.value.toUpperCase())}
+              maxLength={7}
+              className="w-full mt-1 px-4 py-3 bg-muted rounded-xl outline-none border border-transparent focus:border-muted-foreground/30 transition-all text-sm font-semibold font-mono tracking-widest"
+              placeholder="e.g. ANS4X7Q" />
+            <p className="text-[9px] text-muted-foreground mt-1 ml-1">Got a friend's code? Enter it for bonus credits!</p>
           </div>
           <button type="submit" className="w-full py-3.5 mt-2 bg-primary text-primary-foreground rounded-xl text-sm font-bold hover:opacity-80 transition-opacity">
             Initialize Profile

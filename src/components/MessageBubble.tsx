@@ -195,14 +195,17 @@ const MessageBubble = ({ msg, msgIndex, userInitial, model, onRenderCode, onQuic
 
           {/* Reaction picker */}
           <div className="relative">
-            <button onClick={() => setShowReactions(!showReactions)} className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors text-xs">
-              😊
+            <button onClick={() => setShowReactions(!showReactions)} className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors" title="React">
+              <Heart className="w-3.5 h-3.5" />
             </button>
             {showReactions && (
-              <div className="absolute bottom-full mb-1 left-0 flex gap-1 bg-card border border-border rounded-full px-2 py-1 shadow-lg z-10">
-                {REACTION_EMOJIS.map(emoji => (
-                  <button key={emoji} onClick={() => { toggleReaction(msgIndex, emoji); setShowReactions(false); }}
-                    className="text-sm hover:scale-125 transition-transform">{emoji}</button>
+              <div className="absolute bottom-full mb-1 left-0 flex gap-0.5 bg-card border border-border rounded-full px-2 py-1 shadow-lg z-10">
+                {REACTION_ICONS.map(({ key, Icon, label }) => (
+                  <button key={key} onClick={() => { toggleReaction(msgIndex, key); setShowReactions(false); }}
+                    className="p-1.5 hover:bg-accent rounded-full transition-colors hover:scale-125 text-muted-foreground hover:text-foreground"
+                    title={label}>
+                    <Icon className="w-4 h-4" />
+                  </button>
                 ))}
               </div>
             )}
