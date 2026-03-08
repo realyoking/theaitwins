@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Settings, Zap, Sun, Moon, X, Cpu, ChevronUp, MessageSquare, Pin, Trash2, Edit3, Search, MoreHorizontal, Copy, Download, Archive, Tag, BarChart3, Users, Gift, Shield, LogOut } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import { useAppStore } from '@/lib/store';
 import { supabase } from '@/integrations/supabase/client';
-import { useState, useEffect } from 'react';
 
 interface SidebarProps {
   onOpenSettings: () => void;
