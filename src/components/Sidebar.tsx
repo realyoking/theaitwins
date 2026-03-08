@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Plus, Settings, Zap, Sun, Moon, X, Cpu, ChevronUp, MessageSquare, Pin, Trash2, Edit3, Search, MoreHorizontal, Copy, Download, Archive, Tag, BarChart3, Users, Gift } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Settings, Zap, Sun, Moon, X, Cpu, ChevronUp, MessageSquare, Pin, Trash2, Edit3, Search, MoreHorizontal, Copy, Download, Archive, Tag, BarChart3, Users, Gift, Shield, LogOut } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SidebarProps {
   onOpenSettings: () => void;

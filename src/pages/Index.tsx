@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '@/lib/store';
 import Onboarding from '@/components/Onboarding';
 import Sidebar from '@/components/Sidebar';
@@ -14,15 +16,29 @@ const Index = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pricingOpen, setPricingOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  const [authUser, setAuthUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const navigate = useNavigate();
   const [checkout, setCheckout] = useState<{ open: boolean; title: string; cost: string; type: 'plan' | 'credits'; value: string | number }>({
     open: false, title: '', cost: '', type: 'plan', value: ''
   });
 
   useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setAuthUser(session?.user ?? null);
+      setAuthLoading(false);
+    });
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAuthUser(session?.user ?? null);
+      setAuthLoading(false);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
     document.documentElement.className = theme;
     checkDailyReset();
     checkStreak();
-    // Apply saved theme
     if (customThemeId && customThemeId !== 'default-dark') {
       setCustomThemeId(customThemeId);
     }
@@ -45,6 +61,14 @@ const Index = () => {
       window.location.reload();
     }
   };
+
+  if (authLoading) return null;
+
+  // If no auth user, redirect to auth page
+  if (!authUser) {
+    navigate('/auth');
+    return null;
+  }
 
   if (!user) return <Onboarding />;
 
