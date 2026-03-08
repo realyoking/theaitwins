@@ -247,7 +247,7 @@ const ChatArea = () => {
             </div>
             <h2 className="text-2xl font-bold mb-2">{greeting.title}</h2>
             <p className="text-muted-foreground text-sm mb-10">{greeting.sub}</p>
-            <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
+            <div className="grid grid-cols-2 gap-2 w-full max-w-xs md:max-w-sm">
               {['Write me a poem', 'Explain quantum physics', 'Help me code', 'Tell me a joke'].map(q => (
                 <button key={q} onClick={() => handleUseTemplate(q)}
                   className="px-3 py-2.5 bg-muted hover:bg-accent rounded-xl text-xs font-medium text-muted-foreground hover:text-foreground transition-colors text-left">
