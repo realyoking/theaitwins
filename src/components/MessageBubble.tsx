@@ -129,18 +129,56 @@ const MessageBubble = ({ msg, msgIndex, userInitial, model, onRenderCode, onQuic
                   components={{
                     pre: ({ children, ...props }) => {
                       const codeEl = (children as any)?.props;
-                      const code = codeEl?.children || '';
+                      const codeStr = String(codeEl?.children || '');
+                      const langClass = codeEl?.className || '';
+                      const langMatch = langClass.match(/language-(\w+)/);
+                      const langHint = langMatch ? langMatch[1] : '';
+                      const detectedLang = detectLanguage(langHint);
+
+                      const handleRunCode = async () => {
+                        if (!detectedLang) return;
+                        if (detectedLang === 'react') {
+                          onRenderCode?.(codeStr);
+                          return;
+                        }
+                        setRunningCode(true);
+                        setCodeOutput(null);
+                        try {
+                          const result = await runCode(codeStr, detectedLang);
+                          setCodeOutput(result.exitCode !== 0 ? `❌ ${result.output || result.stderr}` : result.output || '(no output)');
+                        } catch (e: any) {
+                          setCodeOutput(`⚠️ ${e.message}`);
+                          toast.error(e.message);
+                        } finally {
+                          setRunningCode(false);
+                        }
+                      };
+
                       return (
                         <div className="relative my-3">
                           <div className="flex justify-between items-center bg-surface-elevated px-3 py-1.5 rounded-t-xl border border-border border-b-0">
-                            <span className="text-[10px] font-mono font-bold text-muted-foreground uppercase">code</span>
+                            <div className="flex items-center gap-2">
+                              {detectedLang && (
+                                <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: getLanguageColor(detectedLang) }} />
+                              )}
+                              <span className="text-[10px] font-mono font-bold text-muted-foreground uppercase">
+                                {detectedLang ? getLanguageLabel(detectedLang) : langHint || 'code'}
+                              </span>
+                            </div>
                             <div className="flex gap-1">
-                              <button onClick={() => navigator.clipboard.writeText(String(code))}
+                              <button onClick={() => navigator.clipboard.writeText(codeStr)}
                                 className="flex items-center gap-1 px-2 py-1 bg-muted hover:bg-accent rounded text-[10px] font-bold text-muted-foreground hover:text-foreground transition-colors">
-                                📋 Copy
+                                <Copy className="w-3 h-3" /> Copy
                               </button>
+                              {detectedLang && (
+                                <button onClick={handleRunCode} disabled={runningCode}
+                                  className="flex items-center gap-1 px-2 py-1 bg-primary/10 hover:bg-primary/20 text-primary rounded text-[10px] font-bold transition-colors disabled:opacity-50">
+                                  {runningCode ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3 fill-current" />}
+                                  Run
+                                </button>
+                              )}
                               {onRenderCode && (
-                                <button onClick={() => onRenderCode(String(code))}
+                                <button onClick={() => onRenderCode(codeStr)}
                                   className="flex items-center gap-1 px-2 py-1 bg-muted hover:bg-accent rounded text-[10px] font-bold text-muted-foreground hover:text-foreground transition-colors">
                                   ▶ Render
                                 </button>
@@ -148,6 +186,12 @@ const MessageBubble = ({ msg, msgIndex, userInitial, model, onRenderCode, onQuic
                             </div>
                           </div>
                           <pre {...props} className="!mt-0 !rounded-t-none">{children}</pre>
+                          {codeOutput && (
+                            <div className="bg-muted border border-border border-t-0 rounded-b-xl px-3 py-2">
+                              <div className="text-[10px] font-bold text-muted-foreground uppercase mb-1">Output</div>
+                              <pre className="text-xs font-mono whitespace-pre-wrap text-foreground">{codeOutput}</pre>
+                            </div>
+                          )}
                         </div>
                       );
                     },
