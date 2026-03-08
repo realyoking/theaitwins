@@ -7,6 +7,7 @@ import {
   Search, UserCheck, UserX, Edit, Save, ExternalLink, FileText, RotateCcw
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { SYSTEM_PROMPTS } from '@/lib/prompts';
 
 // ─── Types ───
 type Profile = { id: string; email: string; display_name: string; avatar_url: string | null; created_at: string };
