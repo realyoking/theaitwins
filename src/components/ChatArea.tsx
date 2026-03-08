@@ -1,18 +1,23 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Ghost, Cpu, Menu, Code, Skull, Search, X, Maximize2, Minimize2, BookTemplate, Wand2 } from 'lucide-react';
+import { Ghost, Cpu, Menu, Code, Skull, Search, X, Maximize2, Minimize2, BookTemplate, Wand2, Layers } from 'lucide-react';
 import { useAppStore, useMessages, type AIModel } from '@/lib/store';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
 import ChatInput from './ChatInput';
 import { WALLPAPERS } from '@/lib/store';
 import { sendChatMessage } from '@/lib/chat-api';
+import { executePlugin } from './PluginSystem';
+import { EXTRA_WALLPAPERS } from './WallpaperPicker';
+import WorkspaceTabs from './WorkspaceTabs';
 
 const ChatArea = () => {
   const messages = useMessages();
   const {
     model, setModel, isGenerating, user, isCanvasOpen, setCanvasOpen, setCanvasCode,
     setSidebarOpen, autoScroll, chatSearchQuery, setChatSearchQuery, focusMode, setFocusMode,
-    wallpaper, promptTemplates, addMessage, deductCredits, setIsGenerating, trackMessage, mode
+    wallpaper, promptTemplates, addMessage, deductCredits, setIsGenerating, trackMessage, mode,
+    plugins, workspaceTabs, activeTabId, addWorkspaceTab, removeWorkspaceTab, setActiveTab,
+    activeConversationId, conversations, createConversation
   } = useAppStore();
   const feedRef = useRef<HTMLDivElement>(null);
   const [showSearch, setShowSearch] = useState(false);
@@ -22,7 +27,6 @@ const ChatArea = () => {
     if (feedRef.current && autoScroll) feedRef.current.scrollTop = feedRef.current.scrollHeight;
   }, [messages, isGenerating, autoScroll]);
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey) {
@@ -31,6 +35,7 @@ const ChatArea = () => {
         if (e.key === 'b') { e.preventDefault(); setSidebarOpen(true); }
         if (e.key === 'f' && e.shiftKey) { e.preventDefault(); setFocusMode(!focusMode); }
         if (e.key === '/') { e.preventDefault(); setShowTemplates(t => !t); }
+        if (e.key === 't') { e.preventDefault(); handleNewTab(); }
       }
       if (e.key === 'Escape') {
         setShowSearch(false);
@@ -66,6 +71,18 @@ const ChatArea = () => {
     setShowTemplates(false);
   };
 
+  // Tab management
+  const handleNewTab = () => {
+    const id = createConversation();
+    addWorkspaceTab(id);
+  };
+
+  const handleOpenInTab = () => {
+    if (activeConversationId) {
+      addWorkspaceTab(activeConversationId);
+    }
+  };
+
   const filteredMessages = chatSearchQuery
     ? messages.filter(m => m.text?.toLowerCase().includes(chatSearchQuery.toLowerCase()))
     : messages;
@@ -94,11 +111,32 @@ const ChatArea = () => {
   };
 
   const greeting = getGreeting();
-  const wp = WALLPAPERS.find(w => w.id === wallpaper);
-  const wallpaperStyle = wp?.css ? { backgroundImage: wp.css, backgroundSize: wp.id === 'dots' ? '20px 20px' : wp.id === 'grid' ? '20px 20px' : undefined } : {};
+
+  // Merge wallpapers
+  const allWallpapers = [...WALLPAPERS, ...EXTRA_WALLPAPERS];
+  const wp = allWallpapers.find(w => w.id === wallpaper);
+  const customWallpaperImage = localStorage.getItem('tat_custom_wallpaper');
+  const wallpaperStyle = wallpaper === 'custom-image' && customWallpaperImage
+    ? { backgroundImage: `url(${customWallpaperImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : wp?.css ? {
+        backgroundImage: wp.css,
+        backgroundSize: wp.id === 'dots' || wp.id === 'grid' ? '20px 20px'
+          : wp.id === 'stars' ? '150px 100px'
+          : wp.id === 'hexagons' ? '40px 70px'
+          : undefined
+      } : {};
 
   return (
     <main className={`flex-1 flex flex-col min-w-0 bg-background h-full relative ${focusMode ? 'fixed inset-0 z-50' : ''}`}>
+      {/* Workspace Tabs */}
+      <WorkspaceTabs
+        tabs={workspaceTabs}
+        activeTabId={activeTabId}
+        onSelectTab={setActiveTab}
+        onCloseTab={removeWorkspaceTab}
+        onNewTab={handleNewTab}
+      />
+
       {/* Header */}
       {!focusMode && (
         <header className="shrink-0 h-14 flex items-center justify-between px-4 bg-background/80 backdrop-blur-md z-10 border-b border-border/50">
@@ -125,6 +163,10 @@ const ChatArea = () => {
             <button onClick={() => setShowTemplates(!showTemplates)}
               className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors" title="Templates (Ctrl+/)">
               <BookTemplate className="w-4 h-4" />
+            </button>
+            <button onClick={handleOpenInTab}
+              className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors" title="Open in Tab (Ctrl+T)">
+              <Layers className="w-4 h-4" />
             </button>
             <button onClick={() => setFocusMode(true)}
               className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors" title="Focus Mode">
@@ -153,16 +195,9 @@ const ChatArea = () => {
       {showSearch && (
         <div className="shrink-0 px-4 md:px-20 py-2 bg-card border-b border-border flex items-center gap-2">
           <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-          <input
-            autoFocus
-            value={chatSearchQuery}
-            onChange={(e) => setChatSearchQuery(e.target.value)}
-            placeholder="Search messages..."
-            className="flex-1 bg-transparent outline-none text-sm"
-          />
-          {chatSearchQuery && (
-            <span className="text-[10px] text-muted-foreground">{filteredMessages.length} results</span>
-          )}
+          <input autoFocus value={chatSearchQuery} onChange={(e) => setChatSearchQuery(e.target.value)}
+            placeholder="Search messages..." className="flex-1 bg-transparent outline-none text-sm" />
+          {chatSearchQuery && <span className="text-[10px] text-muted-foreground">{filteredMessages.length} results</span>}
           <button onClick={() => { setShowSearch(false); setChatSearchQuery(''); }} className="p-1 text-muted-foreground hover:text-foreground">
             <X className="w-4 h-4" />
           </button>
@@ -217,7 +252,7 @@ const ChatArea = () => {
                 </button>
               ))}
             </div>
-            <p className="text-[9px] text-muted-foreground mt-8">⌨️ Ctrl+K search · Ctrl+N new chat · Ctrl+/ templates</p>
+            <p className="text-[9px] text-muted-foreground mt-8">⌨️ Ctrl+K search · Ctrl+N new chat · Ctrl+/ templates · Ctrl+T new tab</p>
           </div>
         ) : filteredMessages.length === 0 && chatSearchQuery ? (
           <div className="h-full flex items-center justify-center text-muted-foreground text-sm">No results for "{chatSearchQuery}"</div>
