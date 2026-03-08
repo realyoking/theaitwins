@@ -164,7 +164,7 @@ const ChatInput = () => {
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   return (
-    <div className="shrink-0 p-4 md:px-20 bg-background border-t border-border z-20">
+    <div className="shrink-0 p-2 md:p-4 md:px-20 bg-background border-t border-border z-20">
       <div className="max-w-3xl mx-auto">
         <div className="flex justify-between items-end mb-2 px-1">
           <div className="flex bg-muted p-0.5 rounded-lg border border-border shadow-sm">
