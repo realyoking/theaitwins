@@ -189,6 +189,17 @@ interface AppState {
   addMemory: (m: string) => void;
   removeMemory: (i: number) => void;
 
+  // Font
+  setCustomFont: (f: string) => void;
+
+  // Plugins
+  setPlugins: (p: import('@/components/PluginSystem').Plugin[]) => void;
+
+  // Workspace tabs
+  addWorkspaceTab: (conversationId: string) => void;
+  removeWorkspaceTab: (tabId: string) => void;
+  setActiveTab: (tabId: string) => void;
+
   // Streak
   checkStreak: () => void;
 }
