@@ -114,6 +114,10 @@ interface AppState {
   ttsEnabled: boolean;
   ttsVoice: string;
   memories: string[];
+  customFont: string;
+  plugins: import('@/components/PluginSystem').Plugin[];
+  workspaceTabs: import('@/components/WorkspaceTabs').WorkspaceTab[];
+  activeTabId: string;
 
   setUser: (user: UserProfile) => void;
   addMessage: (msg: ChatMessage) => void;
