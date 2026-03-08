@@ -33,6 +33,8 @@ const MessageBubble = ({ msg, msgIndex, userInitial, model, onRenderCode, onQuic
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(msg.text || '');
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [runningCode, setRunningCode] = useState(false);
+  const [codeOutput, setCodeOutput] = useState<string | null>(null);
 
   const BotIcon = model === 'anson67' ? Ghost : model === 'chester' ? Skull : Cpu;
 
