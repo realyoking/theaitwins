@@ -135,9 +135,9 @@ const AnnouncementPopup = () => {
             )}
 
             {/* Buttons */}
-            {!buttonContent && announcement.buttons && announcement.buttons.length > 0 && (
+            {!buttonContent && buttons.length > 0 && (
               <div className="flex flex-col gap-2 mb-4">
-                {announcement.buttons.map((btn, i) => (
+                {buttons.map((btn, i) => (
                   <button key={i} onClick={() => handleButton(btn)}
                     className="w-full py-3 bg-primary text-primary-foreground rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform">
                     {btn.text}

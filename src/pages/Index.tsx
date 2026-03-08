@@ -42,6 +42,7 @@ const Index = () => {
     document.documentElement.className = theme;
     checkDailyReset();
     checkStreak();
+    useAppStore.getState().loadGlobalPrompts();
     if (customThemeId && customThemeId !== 'default-dark') {
       setCustomThemeId(customThemeId);
     }

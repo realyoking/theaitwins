@@ -443,6 +443,22 @@ export const useAppStore = create<AppState>((set, get) => {
       set({ modelPrompts: prompts });
       localStorage.setItem('tat_model_prompts', JSON.stringify(prompts));
     },
+    loadGlobalPrompts: () => {
+      import('@/integrations/supabase/client').then(({ supabase }) => {
+        supabase.from('admin_settings').select('key, value').like('key', 'prompt_%').then(({ data }) => {
+          if (data) {
+            const gp: Record<string, string> = {};
+            data.forEach(row => { gp[row.key.replace('prompt_', '')] = row.value; });
+            set({ globalPrompts: gp });
+          }
+        });
+      });
+    },
+    setModelIcon: (model, icon) => {
+      const icons = { ...get().modelIcons, [model]: icon };
+      set({ modelIcons: icons });
+      localStorage.setItem('tat_model_icons', JSON.stringify(icons));
+    },
     setLanguage: (l) => { set({ language: l }); localStorage.setItem('tat_lang', l); },
     updateUser: (partial) => {
       const user = { ...get().user!, ...partial };
