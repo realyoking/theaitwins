@@ -501,6 +501,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      insert_mention_notification: {
+        Args: {
+          _body: string
+          _link?: string
+          _title: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "user"
