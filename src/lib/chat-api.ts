@@ -14,7 +14,7 @@ export function abortChat() {
 
 export async function sendChatMessage(userText: string, imageData?: string | null) {
   const store = useAppStore.getState();
-  const { model, mode, user, modelPrompts, language } = store;
+  const { model, mode, user, modelPrompts, language, memories, notificationsEnabled } = store;
 
   const isDraw = userText.toLowerCase().startsWith('/draw');
   if (isDraw) {
@@ -24,35 +24,32 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
   }
 
   abortController = new AbortController();
+  const startTime = Date.now();
 
   try {
     let finalSysPrompt = modelPrompts[model] || SYSTEM_PROMPTS[model] || SYSTEM_PROMPTS.gemini;
     finalSysPrompt += `\n\nUSER PROFILE:\nName: ${user!.name}\nAge: ${user!.age}\nGender: ${user!.gender}\nHobbies: ${user!.hobbies}\nLanguage Pref: ${language}\nUse this context to personalize responses.`;
 
+    // Add memories
+    if (memories.length > 0) {
+      finalSysPrompt += `\n\nAI MEMORY - Facts about the user:\n${memories.map((m, i) => `${i + 1}. ${m}`).join('\n')}\nUse these facts to better assist the user.`;
+    }
+
     if (mode === 'fast') finalSysPrompt += '\nMODE: FAST. Be concise, direct, and short.';
     if (mode === 'thinking') finalSysPrompt += '\nMODE: THINKING. Think step-by-step logically before answering.';
     if (mode === 'pro') finalSysPrompt += '\nMODE: PRO. Provide an extremely exhaustive, expert-level response.';
 
-    // If image is attached, add vision instruction
     if (imageData) {
-      finalSysPrompt += '\nThe user may attach images. Analyze them thoroughly and respond about what you see. Describe details, text, objects, and context in the image.';
+      finalSysPrompt += '\nThe user may attach images. Analyze them thoroughly and respond about what you see.';
     }
 
-    // Get messages from active conversation
     const state = useAppStore.getState();
     const convo = state.conversations.find(c => c.id === state.activeConversationId);
     const msgs = convo?.messages || [];
-    
-    // Build history with image support
+
     const history = msgs.slice(-12).map((m) => {
-      const msg: any = {
-        role: m.role === 'bot' ? 'assistant' : 'user',
-        content: m.text || '[Image]',
-      };
-      // Attach image data if the message has one
-      if (m.image && m.role === 'user') {
-        msg.imageData = m.image;
-      }
+      const msg: any = { role: m.role === 'bot' ? 'assistant' : 'user', content: m.text || '[Image]' };
+      if (m.image && m.role === 'user') msg.imageData = m.image;
       return msg;
     });
 
@@ -101,8 +98,9 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
           const content = parsed.choices?.[0]?.delta?.content as string | undefined;
           if (content) {
             fullText += content;
+            const responseTime = Date.now() - startTime;
             if (!messageAdded) {
-              store.addMessage({ role: 'bot', type: 'text', text: fullText });
+              store.addMessage({ role: 'bot', type: 'text', text: fullText, responseTime });
               messageAdded = true;
             } else {
               const currentState = useAppStore.getState();
@@ -110,7 +108,7 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
               const updated = currentState.conversations.map(c => {
                 if (c.id !== activeId) return c;
                 const msgs = [...c.messages];
-                msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], text: fullText };
+                msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], text: fullText, responseTime };
                 return { ...c, messages: msgs };
               });
               useAppStore.setState({ conversations: updated });
@@ -127,9 +125,16 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
     if (!messageAdded) {
       store.addMessage({ role: 'bot', type: 'text', text: 'No response from API.' });
     }
+
+    // Browser notification
+    if (notificationsEnabled && document.hidden) {
+      try {
+        new Notification('TheAiTwins', { body: 'AI response ready!', icon: '/favicon.ico' });
+      } catch {}
+    }
   } catch (e: any) {
     if (e.name === 'AbortError') {
-      // User stopped generation
+      // User stopped
     } else {
       store.addMessage({ role: 'bot', type: 'text', text: `⚠️ **Error:** ${e.message}` });
     }
