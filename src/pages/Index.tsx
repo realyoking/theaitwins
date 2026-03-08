@@ -93,10 +93,7 @@ const Index = () => {
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenPricing={() => setPricingOpen(true)}
         onOpenAnalytics={() => setAnalyticsOpen(true)}
-        onOpenThemeStudio={() => setThemeStudioOpen(true)}
         onOpenPlugins={() => setPluginsOpen(true)}
-        onOpenFonts={() => setFontsOpen(true)}
-        onOpenWallpapers={() => setWallpaperOpen(true)}
       />
       <ChatArea />
       <CodeCanvas />
