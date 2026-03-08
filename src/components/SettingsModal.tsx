@@ -270,12 +270,12 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                   <label className="text-[10px] font-bold text-muted-foreground uppercase mb-2 block">Select Model</label>
                   <div className="flex gap-2">
                     {(['anson67', 'gemini', 'chester'] as AIModel[]).map(m => {
-                      const Icon = modelIcons[m];
+                      const Icon = modelIconComponents[m];
                       return (
                         <button key={m} onClick={() => setEditingModel(m)}
                           className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition-all border ${
                             editingModel === m ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted border-border hover:bg-accent'}`}>
-                          <Icon className="w-4 h-4" /> {modelNames[m]}
+                          {modelIcons[m] ? <span className="text-base">{modelIcons[m]}</span> : <Icon className="w-4 h-4" />} {modelNames[m]}
                         </button>
                       );
                     })}
