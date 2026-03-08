@@ -661,6 +661,55 @@ export const useAppStore = create<AppState>((set, get) => {
       localStorage.setItem('tat_memories', JSON.stringify(next));
     },
 
+    setCustomFont: (f) => {
+      set({ customFont: f });
+      localStorage.setItem('tat_font', f);
+      document.body.style.fontFamily = `'${f}', system-ui, sans-serif`;
+    },
+
+    setPlugins: (p) => {
+      set({ plugins: p });
+      localStorage.setItem('tat_plugins', JSON.stringify(p));
+    },
+
+    addWorkspaceTab: (conversationId) => {
+      const state = get();
+      const convo = state.conversations.find(c => c.id === conversationId);
+      // Check if tab already exists
+      const existing = state.workspaceTabs.find(t => t.conversationId === conversationId);
+      if (existing) {
+        set({ activeTabId: existing.id, activeConversationId: conversationId });
+        return;
+      }
+      const tab = { id: generateId(), conversationId, name: convo?.name || 'New Tab' };
+      const tabs = [...state.workspaceTabs, tab];
+      set({ workspaceTabs: tabs, activeTabId: tab.id, activeConversationId: conversationId });
+      localStorage.setItem('tat_tabs', JSON.stringify(tabs));
+    },
+
+    removeWorkspaceTab: (tabId) => {
+      const state = get();
+      const tabs = state.workspaceTabs.filter(t => t.id !== tabId);
+      let activeTabId = state.activeTabId;
+      if (activeTabId === tabId && tabs.length > 0) {
+        activeTabId = tabs[tabs.length - 1].id;
+        const convoId = tabs[tabs.length - 1].conversationId;
+        set({ activeConversationId: convoId });
+        localStorage.setItem('tat_active_convo', convoId);
+      }
+      set({ workspaceTabs: tabs, activeTabId });
+      localStorage.setItem('tat_tabs', JSON.stringify(tabs));
+    },
+
+    setActiveTab: (tabId) => {
+      const state = get();
+      const tab = state.workspaceTabs.find(t => t.id === tabId);
+      if (tab) {
+        set({ activeTabId: tabId, activeConversationId: tab.conversationId });
+        localStorage.setItem('tat_active_convo', tab.conversationId);
+      }
+    },
+
     checkStreak: () => {
       const today = new Date().toDateString();
       const { lastActiveDate, streak } = get();
