@@ -287,37 +287,7 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
 
             {/* Appearance */}
             {tab === 'Appearance' && (
-              <div className="space-y-4">
-                <div>
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase mb-2 block flex items-center gap-1">
-                    <Palette className="w-3 h-3" /> Theme
-                  </label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {THEME_PRESETS.map(t => (
-                      <button key={t.id} onClick={() => setCustomThemeId(t.id)}
-                        className={`p-2 rounded-xl border text-center transition-all ${customThemeId === t.id ? 'ring-2 ring-ring border-transparent' : 'border-border hover:border-muted-foreground/30'}`}>
-                        <div className="w-full h-6 rounded-lg mb-1" style={{ background: `hsl(${t.bg})` }}>
-                          <div className="w-3 h-3 rounded-full ml-auto mr-1 mt-0.5" style={{ background: `hsl(${t.primary})` }} />
-                        </div>
-                        <span className="text-[9px] font-bold">{t.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase mb-2 block">Chat Wallpaper</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {WALLPAPERS.map(w => (
-                      <button key={w.id} onClick={() => setWallpaper(w.id)}
-                        className={`p-3 rounded-xl border text-center transition-all h-16 ${wallpaper === w.id ? 'ring-2 ring-ring border-transparent' : 'border-border'}`}
-                        style={w.css ? { backgroundImage: w.css, backgroundSize: w.id === 'dots' || w.id === 'grid' ? '20px 20px' : undefined } : {}}>
-                        <span className="text-[9px] font-bold bg-card/80 px-1.5 py-0.5 rounded">{w.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <AppearanceTab />
             )}
 
             {/* Data */}
