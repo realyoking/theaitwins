@@ -268,10 +268,54 @@ const AdminPanel = () => {
     setPromptText(SYSTEM_PROMPTS[model] || '');
   };
 
+  // ─── Notification sender ───
+  const [notiMode, setNotiMode] = useState<'everyone' | 'specific'>('everyone');
+  const [notiTitle, setNotiTitle] = useState('');
+  const [notiBody, setNotiBody] = useState('');
+  const [notiLink, setNotiLink] = useState('');
+  const [notiSelectedUsers, setNotiSelectedUsers] = useState<string[]>([]);
+  const [notiSearchQuery, setNotiSearchQuery] = useState('');
+  const [notiSending, setNotiSending] = useState(false);
+
+  const sendNotification = async () => {
+    if (!notiTitle.trim() || !notiBody.trim()) return;
+    setNotiSending(true);
+    try {
+      const targets = notiMode === 'everyone' ? profiles.map(p => p.id) : notiSelectedUsers;
+      for (const uid of targets) {
+        await supabase.from('notifications').insert({
+          user_id: uid,
+          title: notiTitle,
+          body: notiBody,
+          type: 'admin',
+          link: notiLink || null,
+        });
+      }
+      toast({ title: `Notification sent to ${targets.length} user(s)` });
+      setNotiTitle('');
+      setNotiBody('');
+      setNotiLink('');
+      setNotiSelectedUsers([]);
+    } catch (e) {
+      toast({ title: 'Failed to send', variant: 'destructive' });
+    }
+    setNotiSending(false);
+  };
+
+  const toggleNotiUser = (uid: string) => {
+    setNotiSelectedUsers(prev => prev.includes(uid) ? prev.filter(u => u !== uid) : [...prev, uid]);
+  };
+
+  const notiFilteredProfiles = profiles.filter(p =>
+    p.email.toLowerCase().includes(notiSearchQuery.toLowerCase()) ||
+    p.display_name.toLowerCase().includes(notiSearchQuery.toLowerCase())
+  );
+
   const tabs: { id: Tab; label: string; icon: any }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: Shield },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'announcements', label: 'Announcements', icon: Megaphone },
+    { id: 'notifications', label: 'Notify', icon: Bell },
     { id: 'prompts', label: 'Prompts', icon: FileText },
     { id: 'models', label: 'Models', icon: Cpu },
     { id: 'plugins', label: 'Plugins', icon: Plug },
