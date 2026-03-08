@@ -203,10 +203,10 @@ const ChatInput = () => {
           </div>
         )}
 
-        <div className="bg-muted/90 backdrop-blur-xl rounded-3xl border border-border/50 shadow-lg focus-within:ring-1 ring-ring/30 transition-all flex items-end p-1.5">
+        <div className="bg-muted/90 backdrop-blur-xl rounded-2xl md:rounded-3xl border border-border/50 shadow-lg focus-within:ring-1 ring-ring/30 transition-all flex items-end p-1">
           <button onClick={() => fileRef.current?.click()}
-            className="p-2 mb-0.5 ml-1 text-muted-foreground hover:text-foreground hover:bg-card rounded-full transition-colors shrink-0">
-            <ImageIcon className="w-5 h-5" />
+            className="p-2 mb-0.5 ml-0.5 text-muted-foreground hover:text-foreground hover:bg-card rounded-full transition-colors shrink-0">
+            <ImageIcon className="w-4 h-4 md:w-5 md:h-5" />
           </button>
           <input type="file" ref={fileRef} className="hidden" accept="image/*" onChange={handleImage} />
 
