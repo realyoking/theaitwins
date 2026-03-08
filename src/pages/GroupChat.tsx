@@ -5,6 +5,8 @@ import { ArrowLeft, Send, Users, Copy, Link, Ghost, Cpu, Skull } from 'lucide-re
 import VoiceChat from '@/components/VoiceChat';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
+import { useAppStore } from '@/lib/store';
+import { SYSTEM_PROMPTS } from '@/lib/prompts';
 
 type GroupMessage = {
   id: string;
