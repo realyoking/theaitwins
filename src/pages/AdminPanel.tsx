@@ -18,7 +18,7 @@ type Announcement = { id: string; title: string; subtitle: string; body: string;
 type CustomModel = { id: string; name: string; model_id: string; description: string; icon: string; enabled: boolean; created_at: string };
 type AdminPlugin = { id: string; name: string; description: string; icon: string; slash_command: string; code: string; enabled: boolean; created_at: string };
 
-type Tab = 'dashboard' | 'users' | 'announcements' | 'models' | 'plugins';
+type Tab = 'dashboard' | 'users' | 'announcements' | 'models' | 'prompts' | 'plugins';
 
 const AdminPanel = () => {
   const [tab, setTab] = useState<Tab>('dashboard');
