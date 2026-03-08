@@ -242,10 +242,12 @@ const Sidebar = ({ onOpenSettings, onOpenPricing, onOpenAnalytics }: SidebarProp
               className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-accent rounded-lg transition-colors">
               <BarChart3 className="w-4 h-4" /> Analytics
             </button>
-            <button onClick={() => navigate('/admin')}
-              className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-accent rounded-lg transition-colors">
-              <Shield className="w-4 h-4" /> Admin Panel
-            </button>
+            {isAdmin && (
+              <button onClick={() => navigate('/admin')}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-accent rounded-lg transition-colors">
+                <Shield className="w-4 h-4" /> Admin Panel
+              </button>
+            )}
             <button onClick={onOpenSettings}
               className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-accent rounded-lg transition-colors">
               <Settings className="w-4 h-4" /> Settings
