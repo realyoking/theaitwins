@@ -351,8 +351,35 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                     + Add Persona
                   </button>
                 </div>
+
+                {/* Model Icons */}
+                <div className="border-t border-border pt-4">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase mb-2 block flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" /> Custom Model Icons
+                  </label>
+                  <p className="text-[9px] text-muted-foreground mb-2">Set an emoji icon for each model</p>
+                  <div className="space-y-2">
+                    {(['anson67', 'gemini', 'chester'] as AIModel[]).map(m => (
+                      <div key={m} className="flex items-center gap-3 bg-muted px-3 py-2 rounded-lg">
+                        <span className="text-lg">{modelIcons[m] || (m === 'anson67' ? '👻' : m === 'gemini' ? '🤖' : '💀')}</span>
+                        <span className="text-xs font-bold flex-1 capitalize">{modelNames[m]}</span>
+                        <input
+                          value={modelIcons[m] || ''}
+                          onChange={(e) => setModelIcon(m, e.target.value)}
+                          placeholder="emoji"
+                          className="w-16 px-2 py-1 bg-background rounded text-center text-sm border border-border"
+                          maxLength={2}
+                        />
+                        {modelIcons[m] && (
+                          <button onClick={() => setModelIcon(m, '')} className="text-muted-foreground hover:text-destructive p-0.5">
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-            )}
 
             {/* Chat */}
             {tab === 'Chat' && (
