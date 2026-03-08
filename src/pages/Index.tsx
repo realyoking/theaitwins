@@ -17,10 +17,7 @@ const Index = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pricingOpen, setPricingOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
-  const [themeStudioOpen, setThemeStudioOpen] = useState(false);
   const [pluginsOpen, setPluginsOpen] = useState(false);
-  const [fontsOpen, setFontsOpen] = useState(false);
-  const [wallpaperOpen, setWallpaperOpen] = useState(false);
   const [authUser, setAuthUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const navigate = useNavigate();
