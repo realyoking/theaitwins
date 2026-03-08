@@ -164,7 +164,7 @@ const ChatInput = () => {
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   return (
-    <div className="shrink-0 p-4 md:px-20 bg-background border-t border-border z-20">
+    <div className="shrink-0 p-2 md:p-4 md:px-20 bg-background border-t border-border z-20">
       <div className="max-w-3xl mx-auto">
         <div className="flex justify-between items-end mb-2 px-1">
           <div className="flex bg-muted p-0.5 rounded-lg border border-border shadow-sm">
@@ -203,17 +203,17 @@ const ChatInput = () => {
           </div>
         )}
 
-        <div className="bg-muted/90 backdrop-blur-xl rounded-3xl border border-border/50 shadow-lg focus-within:ring-1 ring-ring/30 transition-all flex items-end p-1.5">
+        <div className="bg-muted/90 backdrop-blur-xl rounded-2xl md:rounded-3xl border border-border/50 shadow-lg focus-within:ring-1 ring-ring/30 transition-all flex items-end p-1">
           <button onClick={() => fileRef.current?.click()}
-            className="p-2 mb-0.5 ml-1 text-muted-foreground hover:text-foreground hover:bg-card rounded-full transition-colors shrink-0">
-            <ImageIcon className="w-5 h-5" />
+            className="p-2 mb-0.5 ml-0.5 text-muted-foreground hover:text-foreground hover:bg-card rounded-full transition-colors shrink-0">
+            <ImageIcon className="w-4 h-4 md:w-5 md:h-5" />
           </button>
           <input type="file" ref={fileRef} className="hidden" accept="image/*" onChange={handleImage} />
 
-          {/* Voice buttons */}
+          {/* Voice buttons - hidden on small screens for cleaner UI */}
           {recognitionRef.current && (
             <button onClick={toggleVoice}
-              className={`p-2 mb-0.5 rounded-full transition-colors shrink-0 ${isListening ? 'text-destructive bg-destructive/10 animate-pulse' : 'text-muted-foreground hover:text-foreground hover:bg-card'}`}
+              className={`p-2 mb-0.5 rounded-full transition-colors shrink-0 hidden md:flex ${isListening ? 'text-destructive bg-destructive/10 animate-pulse' : 'text-muted-foreground hover:text-foreground hover:bg-card'}`}
               title="Voice to text">
               {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
             </button>
@@ -222,7 +222,7 @@ const ChatInput = () => {
           {/* Mic recording button */}
           {!isRecording && (
             <button onClick={startRecording}
-              className="p-2 mb-0.5 text-muted-foreground hover:text-foreground hover:bg-card rounded-full transition-colors shrink-0"
+              className="p-2 mb-0.5 text-muted-foreground hover:text-foreground hover:bg-card rounded-full transition-colors shrink-0 hidden md:flex"
               title="Record voice">
               <Circle className="w-4 h-4" />
             </button>
@@ -233,8 +233,8 @@ const ChatInput = () => {
             value={text}
             onChange={(e) => { setText(e.target.value); autoResize(e.target); }}
             onKeyDown={handleKeyDown}
-            placeholder={isListening ? 'Listening...' : isRecording ? 'Recording...' : 'Message TheAiTwins...'}
-            className="flex-1 bg-transparent border-none outline-none py-2.5 px-3 text-[15px] font-medium resize-none min-h-[20px] max-h-[150px] custom-scrollbar placeholder:text-muted-foreground/50"
+            placeholder={isListening ? 'Listening...' : isRecording ? 'Recording...' : 'Message...'}
+            className="flex-1 bg-transparent border-none outline-none py-2 md:py-2.5 px-2 md:px-3 text-sm md:text-[15px] font-medium resize-none min-h-[20px] max-h-[120px] md:max-h-[150px] custom-scrollbar placeholder:text-muted-foreground/50"
             rows={1}
           />
 
@@ -251,8 +251,8 @@ const ChatInput = () => {
           )}
         </div>
 
-        <div className="flex items-center justify-center mt-2 gap-3">
-          <span className="text-[9px] text-muted-foreground">
+        <div className="flex items-center justify-center mt-1.5 gap-3">
+          <span className="text-[9px] text-muted-foreground hidden md:block">
             {text.trim().split(/\s+/).filter(Boolean).length} words · {text.length} chars
           </span>
         </div>

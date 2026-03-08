@@ -139,44 +139,47 @@ const ChatArea = () => {
 
       {/* Header */}
       {!focusMode && (
-        <header className="shrink-0 h-14 flex items-center justify-between px-4 bg-background/80 backdrop-blur-md z-10 border-b border-border/50">
-          <div className="flex items-center gap-3">
+        <header className="shrink-0 h-12 md:h-14 flex items-center justify-between px-2 md:px-4 bg-background/80 backdrop-blur-md z-10 border-b border-border/50">
+          <div className="flex items-center gap-2">
             <button onClick={() => setSidebarOpen(true)} className="md:hidden p-1.5 text-muted-foreground hover:text-foreground">
               <Menu className="w-5 h-5" />
             </button>
-            <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
-              {modelBtn('anson67', 'Anson67')}
-              {modelBtn('gemini', 'Gemini')}
-              {modelBtn('chester', 'Chester')}
+            <div className="flex items-center gap-0.5 bg-muted p-0.5 rounded-lg">
+              {modelBtn('anson67', '👻')}
+              {modelBtn('gemini', '🤖')}
+              {modelBtn('chester', '💀')}
             </div>
+            <span className="hidden md:inline text-[10px] text-muted-foreground font-medium">
+              {model === 'anson67' ? 'Anson67' : model === 'gemini' ? 'Gemini' : 'Chester'}
+            </span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             {messages.length > 0 && (
               <span className="text-[10px] text-muted-foreground font-medium bg-muted px-2 py-1 rounded-md hidden md:block">
-                {messages.length} msgs · {messages.reduce((a, m) => a + (m.text?.split(/\s+/).length || 0), 0)} words
+                {messages.length} msgs
               </span>
             )}
             <button onClick={() => setShowSearch(!showSearch)}
-              className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors" title="Search (Ctrl+K)">
+              className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors" title="Search">
               <Search className="w-4 h-4" />
             </button>
             <button onClick={() => setShowTemplates(!showTemplates)}
-              className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors" title="Templates (Ctrl+/)">
+              className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors hidden md:flex" title="Templates">
               <BookTemplate className="w-4 h-4" />
             </button>
             <button onClick={handleOpenInTab}
-              className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors" title="Open in Tab (Ctrl+T)">
+              className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors hidden md:flex" title="Open in Tab">
               <Layers className="w-4 h-4" />
             </button>
             <button onClick={() => setFocusMode(true)}
-              className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors" title="Focus Mode">
+              className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors hidden md:flex" title="Focus Mode">
               <Maximize2 className="w-4 h-4" />
             </button>
             <button onClick={() => setCanvasOpen(!isCanvasOpen)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${isCanvasOpen
+              className={`flex items-center gap-1 px-2 md:px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${isCanvasOpen
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:bg-muted'}`}>
-              <Code className="w-3.5 h-3.5" /> Canvas
+              <Code className="w-3.5 h-3.5" /> <span className="hidden md:inline">Canvas</span>
             </button>
           </div>
         </header>
@@ -236,7 +239,7 @@ const ChatArea = () => {
         </div>
       )}
 
-      <div ref={feedRef} className="flex-1 overflow-y-auto px-4 md:px-20 py-6 custom-scrollbar scroll-smooth" style={wallpaperStyle}>
+      <div ref={feedRef} className="flex-1 overflow-y-auto px-3 md:px-20 py-4 md:py-6 custom-scrollbar scroll-smooth" style={wallpaperStyle}>
         {filteredMessages.length === 0 && !chatSearchQuery ? (
           <div className="h-full flex flex-col items-center justify-center text-center max-w-xl mx-auto mt-10">
             <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mb-6">
@@ -244,7 +247,7 @@ const ChatArea = () => {
             </div>
             <h2 className="text-2xl font-bold mb-2">{greeting.title}</h2>
             <p className="text-muted-foreground text-sm mb-10">{greeting.sub}</p>
-            <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
+            <div className="grid grid-cols-2 gap-2 w-full max-w-xs md:max-w-sm">
               {['Write me a poem', 'Explain quantum physics', 'Help me code', 'Tell me a joke'].map(q => (
                 <button key={q} onClick={() => handleUseTemplate(q)}
                   className="px-3 py-2.5 bg-muted hover:bg-accent rounded-xl text-xs font-medium text-muted-foreground hover:text-foreground transition-colors text-left">
@@ -252,7 +255,7 @@ const ChatArea = () => {
                 </button>
               ))}
             </div>
-            <p className="text-[9px] text-muted-foreground mt-8">⌨️ Ctrl+K search · Ctrl+N new chat · Ctrl+/ templates · Ctrl+T new tab</p>
+            <p className="text-[9px] text-muted-foreground mt-8 hidden md:block">⌨️ Ctrl+K search · Ctrl+N new chat · Ctrl+/ templates · Ctrl+T new tab</p>
           </div>
         ) : filteredMessages.length === 0 && chatSearchQuery ? (
           <div className="h-full flex items-center justify-center text-muted-foreground text-sm">No results for "{chatSearchQuery}"</div>
