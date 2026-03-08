@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, ImageIcon, X, Zap, Mic, MicOff, Square, Circle } from 'lucide-react';
 import { useAppStore, type ChatMode } from '@/lib/store';
 import { sendChatMessage, abortChat } from '@/lib/chat-api';
+import { executePlugin } from './PluginSystem';
 
 const ChatInput = () => {
   const { mode, setMode, isGenerating, addMessage, deductCredits, setIsGenerating, sendOnEnter, stopGenerating, trackMessage, model } = useAppStore();
