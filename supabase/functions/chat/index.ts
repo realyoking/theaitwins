@@ -15,11 +15,20 @@ serve(async (req) => {
 
     const finalSystemPrompt = systemPrompt || "You are a helpful AI assistant.";
 
-    // Clean messages to only have role + content
-    const chatMessages = messages.map((m: any) => ({
-      role: m.role,
-      content: m.content,
-    }));
+    // Messages can now contain multimodal content (text + images)
+    const chatMessages = messages.map((m: any) => {
+      // If message has image data, format as multimodal content
+      if (m.imageData) {
+        return {
+          role: m.role,
+          content: [
+            { type: "text", text: m.content || "What do you see in this image?" },
+            { type: "image_url", image_url: { url: m.imageData } },
+          ],
+        };
+      }
+      return { role: m.role, content: m.content };
+    });
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

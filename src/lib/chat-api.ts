@@ -33,14 +33,28 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
     if (mode === 'thinking') finalSysPrompt += '\nMODE: THINKING. Think step-by-step logically before answering.';
     if (mode === 'pro') finalSysPrompt += '\nMODE: PRO. Provide an extremely exhaustive, expert-level response.';
 
+    // If image is attached, add vision instruction
+    if (imageData) {
+      finalSysPrompt += '\nThe user may attach images. Analyze them thoroughly and respond about what you see. Describe details, text, objects, and context in the image.';
+    }
+
     // Get messages from active conversation
     const state = useAppStore.getState();
     const convo = state.conversations.find(c => c.id === state.activeConversationId);
     const msgs = convo?.messages || [];
-    const history = msgs.slice(-12).map((m) => ({
-      role: m.role === 'bot' ? 'assistant' : 'user',
-      content: m.text || '[Image]',
-    }));
+    
+    // Build history with image support
+    const history = msgs.slice(-12).map((m) => {
+      const msg: any = {
+        role: m.role === 'bot' ? 'assistant' : 'user',
+        content: m.text || '[Image]',
+      };
+      // Attach image data if the message has one
+      if (m.image && m.role === 'user') {
+        msg.imageData = m.image;
+      }
+      return msg;
+    });
 
     const resp = await fetch(CHAT_URL, {
       method: 'POST',
@@ -91,7 +105,6 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
               store.addMessage({ role: 'bot', type: 'text', text: fullText });
               messageAdded = true;
             } else {
-              // Update the last message in the active conversation
               const currentState = useAppStore.getState();
               const activeId = currentState.activeConversationId;
               const updated = currentState.conversations.map(c => {
