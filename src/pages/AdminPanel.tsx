@@ -268,14 +268,8 @@ const AdminPanel = () => {
     setPromptText(SYSTEM_PROMPTS[model] || '');
   };
 
-  // ─── Notification sender ───
-  const [notiMode, setNotiMode] = useState<'everyone' | 'specific'>('everyone');
-  const [notiTitle, setNotiTitle] = useState('');
-  const [notiBody, setNotiBody] = useState('');
-  const [notiLink, setNotiLink] = useState('');
-  const [notiSelectedUsers, setNotiSelectedUsers] = useState<string[]>([]);
-  const [notiSearchQuery, setNotiSearchQuery] = useState('');
-  const [notiSending, setNotiSending] = useState(false);
+
+
 
   const sendNotification = async () => {
     if (!notiTitle.trim() || !notiBody.trim()) return;
