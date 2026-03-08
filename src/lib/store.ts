@@ -646,7 +646,9 @@ export const useAppStore = create<AppState>((set, get) => {
   };
 });
 
+const EMPTY_MESSAGES: ChatMessage[] = [];
+
 export const useMessages = () => useAppStore((state) => {
   const convo = state.conversations.find(c => c.id === state.activeConversationId);
-  return convo?.messages || [];
+  return convo?.messages ?? EMPTY_MESSAGES;
 });
