@@ -85,6 +85,28 @@ const GroupChat = () => {
     // Insert user message
     await supabase.from('group_messages').insert({ group_id: groupId, user_id: userId, content: text });
 
+    // Check for @mentions of users → send notifications
+    const userMentionRegex = /@(\w+)/gi;
+    const allMentions = text.match(userMentionRegex) || [];
+    for (const mention of allMentions) {
+      const mentionName = mention.slice(1).toLowerCase();
+      // Skip AI model names
+      if (['anson67', 'gemini', 'chester'].includes(mentionName)) continue;
+      // Find member by display name
+      const mentionedMember = members.find(m => 
+        m.profiles?.display_name?.toLowerCase() === mentionName
+      );
+      if (mentionedMember && mentionedMember.user_id !== userId) {
+        // Use the security definer function to insert notification
+        await supabase.rpc('insert_mention_notification', {
+          _user_id: mentionedMember.user_id,
+          _title: `${getMemberName(userId)} mentioned you`,
+          _body: text.length > 100 ? text.slice(0, 100) + '...' : text,
+          _link: `/group/${groupId}`,
+        });
+      }
+    }
+
     // Check for @mentions of AI models
     const mentionRegex = /@(anson67|gemini|chester)/gi;
     const mentions = text.match(mentionRegex);
