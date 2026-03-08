@@ -255,7 +255,7 @@ const ChatArea = () => {
                 </button>
               ))}
             </div>
-            <p className="text-[9px] text-muted-foreground mt-8">⌨️ Ctrl+K search · Ctrl+N new chat · Ctrl+/ templates · Ctrl+T new tab</p>
+            <p className="text-[9px] text-muted-foreground mt-8 hidden md:block">⌨️ Ctrl+K search · Ctrl+N new chat · Ctrl+/ templates · Ctrl+T new tab</p>
           </div>
         ) : filteredMessages.length === 0 && chatSearchQuery ? (
           <div className="h-full flex items-center justify-center text-muted-foreground text-sm">No results for "{chatSearchQuery}"</div>

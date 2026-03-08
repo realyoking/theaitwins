@@ -251,8 +251,8 @@ const ChatInput = () => {
           )}
         </div>
 
-        <div className="flex items-center justify-center mt-2 gap-3">
-          <span className="text-[9px] text-muted-foreground">
+        <div className="flex items-center justify-center mt-1.5 gap-3">
+          <span className="text-[9px] text-muted-foreground hidden md:block">
             {text.trim().split(/\s+/).filter(Boolean).length} words · {text.length} chars
           </span>
         </div>
