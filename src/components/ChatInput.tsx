@@ -112,6 +112,18 @@ const ChatInput = () => {
   };
 
   const handleSendText = async (userText: string) => {
+    // Check for plugin commands first
+    if (userText.startsWith('/')) {
+      const result = executePlugin(userText, plugins);
+      if (result) {
+        addMessage({ role: 'user', text: userText });
+        addMessage({ role: 'bot', text: result });
+        setText('');
+        if (textareaRef.current) textareaRef.current.style.height = '20px';
+        return;
+      }
+    }
+
     if (!deductCredits()) return;
     addMessage({ role: 'user', text: userText, image: imageData || undefined });
     setText('');
