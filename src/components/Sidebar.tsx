@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Settings, Zap, Sun, Moon, X, Cpu, ChevronUp, MessageSquare, Pin, Trash2, Edit3, Search, MoreHorizontal, Copy, Download, Archive, Tag, BarChart3, Users, Gift, Shield, LogOut } from 'lucide-react';
+import NotificationBell from './NotificationBell';
 import { useAppStore } from '@/lib/store';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -136,6 +137,7 @@ const Sidebar = ({ onOpenSettings, onOpenPricing, onOpenAnalytics }: SidebarProp
             <Cpu className="w-4 h-4" /> TheAiTwins
           </div>
           <div className="flex gap-1">
+            <NotificationBell />
             <button onClick={toggleTheme} className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg transition-colors">
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
