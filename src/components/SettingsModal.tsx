@@ -329,9 +329,20 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                 {toggleItem('Sound Effects', soundEnabled, setSoundEnabled)}
                 {toggleItem('Auto Scroll', autoScroll, setAutoScroll)}
                 {toggleItem('Text-to-Speech', ttsEnabled, setTtsEnabled)}
-                {toggleItem('Notifications', notificationsEnabled, (v) => {
-                  if (v && 'Notification' in window) Notification.requestPermission();
+                {toggleItem('Notifications', notificationsEnabled, async (v) => {
                   setNotificationsEnabled(v);
+                  if (v) {
+                    if ('Notification' in window) await Notification.requestPermission();
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session?.user?.id) {
+                      await subscribeToPush(session.user.id);
+                    }
+                  } else {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session?.user?.id) {
+                      await unsubscribeFromPush(session.user.id);
+                    }
+                  }
                 })}
                 {notificationsEnabled && (
                   <div className="pl-2 pb-2">
