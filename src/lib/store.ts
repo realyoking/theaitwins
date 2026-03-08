@@ -303,6 +303,8 @@ export const useAppStore = create<AppState>((set, get) => {
     canvasCode: '',
     isGenerating: false,
     modelPrompts: loadFromLS('tat_model_prompts', { anson67: '', gemini: '', chester: '' }),
+    globalPrompts: {},
+    modelIcons: loadFromLS('tat_model_icons', {}),
     language: localStorage.getItem('tat_lang') || 'en',
     sidebarOpen: false,
     searchQuery: '',
