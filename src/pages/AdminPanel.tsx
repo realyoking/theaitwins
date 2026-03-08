@@ -48,6 +48,15 @@ const AdminPanel = () => {
   // Plugin form
   const [pluginForm, setPluginForm] = useState({ name: '', description: '', icon: '🔌', slash_command: '', code: '' });
 
+  // Notification sender
+  const [notiMode, setNotiMode] = useState<'everyone' | 'specific'>('everyone');
+  const [notiTitle, setNotiTitle] = useState('');
+  const [notiBody, setNotiBody] = useState('');
+  const [notiLink, setNotiLink] = useState('');
+  const [notiSelectedUsers, setNotiSelectedUsers] = useState<string[]>([]);
+  const [notiSearchQuery, setNotiSearchQuery] = useState('');
+  const [notiSending, setNotiSending] = useState(false);
+
   // Prompt editing
   const [promptModel, setPromptModel] = useState<'anson67' | 'gemini' | 'chester'>('anson67');
   const [promptText, setPromptText] = useState('');
