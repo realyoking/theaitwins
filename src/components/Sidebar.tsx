@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Plus, Settings, Zap, Sun, Moon, X, Cpu, ChevronUp, MessageSquare, Pin, Trash2, Edit3, Search, MoreHorizontal, Copy, Download, Archive, Tag, BarChart3, Users, Gift } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Settings, Zap, Sun, Moon, X, Cpu, ChevronUp, MessageSquare, Pin, Trash2, Edit3, Search, MoreHorizontal, Copy, Download, Archive, Tag, BarChart3, Users, Gift, Shield, LogOut } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SidebarProps {
   onOpenSettings: () => void;
@@ -9,6 +11,7 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ onOpenSettings, onOpenPricing, onOpenAnalytics }: SidebarProps) => {
+  const navigate = useNavigate();
   const {
     user, credits, isPro, conversations, activeConversationId,
     clearMessages, toggleTheme, theme, sidebarOpen, setSidebarOpen,
@@ -216,16 +219,27 @@ const Sidebar = ({ onOpenSettings, onOpenPricing, onOpenAnalytics }: SidebarProp
             </div>
           </div>
 
-          {/* Tools */}
           <div className="space-y-1">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2 block mb-2">Tools</span>
+            <button onClick={() => navigate('/groups')}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-accent rounded-lg transition-colors">
+              <Users className="w-4 h-4" /> Groups
+            </button>
             <button onClick={onOpenAnalytics}
               className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-accent rounded-lg transition-colors">
               <BarChart3 className="w-4 h-4" /> Analytics
             </button>
+            <button onClick={() => navigate('/admin')}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-accent rounded-lg transition-colors">
+              <Shield className="w-4 h-4" /> Admin Panel
+            </button>
             <button onClick={onOpenSettings}
               className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-accent rounded-lg transition-colors">
               <Settings className="w-4 h-4" /> Settings
+            </button>
+            <button onClick={async () => { await supabase.auth.signOut(); navigate('/auth'); }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-destructive hover:bg-accent rounded-lg transition-colors">
+              <LogOut className="w-4 h-4" /> Sign Out
             </button>
           </div>
 
