@@ -315,6 +315,7 @@ export const useAppStore = create<AppState>((set, get) => {
     streak: parseInt(localStorage.getItem('tat_streak') || '0'),
     lastActiveDate: localStorage.getItem('tat_last_active') || '',
     notificationsEnabled: loadFromLS('tat_notif', false),
+    notificationMode: (localStorage.getItem('tat_notif_mode') as any) || 'inactive',
     ttsEnabled: loadFromLS('tat_tts', false),
     ttsVoice: localStorage.getItem('tat_tts_voice') || '',
     memories: loadFromLS('tat_memories', []),
