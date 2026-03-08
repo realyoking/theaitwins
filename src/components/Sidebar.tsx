@@ -137,6 +137,7 @@ const Sidebar = ({ onOpenSettings, onOpenPricing, onOpenAnalytics }: SidebarProp
             <Cpu className="w-4 h-4" /> TheAiTwins
           </div>
           <div className="flex gap-1">
+            <NotificationBell />
             <button onClick={toggleTheme} className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg transition-colors">
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
