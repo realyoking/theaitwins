@@ -505,6 +505,55 @@ const AdminPanel = () => {
           </div>
         )}
 
+        {/* ═══ PROMPTS ═══ */}
+        {tab === 'prompts' && (
+          <div className="space-y-4">
+            <h2 className="text-sm font-bold">Global System Prompts</h2>
+            <p className="text-xs text-muted-foreground">These prompts apply to ALL users. Users can still override them in their own settings.</p>
+
+            <div className="flex gap-2">
+              {(['anson67', 'gemini', 'chester'] as const).map(m => (
+                <button key={m} onClick={() => setPromptModel(m)}
+                  className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-bold border transition-all capitalize ${
+                    promptModel === m ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted border-border hover:bg-accent'}`}>
+                  {m === 'anson67' ? '👻 Anson67' : m === 'gemini' ? '🤖 Gemini' : '💀 Chester'}
+                </button>
+              ))}
+            </div>
+
+            <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase">System Prompt for {promptModel}</label>
+                <span className="text-[10px] text-muted-foreground">{savedPrompts[promptModel] ? 'Custom' : 'Using default'}</span>
+              </div>
+              <textarea value={promptText} onChange={e => setPromptText(e.target.value)}
+                placeholder={SYSTEM_PROMPTS[promptModel] || 'Enter system prompt...'}
+                rows={10} className={inputClass + ' resize-none font-mono text-xs'} />
+              <div className="flex gap-2">
+                <button onClick={() => savePrompt(promptModel, promptText)}
+                  className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-bold flex items-center justify-center gap-2">
+                  <Save className="w-4 h-4" /> Save
+                </button>
+                <button onClick={() => resetPrompt(promptModel)}
+                  className="px-4 py-2.5 bg-muted rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-accent">
+                  <RotateCcw className="w-4 h-4" /> Load Default
+                </button>
+                <button onClick={() => { setPromptText(''); savePrompt(promptModel, ''); }}
+                  className="px-4 py-2.5 bg-destructive/10 text-destructive rounded-lg text-sm font-bold hover:bg-destructive/20">
+                  Clear
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-muted p-4 rounded-xl">
+              <h3 className="text-[10px] font-bold text-muted-foreground uppercase mb-2">Default Prompt Preview</h3>
+              <pre className="text-[10px] font-mono whitespace-pre-wrap max-h-40 overflow-y-auto text-muted-foreground">
+                {SYSTEM_PROMPTS[promptModel] || 'No default prompt defined.'}
+              </pre>
+            </div>
+          </div>
+        )}
+
         {/* ═══ MODELS ═══ */}
         {tab === 'models' && (
           <div className="space-y-4">
