@@ -11,6 +11,7 @@ import PricingModal from '@/components/PricingModal';
 import CheckoutModal from '@/components/CheckoutModal';
 import AnalyticsModal from '@/components/AnalyticsModal';
 import PluginSystem from '@/components/PluginSystem';
+import AnnouncementPopup from '@/components/AnnouncementPopup';
 
 const Index = () => {
   const { user, theme, checkDailyReset, checkStreak, customThemeId, setCustomThemeId, customFont, plugins, setPlugins } = useAppStore();
