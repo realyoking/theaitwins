@@ -204,6 +204,9 @@ interface AppState {
 
   // Streak
   checkStreak: () => void;
+
+  // Cloud sync
+  syncToCloud: () => void;
 }
 
 function loadFromLS<T>(key: string, fallback: T): T {
@@ -217,8 +220,15 @@ function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
 }
 
+let syncTimer: ReturnType<typeof setTimeout> | null = null;
+
 function saveConversations(convos: Conversation[]) {
   localStorage.setItem('tat_convos', JSON.stringify(convos));
+  // Debounced cloud sync
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    try { useAppStore.getState().syncToCloud(); } catch {}
+  }, 5000);
 }
 
 const DEFAULT_TEMPLATES: PromptTemplate[] = [
@@ -748,6 +758,56 @@ export const useAppStore = create<AppState>((set, get) => {
       set({ streak: newStreak, lastActiveDate: today });
       localStorage.setItem('tat_streak', String(newStreak));
       localStorage.setItem('tat_last_active', today);
+    },
+
+    syncToCloud: () => {
+      // Debounced sync of conversations and settings to cloud
+      const state = get();
+      import('@/integrations/supabase/client').then(({ supabase }) => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (!session?.user) return;
+          const userId = session.user.id;
+
+          // Sync conversations
+          for (const convo of state.conversations) {
+            supabase.from('user_conversations').upsert({
+              user_id: userId,
+              conversation_id: convo.id,
+              name: convo.name,
+              model: convo.model,
+              messages: convo.messages as any,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'user_id,conversation_id' }).then(() => {});
+          }
+
+          // Sync settings
+          supabase.from('user_app_settings').upsert({
+            user_id: userId,
+            settings: {
+              theme: state.theme,
+              fontSize: state.fontSize,
+              sendOnEnter: state.sendOnEnter,
+              showTimestamps: state.showTimestamps,
+              compactMode: state.compactMode,
+              soundEnabled: state.soundEnabled,
+              autoScroll: state.autoScroll,
+              wallpaper: state.wallpaper,
+              customThemeId: state.customThemeId,
+              customFont: state.customFont,
+              notificationsEnabled: state.notificationsEnabled,
+              notificationMode: state.notificationMode,
+              ttsEnabled: state.ttsEnabled,
+              focusMode: state.focusMode,
+              language: state.language,
+              memories: state.memories,
+            },
+            credits: state.credits,
+            plan: state.isPro ? 'pro' : 'free',
+            is_pro: state.isPro,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'user_id' }).then(() => {});
+        });
+      }).catch(() => {});
     },
   };
 });

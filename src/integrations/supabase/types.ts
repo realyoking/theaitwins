@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_plugins: {
+        Row: {
+          code: string
+          created_at: string | null
+          description: string | null
+          enabled: boolean | null
+          icon: string | null
+          id: string
+          name: string
+          slash_command: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean | null
+          icon?: string | null
+          id?: string
+          name: string
+          slash_command: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean | null
+          icon?: string | null
+          id?: string
+          name?: string
+          slash_command?: string
+        }
+        Relationships: []
+      }
       admin_settings: {
         Row: {
           id: string
@@ -32,6 +65,104 @@ export type Database = {
           key?: string
           updated_at?: string | null
           value?: string
+        }
+        Relationships: []
+      }
+      announcement_reads: {
+        Row: {
+          announcement_id: string
+          id: string
+          read_at: string | null
+          user_id: string
+        }
+        Insert: {
+          announcement_id: string
+          id?: string
+          read_at?: string | null
+          user_id: string
+        }
+        Update: {
+          announcement_id?: string
+          id?: string
+          read_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcement_reads_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "announcements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      announcements: {
+        Row: {
+          active: boolean | null
+          body: string | null
+          buttons: Json | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          image_url: string | null
+          subtitle: string | null
+          title: string
+          video_url: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          body?: string | null
+          buttons?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          image_url?: string | null
+          subtitle?: string | null
+          title: string
+          video_url?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          body?: string | null
+          buttons?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          image_url?: string | null
+          subtitle?: string | null
+          title?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
+      custom_models: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          enabled: boolean | null
+          icon: string | null
+          id: string
+          model_id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean | null
+          icon?: string | null
+          id?: string
+          model_id: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          enabled?: boolean | null
+          icon?: string | null
+          id?: string
+          model_id?: string
+          name?: string
         }
         Relationships: []
       }
@@ -212,6 +343,69 @@ export type Database = {
           endpoint?: string
           id?: string
           p256dh?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_app_settings: {
+        Row: {
+          credits: number | null
+          id: string
+          is_pro: boolean | null
+          plan: string | null
+          settings: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          credits?: number | null
+          id?: string
+          is_pro?: boolean | null
+          plan?: string | null
+          settings?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          credits?: number | null
+          id?: string
+          is_pro?: boolean | null
+          plan?: string | null
+          settings?: Json | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_conversations: {
+        Row: {
+          conversation_id: string
+          created_at: string | null
+          id: string
+          messages: Json | null
+          model: string | null
+          name: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          messages?: Json | null
+          model?: string | null
+          name?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          messages?: Json | null
+          model?: string | null
+          name?: string | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
