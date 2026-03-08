@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, X, MessageSquare, Info } from 'lucide-react';
+import { Bell, X, MessageSquare, Info, AtSign, Megaphone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Notification {
