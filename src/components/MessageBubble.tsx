@@ -1,21 +1,30 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
-import { Ghost, Cpu, Skull, Copy, Check, RotateCcw, Share2 } from 'lucide-react';
+import { Ghost, Cpu, Skull, Copy, Check, RotateCcw, Share2, ThumbsUp, Heart, Laugh, Lightbulb } from 'lucide-react';
 import type { ChatMessage, AIModel } from '@/lib/store';
 import { useAppStore } from '@/lib/store';
 
 interface MessageBubbleProps {
   msg: ChatMessage;
+  msgIndex: number;
   userInitial: string;
   model: AIModel;
   onRenderCode?: (code: string) => void;
 }
 
-const MessageBubble = ({ msg, userInitial, model, onRenderCode }: MessageBubbleProps) => {
+const REACTION_EMOJIS = [
+  { emoji: '👍', icon: ThumbsUp },
+  { emoji: '❤️', icon: Heart },
+  { emoji: '😂', icon: Laugh },
+  { emoji: '💡', icon: Lightbulb },
+];
+
+const MessageBubble = ({ msg, msgIndex, userInitial, model, onRenderCode }: MessageBubbleProps) => {
   const isUser = msg.role === 'user';
-  const { showTimestamps, compactMode, fontSize } = useAppStore();
+  const { showTimestamps, compactMode, fontSize, toggleReaction } = useAppStore();
   const [copied, setCopied] = useState(false);
+  const [showReactions, setShowReactions] = useState(false);
 
   const BotIcon = model === 'anson67' ? Ghost : model === 'chester' ? Skull : Cpu;
 
@@ -34,6 +43,7 @@ const MessageBubble = ({ msg, userInitial, model, onRenderCode }: MessageBubbleP
   };
 
   const textSizeClass = fontSize === 'sm' ? 'text-[13px]' : fontSize === 'lg' ? 'text-[16px]' : 'text-[14px]';
+  const wordCount = msg.text?.split(/\s+/).filter(Boolean).length || 0;
 
   return (
     <motion.div
@@ -95,6 +105,18 @@ const MessageBubble = ({ msg, userInitial, model, onRenderCode }: MessageBubbleP
           </div>
         )}
 
+        {/* Reactions display */}
+        {msg.reactions && msg.reactions.length > 0 && (
+          <div className="flex gap-1 mt-1">
+            {msg.reactions.map((r, i) => (
+              <span key={i} className="text-sm bg-muted px-1.5 py-0.5 rounded-full border border-border cursor-pointer hover:scale-110 transition-transform"
+                onClick={() => toggleReaction(msgIndex, r)}>
+                {r}
+              </span>
+            ))}
+          </div>
+        )}
+
         {/* Action buttons */}
         <div className={`flex items-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity ${isUser ? 'flex-row-reverse' : ''}`}>
           <button onClick={handleCopy} className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors" title="Copy">
@@ -103,11 +125,30 @@ const MessageBubble = ({ msg, userInitial, model, onRenderCode }: MessageBubbleP
           <button onClick={handleShare} className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors" title="Share">
             <Share2 className="w-3.5 h-3.5" />
           </button>
+
+          {/* Reaction picker */}
+          <div className="relative">
+            <button onClick={() => setShowReactions(!showReactions)} className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors text-xs">
+              😊
+            </button>
+            {showReactions && (
+              <div className="absolute bottom-full mb-1 left-0 flex gap-1 bg-card border border-border rounded-full px-2 py-1 shadow-lg z-10">
+                {REACTION_EMOJIS.map(({ emoji }) => (
+                  <button key={emoji} onClick={() => { toggleReaction(msgIndex, emoji); setShowReactions(false); }}
+                    className="text-sm hover:scale-125 transition-transform">
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           {showTimestamps && msg.timestamp && (
             <span className="text-[9px] text-muted-foreground ml-2">
               {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
+          {!isUser && <span className="text-[9px] text-muted-foreground ml-1">{wordCount}w</span>}
         </div>
       </div>
     </motion.div>

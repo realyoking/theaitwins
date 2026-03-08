@@ -15,6 +15,7 @@ export type ChatMessage = {
   type?: 'text' | 'image';
   url?: string;
   timestamp?: number;
+  reactions?: string[];
 };
 
 export type Conversation = {
@@ -54,9 +55,6 @@ interface AppState {
   autoScroll: boolean;
   messageLimit: number;
 
-  // Computed
-  messages: ChatMessage[];
-
   setUser: (user: UserProfile) => void;
   addMessage: (msg: ChatMessage) => void;
   clearMessages: () => void;
@@ -74,6 +72,8 @@ interface AppState {
   checkDailyReset: () => void;
   updateUser: (partial: Partial<UserProfile>) => void;
   getCreditCost: () => number;
+  toggleReaction: (msgIndex: number, emoji: string) => void;
+  stopGenerating: () => void;
 
   // Conversation management
   createConversation: (model?: AIModel) => string;
@@ -115,7 +115,6 @@ export const useAppStore = create<AppState>((set, get) => {
   const savedConvos = loadFromLS<Conversation[]>('tat_convos', []);
   const savedActiveId = localStorage.getItem('tat_active_convo') || null;
 
-  // Migrate old messages to conversation
   const oldMessages = loadFromLS<ChatMessage[]>('tat_chat', []);
   let initialConvos = savedConvos;
   let initialActiveId = savedActiveId;
@@ -160,24 +159,29 @@ export const useAppStore = create<AppState>((set, get) => {
     autoScroll: loadFromLS('tat_autoscroll', true),
     messageLimit: parseInt(localStorage.getItem('tat_msglimit') || '50') || 50,
 
-    get messages() {
-      const state = get();
-      const convo = state.conversations.find(c => c.id === state.activeConversationId);
-      return convo?.messages || [];
-    },
-
     setUser: (user) => { set({ user }); localStorage.setItem('tat_user', JSON.stringify(user)); },
 
     addMessage: (msg) => {
-      const { conversations, activeConversationId } = get();
+      const state = get();
       const msgWithTime = { ...msg, timestamp: Date.now() };
-      let convoId = activeConversationId;
+      let convoId = state.activeConversationId;
+      let convos = state.conversations;
 
-      if (!convoId || !conversations.find(c => c.id === convoId)) {
-        convoId = get().createConversation();
+      if (!convoId || !convos.find(c => c.id === convoId)) {
+        const id = generateId();
+        const newConvo: Conversation = {
+          id,
+          name: msg.role === 'user' ? (msg.text?.slice(0, 40) || 'New Chat') : 'New Chat',
+          messages: [],
+          model: state.model,
+          createdAt: Date.now(),
+        };
+        convos = [newConvo, ...convos];
+        convoId = id;
+        localStorage.setItem('tat_active_convo', id);
       }
 
-      const updated = conversations.map(c => {
+      const updated = convos.map(c => {
         if (c.id !== convoId) return c;
         const newMsgs = [...c.messages, msgWithTime];
         const name = c.messages.length === 0 && msg.role === 'user' ? (msg.text?.slice(0, 40) || 'New Chat') : c.name;
@@ -189,8 +193,18 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     clearMessages: () => {
-      const id = get().createConversation();
-      set({ activeConversationId: id });
+      const id = generateId();
+      const convo: Conversation = {
+        id,
+        name: 'New Chat',
+        messages: [],
+        model: get().model,
+        createdAt: Date.now(),
+      };
+      const updated = [convo, ...get().conversations];
+      set({ conversations: updated, activeConversationId: id });
+      saveConversations(updated);
+      localStorage.setItem('tat_active_convo', id);
     },
 
     setModel: (m) => set({ model: m }),
@@ -245,6 +259,27 @@ export const useAppStore = create<AppState>((set, get) => {
         localStorage.setItem('tat_credits', String(c));
         localStorage.setItem('tat_reset', today);
       }
+    },
+
+    stopGenerating: () => {
+      set({ isGenerating: false });
+    },
+
+    toggleReaction: (msgIndex, emoji) => {
+      const state = get();
+      const convo = state.conversations.find(c => c.id === state.activeConversationId);
+      if (!convo) return;
+      const updated = state.conversations.map(c => {
+        if (c.id !== state.activeConversationId) return c;
+        const msgs = [...c.messages];
+        const msg = { ...msgs[msgIndex] };
+        const reactions = msg.reactions || [];
+        msg.reactions = reactions.includes(emoji) ? reactions.filter(r => r !== emoji) : [...reactions, emoji];
+        msgs[msgIndex] = msg;
+        return { ...c, messages: msgs };
+      });
+      set({ conversations: updated });
+      saveConversations(updated);
     },
 
     // Conversation management
@@ -318,4 +353,10 @@ export const useAppStore = create<AppState>((set, get) => {
       localStorage.setItem('tat_credits', String(next));
     },
   };
+});
+
+// Selector to get current messages - use this in components
+export const useMessages = () => useAppStore((state) => {
+  const convo = state.conversations.find(c => c.id === state.activeConversationId);
+  return convo?.messages || [];
 });
