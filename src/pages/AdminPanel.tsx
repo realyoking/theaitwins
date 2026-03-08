@@ -236,10 +236,43 @@ const AdminPanel = () => {
     </div>
   );
 
+  const loadPrompts = async () => {
+    const { data } = await supabase.from('admin_settings').select('key, value').like('key', 'prompt_%');
+    const prompts: Record<string, string> = {};
+    (data || []).forEach(row => { prompts[row.key.replace('prompt_', '')] = row.value; });
+    setSavedPrompts(prompts);
+    setPromptText(prompts[promptModel] || '');
+    setPromptsLoaded(true);
+  };
+
+  const savePrompt = async (model: string, text: string) => {
+    const key = `prompt_${model}`;
+    if (text.trim()) {
+      await supabase.from('admin_settings').upsert({ key, value: text, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+    } else {
+      await supabase.from('admin_settings').delete().eq('key', key);
+    }
+    toast({ title: `Prompt for ${model} saved` });
+    setSavedPrompts(p => ({ ...p, [model]: text }));
+  };
+
+  const resetPrompt = (model: string) => {
+    setPromptText(SYSTEM_PROMPTS[model] || '');
+  };
+
+  useEffect(() => {
+    if (tab === 'prompts' && !promptsLoaded) loadPrompts();
+  }, [tab]);
+
+  useEffect(() => {
+    setPromptText(savedPrompts[promptModel] || '');
+  }, [promptModel]);
+
   const tabs: { id: Tab; label: string; icon: any }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: Shield },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'announcements', label: 'Announcements', icon: Megaphone },
+    { id: 'prompts', label: 'Prompts', icon: FileText },
     { id: 'models', label: 'Models', icon: Cpu },
     { id: 'plugins', label: 'Plugins', icon: Plug },
   ];
