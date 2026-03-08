@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Send, Users, Copy, Link, Ghost, Cpu, Skull } from 'lucide-react';
+import VoiceChat from '@/components/VoiceChat';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
 
