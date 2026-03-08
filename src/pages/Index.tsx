@@ -102,10 +102,7 @@ const Index = () => {
         onSuccess={handleCheckoutSuccess}
       />
       <AnalyticsModal open={analyticsOpen} onClose={() => setAnalyticsOpen(false)} />
-      <ThemeStudio open={themeStudioOpen} onClose={() => setThemeStudioOpen(false)} />
       <PluginSystem open={pluginsOpen} onClose={() => setPluginsOpen(false)} plugins={plugins} setPlugins={setPlugins} />
-      <FontPicker open={fontsOpen} onClose={() => setFontsOpen(false)} currentFont={customFont} onSelectFont={setCustomFont} />
-      <WallpaperPicker open={wallpaperOpen} onClose={() => setWallpaperOpen(false)} />
     </div>
   );
 };
