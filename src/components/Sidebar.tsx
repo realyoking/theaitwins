@@ -219,16 +219,27 @@ const Sidebar = ({ onOpenSettings, onOpenPricing, onOpenAnalytics }: SidebarProp
             </div>
           </div>
 
-          {/* Tools */}
           <div className="space-y-1">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2 block mb-2">Tools</span>
+            <button onClick={() => navigate('/groups')}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-accent rounded-lg transition-colors">
+              <Users className="w-4 h-4" /> Groups
+            </button>
             <button onClick={onOpenAnalytics}
               className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-accent rounded-lg transition-colors">
               <BarChart3 className="w-4 h-4" /> Analytics
             </button>
+            <button onClick={() => navigate('/admin')}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-accent rounded-lg transition-colors">
+              <Shield className="w-4 h-4" /> Admin Panel
+            </button>
             <button onClick={onOpenSettings}
               className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-accent rounded-lg transition-colors">
               <Settings className="w-4 h-4" /> Settings
+            </button>
+            <button onClick={async () => { await supabase.auth.signOut(); navigate('/auth'); }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-destructive hover:bg-accent rounded-lg transition-colors">
+              <LogOut className="w-4 h-4" /> Sign Out
             </button>
           </div>
 
