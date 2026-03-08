@@ -11,6 +11,7 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ onOpenSettings, onOpenPricing, onOpenAnalytics }: SidebarProps) => {
+  const navigate = useNavigate();
   const {
     user, credits, isPro, conversations, activeConversationId,
     clearMessages, toggleTheme, theme, sidebarOpen, setSidebarOpen,
