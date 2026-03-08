@@ -135,6 +135,8 @@ interface AppState {
   deductCredits: () => boolean;
   setSidebarOpen: (v: boolean) => void;
   setModelPrompt: (model: AIModel, prompt: string) => void;
+  loadGlobalPrompts: () => void;
+  setModelIcon: (model: string, icon: string) => void;
   setLanguage: (l: string) => void;
   checkDailyReset: () => void;
   updateUser: (partial: Partial<UserProfile>) => void;
