@@ -5,7 +5,7 @@ import {
   Shield, Users, ArrowLeft, Trash2, Plus, RefreshCw, Megaphone, Cpu, Plug, Eye,
   ChevronLeft, MessageSquare, Settings, CreditCard, Upload, X, ToggleLeft, ToggleRight,
   Search, UserCheck, UserX, Edit, Save, ExternalLink, FileText, RotateCcw, Bell, Send,
-  Ghost, Skull, Heart, User
+  Ghost, Skull, Heart, User, Sandwich
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { SYSTEM_PROMPTS } from '@/lib/prompts';
