@@ -206,7 +206,7 @@ const GroupChat = () => {
     }
 
     // Check for @mentions of AI models
-    const mentionRegex = /@(anson67|gemini|chester|bobby)/gi;
+    const mentionRegex = /@(anson67|gemini|chester|bobby|max)/gi;
     const mentions = text.match(mentionRegex);
 
     if (mentions) {
