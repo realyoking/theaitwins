@@ -414,6 +414,20 @@ const GroupChat = () => {
           </button>
         </div>
       </div>
+
+      {showSettings && groupId && userId && (
+        <GroupSettings
+          groupId={groupId}
+          groupName={groupName}
+          groupDescription={groupDescription}
+          groupAvatarUrl={groupAvatarUrl}
+          members={members}
+          userId={userId}
+          isOwner={isOwner}
+          onClose={() => setShowSettings(false)}
+          onUpdate={reloadGroup}
+        />
+      )}
     </div>
   );
 };
