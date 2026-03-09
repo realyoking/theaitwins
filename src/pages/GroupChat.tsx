@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Send, Users, Copy, Link, Ghost, Cpu, Skull } from 'lucide-react';
+import { ArrowLeft, Send, Users, Copy, Link, Ghost, Cpu, Skull, Settings } from 'lucide-react';
 import VoiceChat from '@/components/VoiceChat';
 import MentionDropdown from '@/components/MentionDropdown';
+import GroupSettings from '@/components/GroupSettings';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
 import { useAppStore } from '@/lib/store';
@@ -32,10 +33,13 @@ const GroupChat = () => {
   const [members, setMembers] = useState<Member[]>([]);
   const [input, setInput] = useState('');
   const [groupName, setGroupName] = useState('');
+  const [groupDescription, setGroupDescription] = useState('');
+  const [groupAvatarUrl, setGroupAvatarUrl] = useState<string | null>(null);
   const [inviteCode, setInviteCode] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [showMentionDropdown, setShowMentionDropdown] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
   const feedRef = useRef<HTMLDivElement>(null);
@@ -116,6 +120,8 @@ const GroupChat = () => {
     const { data: group } = await supabase.from('groups').select('*').eq('id', groupId).single();
     if (!group) { navigate('/groups'); return; }
     setGroupName(group.name);
+    setGroupDescription(group.description || '');
+    setGroupAvatarUrl((group as any).avatar_url || null);
     setInviteCode(group.invite_code);
 
     // Load messages
@@ -143,6 +149,19 @@ const GroupChat = () => {
 
     return () => { supabase.removeChannel(channel); };
   };
+
+  const reloadGroup = async () => {
+    if (!groupId || !userId) return;
+    const { data: group } = await supabase.from('groups').select('*').eq('id', groupId).single();
+    if (group) {
+      setGroupName(group.name);
+      setGroupDescription(group.description || '');
+      setGroupAvatarUrl((group as any).avatar_url || null);
+    }
+    await loadMembers();
+  };
+
+  const isOwner = members.some(m => m.user_id === userId && m.role === 'owner');
 
   const handleMentionSelect = (mentionName: string) => {
     const lastAtIndex = input.lastIndexOf('@');
@@ -282,10 +301,24 @@ const GroupChat = () => {
         <button onClick={() => navigate('/groups')} className="p-1.5 text-muted-foreground hover:text-foreground">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <div className="flex-1 min-w-0">
-          <h1 className="text-sm font-bold truncate">{groupName}</h1>
-          <p className="text-[10px] text-muted-foreground">{members.length} members</p>
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          {groupAvatarUrl ? (
+            <img src={groupAvatarUrl} alt={groupName} className="w-8 h-8 rounded-full object-cover shrink-0" />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <span className="text-sm font-bold text-primary">{groupName[0]?.toUpperCase()}</span>
+            </div>
+          )}
+          <div className="min-w-0">
+            <h1 className="text-sm font-bold truncate">{groupName}</h1>
+            <p className="text-[10px] text-muted-foreground">{members.length} members</p>
+          </div>
         </div>
+        {isOwner && (
+          <button onClick={() => setShowSettings(true)} className="p-1.5 text-muted-foreground hover:text-foreground" title="Group settings">
+            <Settings className="w-4 h-4" />
+          </button>
+        )}
         <button onClick={copyInvite} className="p-1.5 text-muted-foreground hover:text-foreground" title="Copy invite link">
           <Link className="w-4 h-4" />
         </button>
@@ -380,6 +413,20 @@ const GroupChat = () => {
           </button>
         </div>
       </div>
+
+      {showSettings && groupId && userId && (
+        <GroupSettings
+          groupId={groupId}
+          groupName={groupName}
+          groupDescription={groupDescription}
+          groupAvatarUrl={groupAvatarUrl}
+          members={members}
+          userId={userId}
+          isOwner={isOwner}
+          onClose={() => setShowSettings(false)}
+          onUpdate={reloadGroup}
+        />
+      )}
     </div>
   );
 };
