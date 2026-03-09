@@ -302,7 +302,7 @@ export const useAppStore = create<AppState>((set, get) => {
     isCanvasOpen: false,
     canvasCode: '',
     isGenerating: false,
-    modelPrompts: loadFromLS('tat_model_prompts', { anson67: '', gemini: '', chester: '', bobby: '' }),
+    modelPrompts: loadFromLS('tat_model_prompts', { anson67: '', gemini: '', chester: '', bobby: '', max: '' }),
     globalPrompts: {},
     modelIcons: loadFromLS('tat_model_icons', {}),
     language: localStorage.getItem('tat_lang') || 'en',
