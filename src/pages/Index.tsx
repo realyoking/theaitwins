@@ -88,6 +88,7 @@ const Index = () => {
       loadUserProfileFromCloud();
     }
   }, [authLoading, authUser, user, setUser]);
+  const handleCheckout = (type: 'plan' | 'credits', value: string | number, cost: string) => {
     setPricingOpen(false);
     setCheckout({ open: true, title: type === 'plan' ? 'Upgrade Plan' : 'Buy Credits', cost, type, value });
   };
