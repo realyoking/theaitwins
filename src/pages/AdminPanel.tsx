@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import {
   Shield, Users, ArrowLeft, Trash2, Plus, RefreshCw, Megaphone, Cpu, Plug, Eye,
   ChevronLeft, MessageSquare, Settings, CreditCard, Upload, X, ToggleLeft, ToggleRight,
-  Search, UserCheck, UserX, Edit, Save, ExternalLink, FileText, RotateCcw, Bell, Send
+  Search, UserCheck, UserX, Edit, Save, ExternalLink, FileText, RotateCcw, Bell, Send,
+  Ghost, Skull, Heart, User
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { SYSTEM_PROMPTS } from '@/lib/prompts';
@@ -615,9 +616,10 @@ const AdminPanel = () => {
             <div className="flex gap-2">
               {(['anson67', 'gemini', 'chester', 'bobby'] as const).map(m => (
                 <button key={m} onClick={() => setPromptModel(m)}
-                  className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-bold border transition-all capitalize ${
+                  className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-bold border transition-all capitalize flex items-center justify-center gap-1.5 ${
                     promptModel === m ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted border-border hover:bg-accent'}`}>
-                  {m === 'anson67' ? '👻 Anson67' : m === 'gemini' ? '🤖 Gemini' : m === 'chester' ? '💀 Chester' : '💕 Bobby'}
+                  {m === 'anson67' ? <Ghost className="w-3.5 h-3.5" /> : m === 'gemini' ? <Cpu className="w-3.5 h-3.5" /> : m === 'chester' ? <Skull className="w-3.5 h-3.5" /> : <Heart className="w-3.5 h-3.5" />}
+                  <span className="capitalize">{m === 'anson67' ? 'Anson67' : m === 'gemini' ? 'Gemini' : m === 'chester' ? 'Chester' : 'Bobby'}</span>
                 </button>
               ))}
             </div>
@@ -788,7 +790,9 @@ const UserDetailView = ({
         <div className="space-y-2 max-h-[60vh] overflow-y-auto">
           {(viewingConvo.messages as any[]).map((msg: any, i: number) => (
             <div key={i} className={`p-3 rounded-xl text-xs ${msg.role === 'user' ? 'bg-primary/10 ml-8' : 'bg-muted mr-8'}`}>
-              <span className="text-[10px] font-bold text-muted-foreground">{msg.role === 'user' ? '👤 User' : '🤖 AI'}</span>
+              <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
+                {msg.role === 'user' ? <><User className="w-3 h-3" /> User</> : <><Cpu className="w-3 h-3" /> AI</>}
+              </span>
               <p className="mt-1 whitespace-pre-wrap">{msg.text || '[Image/Media]'}</p>
               {msg.timestamp && <p className="text-[9px] text-muted-foreground mt-1">{new Date(msg.timestamp).toLocaleString()}</p>}
             </div>

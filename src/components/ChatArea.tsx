@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Ghost, Cpu, Menu, Code, Skull, Search, X, Maximize2, Minimize2, BookTemplate, Wand2, Layers } from 'lucide-react';
+import { Ghost, Cpu, Menu, Code, Skull, Search, X, Maximize2, Minimize2, BookTemplate, Wand2, Layers, Heart } from 'lucide-react';
 import { useAppStore, useMessages, type AIModel } from '@/lib/store';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
@@ -89,12 +89,19 @@ const ChatArea = () => {
 
   const pinnedMessages = messages.filter(m => m.pinned);
 
-  const modelBtn = (m: AIModel, label: string) => (
+  const modelIcons: Record<AIModel, React.ReactNode> = {
+    anson67: <Ghost className="w-3.5 h-3.5" />,
+    gemini: <Cpu className="w-3.5 h-3.5" />,
+    chester: <Skull className="w-3.5 h-3.5" />,
+    bobby: <Heart className="w-3.5 h-3.5" />,
+  };
+
+  const modelBtn = (m: AIModel) => (
     <button onClick={() => setModel(m)}
-      className={`px-2.5 py-1 text-[11px] font-bold rounded-md transition-all ${model === m
+      className={`px-2.5 py-1.5 rounded-md transition-all ${model === m
         ? 'bg-card text-foreground shadow-sm'
         : 'text-muted-foreground hover:text-foreground'}`}>
-      {label}
+      {modelIcons[m]}
     </button>
   );
 
@@ -145,10 +152,10 @@ const ChatArea = () => {
               <Menu className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-0.5 bg-muted p-0.5 rounded-lg">
-              {modelBtn('anson67', '👻')}
-              {modelBtn('gemini', '🤖')}
-              {modelBtn('chester', '💀')}
-              {modelBtn('bobby', '💕')}
+              {modelBtn('anson67')}
+              {modelBtn('gemini')}
+              {modelBtn('chester')}
+              {modelBtn('bobby')}
             </div>
             <span className="hidden md:inline text-[10px] text-muted-foreground font-medium">
               {model === 'anson67' ? 'Anson67' : model === 'gemini' ? 'Gemini' : model === 'chester' ? 'Chester' : 'Bobby'}
