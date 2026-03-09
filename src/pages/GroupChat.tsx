@@ -139,7 +139,12 @@ const GroupChat = () => {
       .channel(`group-${groupId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'group_messages', filter: `group_id=eq.${groupId}` },
         (payload) => {
-          setMessages(prev => [...prev, payload.new as GroupMessage]);
+          const newMsg = payload.new as GroupMessage;
+          setMessages(prev => {
+            // Prevent duplicates (from optimistic insert or multiple subscriptions)
+            if (prev.some(m => m.id === newMsg.id)) return prev;
+            return [...prev, newMsg];
+          });
         }
       )
       .on('postgres_changes', { event: '*', schema: 'public', table: 'group_members', filter: `group_id=eq.${groupId}` },
