@@ -35,7 +35,7 @@ export type Conversation = {
   shared?: boolean;
 };
 
-export type AIModel = 'anson67' | 'gemini' | 'chester';
+export type AIModel = 'anson67' | 'gemini' | 'chester' | 'bobby';
 export type ChatMode = 'fast' | 'thinking' | 'pro';
 
 export type CustomPersona = {
