@@ -616,9 +616,10 @@ const AdminPanel = () => {
             <div className="flex gap-2">
               {(['anson67', 'gemini', 'chester', 'bobby'] as const).map(m => (
                 <button key={m} onClick={() => setPromptModel(m)}
-                  className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-bold border transition-all capitalize ${
+                  className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-bold border transition-all capitalize flex items-center justify-center gap-1.5 ${
                     promptModel === m ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted border-border hover:bg-accent'}`}>
-                  {m === 'anson67' ? '👻 Anson67' : m === 'gemini' ? '🤖 Gemini' : m === 'chester' ? '💀 Chester' : '💕 Bobby'}
+                  {m === 'anson67' ? <Ghost className="w-3.5 h-3.5" /> : m === 'gemini' ? <Cpu className="w-3.5 h-3.5" /> : m === 'chester' ? <Skull className="w-3.5 h-3.5" /> : <Heart className="w-3.5 h-3.5" />}
+                  <span className="capitalize">{m === 'anson67' ? 'Anson67' : m === 'gemini' ? 'Gemini' : m === 'chester' ? 'Chester' : 'Bobby'}</span>
                 </button>
               ))}
             </div>
