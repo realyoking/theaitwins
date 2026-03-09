@@ -281,6 +281,7 @@ const GroupChat = () => {
   const getModelIcon = (model: string) => {
     if (model === 'anson67') return <Ghost className="w-4 h-4" />;
     if (model === 'chester') return <Skull className="w-4 h-4" />;
+    if (model === 'bobby') return <Heart className="w-4 h-4" />;
     return <Cpu className="w-4 h-4" />;
   };
 
