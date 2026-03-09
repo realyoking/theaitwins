@@ -790,7 +790,9 @@ const UserDetailView = ({
         <div className="space-y-2 max-h-[60vh] overflow-y-auto">
           {(viewingConvo.messages as any[]).map((msg: any, i: number) => (
             <div key={i} className={`p-3 rounded-xl text-xs ${msg.role === 'user' ? 'bg-primary/10 ml-8' : 'bg-muted mr-8'}`}>
-              <span className="text-[10px] font-bold text-muted-foreground">{msg.role === 'user' ? '👤 User' : '🤖 AI'}</span>
+              <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
+                {msg.role === 'user' ? <><User className="w-3 h-3" /> User</> : <><Cpu className="w-3 h-3" /> AI</>}
+              </span>
               <p className="mt-1 whitespace-pre-wrap">{msg.text || '[Image/Media]'}</p>
               {msg.timestamp && <p className="text-[9px] text-muted-foreground mt-1">{new Date(msg.timestamp).toLocaleString()}</p>}
             </div>

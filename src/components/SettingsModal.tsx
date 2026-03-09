@@ -361,7 +361,9 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                   <div className="space-y-2">
                     {(['anson67', 'gemini', 'chester', 'bobby'] as AIModel[]).map(m => (
                       <div key={m} className="flex items-center gap-3 bg-muted px-3 py-2 rounded-lg">
-                        <span className="text-lg">{modelIcons[m] || (m === 'anson67' ? '👻' : m === 'gemini' ? '🤖' : m === 'chester' ? '💀' : '💕')}</span>
+                        <span className="w-5 h-5 flex items-center justify-center text-primary">
+                          {m === 'anson67' ? <Ghost className="w-4 h-4" /> : m === 'gemini' ? <Cpu className="w-4 h-4" /> : m === 'chester' ? <Skull className="w-4 h-4" /> : <Heart className="w-4 h-4" />}
+                        </span>
                         <span className="text-xs font-bold flex-1 capitalize">{modelNames[m]}</span>
                         <input
                           value={modelIcons[m] || ''}
