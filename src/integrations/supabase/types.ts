@@ -497,6 +497,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_group_id_by_invite_code: { Args: { _code: string }; Returns: string }
       get_user_group_ids: { Args: { _user_id: string }; Returns: string[] }
       has_role: {
         Args: {
