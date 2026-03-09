@@ -162,7 +162,6 @@ const GroupChat = () => {
   };
 
   const isOwner = members.some(m => m.user_id === userId && m.role === 'owner');
-  };
 
   const handleMentionSelect = (mentionName: string) => {
     const lastAtIndex = input.lastIndexOf('@');
