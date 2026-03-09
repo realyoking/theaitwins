@@ -120,6 +120,8 @@ const GroupChat = () => {
     const { data: group } = await supabase.from('groups').select('*').eq('id', groupId).single();
     if (!group) { navigate('/groups'); return; }
     setGroupName(group.name);
+    setGroupDescription(group.description || '');
+    setGroupAvatarUrl((group as any).avatar_url || null);
     setInviteCode(group.invite_code);
 
     // Load messages
