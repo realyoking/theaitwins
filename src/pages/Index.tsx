@@ -67,27 +67,34 @@ const Index = () => {
   useEffect(() => {
     if (!authLoading && authUser && !user) {
       const loadUserProfileFromCloud = async () => {
-        const { data, error } = await supabase
-          .from('user_app_settings')
-          .select('settings')
-          .eq('user_id', authUser.id)
-          .maybeSingle();
+        setProfileLoading(true);
+        try {
+          const { data, error } = await supabase
+            .from('user_app_settings')
+            .select('settings')
+            .eq('user_id', authUser.id)
+            .maybeSingle();
 
-        if (error) return;
+          if (!error) {
+            const userProfile = data?.settings && typeof data.settings === 'object'
+              ? (data.settings as Record<string, any>).userProfile
+              : null;
 
-        const userProfile = data?.settings && typeof data.settings === 'object'
-          ? (data.settings as Record<string, any>).userProfile
-          : null;
-
-        if (userProfile?.name) {
-          setUser({
-            ...userProfile,
-            initial: userProfile.initial || userProfile.name.charAt(0).toUpperCase(),
-          });
+            if (userProfile?.name) {
+              setUser({
+                ...userProfile,
+                initial: userProfile.initial || userProfile.name.charAt(0).toUpperCase(),
+              });
+            }
+          }
+        } finally {
+          setProfileLoading(false);
         }
       };
 
       loadUserProfileFromCloud();
+    } else if (user || authLoading) {
+      setProfileLoading(false);
     }
   }, [authLoading, authUser, user, setUser]);
 
