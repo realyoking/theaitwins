@@ -58,7 +58,7 @@ const AdminPanel = () => {
   const [notiSending, setNotiSending] = useState(false);
 
   // Prompt editing
-  const [promptModel, setPromptModel] = useState<'anson67' | 'gemini' | 'chester'>('anson67');
+  const [promptModel, setPromptModel] = useState<'anson67' | 'gemini' | 'chester' | 'bobby'>('anson67');
   const [promptText, setPromptText] = useState('');
   const [promptsLoaded, setPromptsLoaded] = useState(false);
   const [savedPrompts, setSavedPrompts] = useState<Record<string, string>>({});
