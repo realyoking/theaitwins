@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Send, Users, Copy, Link, Ghost, Cpu, Skull, Settings } from 'lucide-react';
+import { ArrowLeft, Send, Users, Copy, Link, Ghost, Cpu, Skull, Settings, LogOut } from 'lucide-react';
 import VoiceChat from '@/components/VoiceChat';
 import MentionDropdown from '@/components/MentionDropdown';
 import GroupSettings from '@/components/GroupSettings';
@@ -38,6 +38,7 @@ const GroupChat = () => {
   const [inviteCode, setInviteCode] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showMentionDropdown, setShowMentionDropdown] = useState(false);
@@ -295,6 +296,28 @@ const GroupChat = () => {
     toast({ title: 'Invite link copied!' });
   };
 
+  const leaveGroup = async () => {
+    if (!groupId || !userId || isOwner || leaving) return;
+    const confirmed = window.confirm('Leave this group? You can rejoin later using an invite link.');
+    if (!confirmed) return;
+
+    setLeaving(true);
+    const { error } = await supabase
+      .from('group_members')
+      .delete()
+      .eq('group_id', groupId)
+      .eq('user_id', userId);
+
+    if (error) {
+      toast({ title: 'Failed to leave group', description: error.message, variant: 'destructive' });
+      setLeaving(false);
+      return;
+    }
+
+    toast({ title: 'You left the group' });
+    navigate('/groups');
+  };
+
   return (
     <div className="h-[100dvh] flex flex-col bg-background">
       <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card shrink-0">
@@ -317,6 +340,16 @@ const GroupChat = () => {
         {isOwner && (
           <button onClick={() => setShowSettings(true)} className="p-1.5 text-muted-foreground hover:text-foreground" title="Group settings">
             <Settings className="w-4 h-4" />
+          </button>
+        )}
+        {!isOwner && userId && (
+          <button
+            onClick={leaveGroup}
+            disabled={leaving}
+            className="p-1.5 text-muted-foreground hover:text-destructive disabled:opacity-50"
+            title="Leave group"
+          >
+            <LogOut className="w-4 h-4" />
           </button>
         )}
         <button onClick={copyInvite} className="p-1.5 text-muted-foreground hover:text-foreground" title="Copy invite link">

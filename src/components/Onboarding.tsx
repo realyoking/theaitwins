@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Cpu, Gift } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '@/lib/store';
+import { useToast } from '@/hooks/use-toast';
 
 function generateReferralCode(name: string) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -13,16 +15,17 @@ function generateReferralCode(name: string) {
 
 const Onboarding = () => {
   const setUser = useAppStore((s) => s.setUser);
+  const { toast } = useToast();
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
   const [hobbies, setHobbies] = useState('');
   const [referredBy, setReferredBy] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const referralCode = generateReferralCode(name);
-    setUser({
+    const profile = {
       name,
       initial: name.charAt(0).toUpperCase(),
       age,
@@ -30,7 +33,36 @@ const Onboarding = () => {
       hobbies,
       referralCode,
       referredBy: referredBy.trim() || undefined,
-    });
+    };
+
+    setUser(profile);
+
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) return;
+
+    const { data: existing, error: existingError } = await supabase
+      .from('user_app_settings')
+      .select('settings')
+      .eq('user_id', authData.user.id)
+      .maybeSingle();
+
+    if (existingError) {
+      toast({ title: 'Profile saved locally', description: 'Cloud backup failed this time.', variant: 'destructive' });
+      return;
+    }
+
+    const mergedSettings = {
+      ...(existing?.settings && typeof existing.settings === 'object' ? existing.settings : {}),
+      userProfile: profile,
+    };
+
+    const { error: upsertError } = await supabase
+      .from('user_app_settings')
+      .upsert({ user_id: authData.user.id, settings: mergedSettings }, { onConflict: 'user_id' });
+
+    if (upsertError) {
+      toast({ title: 'Profile saved locally', description: 'Cloud backup failed this time.', variant: 'destructive' });
+    }
   };
 
   return (
