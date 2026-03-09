@@ -94,6 +94,7 @@ const ChatArea = () => {
     gemini: <Cpu className="w-3.5 h-3.5" />,
     chester: <Skull className="w-3.5 h-3.5" />,
     bobby: <Heart className="w-3.5 h-3.5" />,
+    max: <Sandwich className="w-3.5 h-3.5" />,
   };
 
   const modelBtn = (m: AIModel) => (
