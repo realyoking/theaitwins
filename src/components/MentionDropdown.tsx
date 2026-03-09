@@ -19,6 +19,8 @@ const AI_MODELS: MentionOption[] = [
   { id: 'anson67', name: 'anson67', type: 'ai', icon: <Ghost className="w-4 h-4" /> },
   { id: 'gemini', name: 'gemini', type: 'ai', icon: <Cpu className="w-4 h-4" /> },
   { id: 'chester', name: 'chester', type: 'ai', icon: <Skull className="w-4 h-4" /> },
+  { id: 'bobby', name: 'bobby', type: 'ai', icon: <Heart className="w-4 h-4" /> },
+  { id: 'max', name: 'max', type: 'ai', icon: <Sandwich className="w-4 h-4" /> },
 ];
 
 const MentionDropdown = ({ query, members, onSelect, visible }: MentionDropdownProps) => {

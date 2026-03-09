@@ -115,6 +115,7 @@ const ChatArea = () => {
   const getGreeting = () => {
     if (model === 'anson67') return { title: 'Sup. What do you want?', sub: 'I write perfect code, answer anything, and roast you.' };
     if (model === 'chester') return { title: '主人，有咩吩咐？', sub: 'Chester聽命於你。' };
+    if (model === 'max') return { title: 'yo whats up', sub: 'i got 10k+ trophies in clash royale btw' };
     return { title: 'How can I assist you?', sub: 'Advanced reasoning, coding, and generation.' };
   };
 
