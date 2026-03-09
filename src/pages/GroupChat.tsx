@@ -302,10 +302,24 @@ const GroupChat = () => {
         <button onClick={() => navigate('/groups')} className="p-1.5 text-muted-foreground hover:text-foreground">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <div className="flex-1 min-w-0">
-          <h1 className="text-sm font-bold truncate">{groupName}</h1>
-          <p className="text-[10px] text-muted-foreground">{members.length} members</p>
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          {groupAvatarUrl ? (
+            <img src={groupAvatarUrl} alt={groupName} className="w-8 h-8 rounded-full object-cover shrink-0" />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <span className="text-sm font-bold text-primary">{groupName[0]?.toUpperCase()}</span>
+            </div>
+          )}
+          <div className="min-w-0">
+            <h1 className="text-sm font-bold truncate">{groupName}</h1>
+            <p className="text-[10px] text-muted-foreground">{members.length} members</p>
+          </div>
         </div>
+        {isOwner && (
+          <button onClick={() => setShowSettings(true)} className="p-1.5 text-muted-foreground hover:text-foreground" title="Group settings">
+            <Settings className="w-4 h-4" />
+          </button>
+        )}
         <button onClick={copyInvite} className="p-1.5 text-muted-foreground hover:text-foreground" title="Copy invite link">
           <Link className="w-4 h-4" />
         </button>
