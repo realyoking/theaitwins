@@ -57,7 +57,8 @@ const Groups = () => {
   const joinGroup = async () => {
     if (!joinCode.trim() || !userId) return;
     const code = joinCode.trim();
-    const { data: group } = await supabase.from('groups').select('id').eq('invite_code', code).single();
+    const { data: groupId } = await supabase.rpc('get_group_id_by_invite_code', { _code: code });
+    const group = groupId ? { id: groupId } : null;
     if (!group) { toast({ title: 'Invalid code', variant: 'destructive' }); return; }
     const { error } = await supabase.from('group_members').insert({ group_id: group.id, user_id: userId });
     if (error) {
