@@ -14,7 +14,7 @@ import PluginSystem from '@/components/PluginSystem';
 import AnnouncementPopup from '@/components/AnnouncementPopup';
 
 const Index = () => {
-  const { user, theme, checkDailyReset, checkStreak, customThemeId, setCustomThemeId, customFont, plugins, setPlugins } = useAppStore();
+  const { user, theme, checkDailyReset, checkStreak, customThemeId, setCustomThemeId, customFont, plugins, setPlugins, setUser } = useAppStore();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pricingOpen, setPricingOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
