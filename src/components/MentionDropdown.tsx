@@ -1,4 +1,4 @@
-import { Ghost, Cpu, Skull, User } from 'lucide-react';
+import { Ghost, Cpu, Skull, User, Heart, Sandwich } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type MentionOption = {
