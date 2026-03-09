@@ -49,7 +49,9 @@ const GroupChat = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    init();
+    let cleanup: (() => void) | undefined;
+    init().then(fn => { cleanup = fn; });
+    return () => { cleanup?.(); };
   }, [groupId]);
 
   useEffect(() => {
