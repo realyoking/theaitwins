@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { subscribeToPush, unsubscribeFromPush } from '@/lib/push-notifications';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Settings as SettingsIcon, Trash2, Ghost, Cpu, Skull, Palette, Brain, Users, Bell, Volume2, Type, Image, Sparkles, Upload, Check, Copy, Camera } from 'lucide-react';
+import { X, Settings as SettingsIcon, Trash2, Ghost, Cpu, Skull, Palette, Brain, Users, Bell, Volume2, Type, Image, Sparkles, Upload, Check, Copy, Camera, Heart } from 'lucide-react';
 import { useAppStore, type AIModel, type CustomPersona, THEME_PRESETS, WALLPAPERS } from '@/lib/store';
 import { SYSTEM_PROMPTS } from '@/lib/prompts';
 import { EXTRA_WALLPAPERS } from './WallpaperPicker';
@@ -101,8 +101,8 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
   const { customFont, setCustomFont } = useAppStore();
 
   const inputClass = "w-full mt-1 px-3 py-2 bg-muted rounded-lg outline-none border border-transparent focus:border-muted-foreground/30 text-sm";
-  const modelIconComponents: Record<AIModel, any> = { anson67: Ghost, gemini: Cpu, chester: Skull };
-  const modelNames: Record<AIModel, string> = { anson67: 'Anson67', gemini: 'Gemini', chester: 'Chester' };
+  const modelIconComponents: Record<AIModel, any> = { anson67: Ghost, gemini: Cpu, chester: Skull, bobby: Heart };
+  const modelNames: Record<AIModel, string> = { anson67: 'Anson67', gemini: 'Gemini', chester: 'Chester', bobby: 'Bobby' };
 
   const toggleItem = (label: string, value: boolean, setter: (v: boolean) => void) => (
     <div key={label} className="flex items-center justify-between py-2">
@@ -303,7 +303,7 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                 <div>
                   <label className="text-[10px] font-bold text-muted-foreground uppercase mb-2 block">Select Model</label>
                   <div className="flex gap-2">
-                    {(['anson67', 'gemini', 'chester'] as AIModel[]).map(m => {
+                    {(['anson67', 'gemini', 'chester', 'bobby'] as AIModel[]).map(m => {
                       const Icon = modelIconComponents[m];
                       return (
                         <button key={m} onClick={() => setEditingModel(m)}
@@ -359,9 +359,9 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                   </label>
                   <p className="text-[9px] text-muted-foreground mb-2">Set an emoji icon for each model</p>
                   <div className="space-y-2">
-                    {(['anson67', 'gemini', 'chester'] as AIModel[]).map(m => (
+                    {(['anson67', 'gemini', 'chester', 'bobby'] as AIModel[]).map(m => (
                       <div key={m} className="flex items-center gap-3 bg-muted px-3 py-2 rounded-lg">
-                        <span className="text-lg">{modelIcons[m] || (m === 'anson67' ? '👻' : m === 'gemini' ? '🤖' : '💀')}</span>
+                        <span className="text-lg">{modelIcons[m] || (m === 'anson67' ? '👻' : m === 'gemini' ? '🤖' : m === 'chester' ? '💀' : '💕')}</span>
                         <span className="text-xs font-bold flex-1 capitalize">{modelNames[m]}</span>
                         <input
                           value={modelIcons[m] || ''}

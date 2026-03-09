@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Send, Users, Copy, Link, Ghost, Cpu, Skull, Settings, LogOut } from 'lucide-react';
+import { ArrowLeft, Send, Users, Copy, Link, Ghost, Cpu, Skull, Settings, LogOut, Heart } from 'lucide-react';
 import VoiceChat from '@/components/VoiceChat';
 import MentionDropdown from '@/components/MentionDropdown';
 import GroupSettings from '@/components/GroupSettings';
@@ -189,7 +189,7 @@ const GroupChat = () => {
     for (const mention of allMentions) {
       const mentionName = mention.slice(1).toLowerCase();
       // Skip AI model names
-      if (['anson67', 'gemini', 'chester'].includes(mentionName)) continue;
+      if (['anson67', 'gemini', 'chester', 'bobby'].includes(mentionName)) continue;
       // Find member by display name
       const mentionedMember = members.find(m => 
         m.display_name?.toLowerCase() === mentionName
@@ -206,7 +206,7 @@ const GroupChat = () => {
     }
 
     // Check for @mentions of AI models
-    const mentionRegex = /@(anson67|gemini|chester)/gi;
+    const mentionRegex = /@(anson67|gemini|chester|bobby)/gi;
     const mentions = text.match(mentionRegex);
 
     if (mentions) {
@@ -281,6 +281,7 @@ const GroupChat = () => {
   const getModelIcon = (model: string) => {
     if (model === 'anson67') return <Ghost className="w-4 h-4" />;
     if (model === 'chester') return <Skull className="w-4 h-4" />;
+    if (model === 'bobby') return <Heart className="w-4 h-4" />;
     return <Cpu className="w-4 h-4" />;
   };
 
