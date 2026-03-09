@@ -117,12 +117,18 @@ const GroupChat = () => {
       console.log('No members found for group:', groupId);
     }
 
-    // Realtime
+    // Realtime for messages and members
     const channel = supabase
       .channel(`group-${groupId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'group_messages', filter: `group_id=eq.${groupId}` },
         (payload) => {
           setMessages(prev => [...prev, payload.new as GroupMessage]);
+        }
+      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'group_members', filter: `group_id=eq.${groupId}` },
+        () => {
+          // Refetch members when membership changes
+          loadMembers();
         }
       )
       .subscribe();
