@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Send, Users, Copy, Link, Ghost, Cpu, Skull, Settings, LogOut, Heart } from 'lucide-react';
+import { ArrowLeft, Send, Users, Copy, Link, Ghost, Cpu, Skull, Settings, LogOut, Heart, ImageIcon, X, Mic, MicOff, Square, Circle, Loader2 } from 'lucide-react';
 import VoiceChat from '@/components/VoiceChat';
 import MentionDropdown from '@/components/MentionDropdown';
 import GroupSettings from '@/components/GroupSettings';
@@ -9,6 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
 import { useAppStore } from '@/lib/store';
 import { SYSTEM_PROMPTS } from '@/lib/prompts';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type GroupMessage = {
   id: string;
@@ -25,6 +27,7 @@ type Member = {
   role: string;
   display_name: string;
   email: string;
+  avatar_url?: string | null;
 };
 
 const GroupChat = () => {
@@ -43,10 +46,40 @@ const GroupChat = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showMentionDropdown, setShowMentionDropdown] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [imageData, setImageData] = useState<string | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [isListening, setIsListening] = useState(false);
   const feedRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Speech recognition setup
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.onresult = (e: any) => {
+        let transcript = '';
+        for (let i = 0; i < e.results.length; i++) {
+          transcript += e.results[i][0].transcript;
+        }
+        setInput(transcript);
+      };
+      recognition.onend = () => setIsListening(false);
+      recognitionRef.current = recognition;
+    }
+    return () => { recognitionRef.current?.stop(); };
+  }, []);
 
   useEffect(() => {
     let cleanup: (() => void) | undefined;
@@ -63,7 +96,6 @@ const GroupChat = () => {
     const lastAtIndex = input.lastIndexOf('@');
     if (lastAtIndex !== -1) {
       const textAfterAt = input.slice(lastAtIndex + 1);
-      // Check if there's no space after the @
       if (!textAfterAt.includes(' ')) {
         setMentionQuery(textAfterAt);
         setShowMentionDropdown(true);
@@ -76,13 +108,10 @@ const GroupChat = () => {
 
   const loadMembers = async () => {
     if (!groupId) return;
-    
     const { data: memberRows, error: membersError } = await supabase
       .from('group_members')
       .select('user_id, role')
       .eq('group_id', groupId);
-
-    console.log('Members query result:', { memberRows, membersError, groupId });
 
     if (membersError) {
       console.error('Error loading members:', membersError);
@@ -91,12 +120,10 @@ const GroupChat = () => {
 
     if (memberRows && memberRows.length > 0) {
       const userIds = memberRows.map(m => m.user_id);
-      const { data: profiles, error: profilesError } = await supabase
+      const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, display_name, email')
+        .select('id, display_name, email, avatar_url')
         .in('id', userIds);
-
-      console.log('Profiles query result:', { profiles, profilesError, userIds });
 
       const membersWithProfiles = memberRows.map(m => {
         const profile = profiles?.find(p => p.id === m.user_id);
@@ -105,53 +132,47 @@ const GroupChat = () => {
           role: m.role || 'member',
           display_name: profile?.display_name || 'Unknown',
           email: profile?.email || '',
+          avatar_url: profile?.avatar_url || null,
         };
       });
       setMembers(membersWithProfiles);
     } else {
-      console.log('No members found for group:', groupId);
       setMembers([]);
     }
   };
 
   const init = async () => {
+    setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate('/auth'); return; }
     setUserId(user.id);
 
-    // Load group
     const { data: group } = await supabase.from('groups').select('*').eq('id', groupId).single();
     if (!group) { navigate('/groups'); return; }
     setGroupName(group.name);
     setGroupDescription(group.description || '');
-    setGroupAvatarUrl((group as any).avatar_url || null);
+    setGroupAvatarUrl(group.avatar_url || null);
     setInviteCode(group.invite_code);
 
-    // Load messages
     const { data: msgs } = await supabase.from('group_messages').select('*').eq('group_id', groupId).order('created_at');
     if (msgs) setMessages(msgs);
 
-    // Load members
     await loadMembers();
+    setLoading(false);
 
-    // Realtime for messages and members
     const channel = supabase
       .channel(`group-${groupId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'group_messages', filter: `group_id=eq.${groupId}` },
         (payload) => {
           const newMsg = payload.new as GroupMessage;
           setMessages(prev => {
-            // Prevent duplicates (from optimistic insert or multiple subscriptions)
             if (prev.some(m => m.id === newMsg.id)) return prev;
             return [...prev, newMsg];
           });
         }
       )
       .on('postgres_changes', { event: '*', schema: 'public', table: 'group_members', filter: `group_id=eq.${groupId}` },
-        () => {
-          // Refetch members when membership changes
-          loadMembers();
-        }
+        () => { loadMembers(); }
       )
       .subscribe();
 
@@ -164,7 +185,7 @@ const GroupChat = () => {
     if (group) {
       setGroupName(group.name);
       setGroupDescription(group.description || '');
-      setGroupAvatarUrl((group as any).avatar_url || null);
+      setGroupAvatarUrl(group.avatar_url || null);
     }
     await loadMembers();
   };
@@ -181,29 +202,106 @@ const GroupChat = () => {
     inputRef.current?.focus();
   };
 
+  const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) {
+      const r = new FileReader();
+      r.onloadend = () => setImageData(r.result as string);
+      r.readAsDataURL(f);
+    }
+  };
+
+  const toggleVoice = () => {
+    if (!recognitionRef.current) return;
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+      mediaRecorder.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+        setRecordingTime(0);
+        // Use transcription from speech recognition if available
+        if (input.trim()) {
+          // Text is already set via speech recognition
+        }
+      };
+      mediaRecorder.start();
+      mediaRecorderRef.current = mediaRecorder;
+      setIsRecording(true);
+      setRecordingTime(0);
+      recordingTimerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
+
+      if (recognitionRef.current && !isListening) {
+        try {
+          recognitionRef.current.start();
+          setIsListening(true);
+        } catch {}
+      }
+    } catch (err) {
+      console.error('Failed to start recording:', err);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (isListening) {
+        recognitionRef.current?.stop();
+        setIsListening(false);
+      }
+    }
+  };
+
+  const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
+
   const sendMessage = async () => {
-    if (!input.trim() || !userId || !groupId || sending) return;
+    if ((!input.trim() && !imageData) || !userId || !groupId || sending) return;
     const text = input.trim();
+    const img = imageData;
     setInput('');
+    setImageData(null);
     setSending(true);
 
-    // Optimistic update - show message immediately
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    }
+
+    // Build content with image if present
+    let content = text;
+    if (img) {
+      content = img + (text ? '\n' + text : '');
+    }
+
+    // Optimistic update
     const optimisticId = crypto.randomUUID();
     const optimisticMsg: GroupMessage = {
       id: optimisticId,
       group_id: groupId,
       user_id: userId,
-      content: text,
+      content,
       is_ai: false,
       ai_model: '',
       created_at: new Date().toISOString(),
     };
     setMessages(prev => [...prev, optimisticMsg]);
 
-    // Insert user message
-    const { data: inserted } = await supabase.from('group_messages').insert({ group_id: groupId, user_id: userId, content: text }).select().single();
-    
-    // Replace optimistic message with real one
+    const { data: inserted } = await supabase.from('group_messages').insert({ group_id: groupId, user_id: userId, content }).select().single();
     if (inserted) {
       setMessages(prev => prev.map(m => m.id === optimisticId ? inserted as GroupMessage : m));
     }
@@ -213,14 +311,9 @@ const GroupChat = () => {
     const allMentions = text.match(userMentionRegex) || [];
     for (const mention of allMentions) {
       const mentionName = mention.slice(1).toLowerCase();
-      // Skip AI model names
       if (['anson67', 'gemini', 'chester', 'bobby', 'max'].includes(mentionName)) continue;
-      // Find member by display name
-      const mentionedMember = members.find(m => 
-        m.display_name?.toLowerCase() === mentionName
-      );
+      const mentionedMember = members.find(m => m.display_name?.toLowerCase() === mentionName);
       if (mentionedMember && mentionedMember.user_id !== userId) {
-        // Use the security definer function to insert notification
         await supabase.rpc('insert_mention_notification', {
           _user_id: mentionedMember.user_id,
           _title: `${getMemberName(userId)} mentioned you`,
@@ -237,7 +330,6 @@ const GroupChat = () => {
     if (mentions) {
       for (const mention of mentions) {
         const modelName = mention.slice(1).toLowerCase();
-        // Call AI
         try {
           const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
             method: 'POST',
@@ -257,7 +349,6 @@ const GroupChat = () => {
             const decoder = new TextDecoder();
             let fullText = '';
             let buffer = '';
-
             while (true) {
               const { done, value } = await reader.read();
               if (done) break;
@@ -277,7 +368,6 @@ const GroupChat = () => {
                 } catch {}
               }
             }
-
             if (fullText) {
               await supabase.from('group_messages').insert({
                 group_id: groupId,
@@ -299,7 +389,6 @@ const GroupChat = () => {
 
   const getModelPrompt = (model: string) => {
     const { globalPrompts } = useAppStore.getState();
-    // Priority: admin global prompt → default prompt
     return globalPrompts[model] || SYSTEM_PROMPTS[model] || 'You are a helpful AI assistant.';
   };
 
@@ -316,6 +405,12 @@ const GroupChat = () => {
     return m?.display_name || 'Unknown';
   };
 
+  const getMemberAvatar = (uid: string | null) => {
+    if (!uid) return null;
+    const m = members.find(m => m.user_id === uid);
+    return m?.avatar_url || null;
+  };
+
   const copyInvite = () => {
     const link = `${window.location.origin}/join/${inviteCode}`;
     navigator.clipboard.writeText(link);
@@ -326,23 +421,54 @@ const GroupChat = () => {
     if (!groupId || !userId || isOwner || leaving) return;
     const confirmed = window.confirm('Leave this group? You can rejoin later using an invite link.');
     if (!confirmed) return;
-
     setLeaving(true);
     const { error } = await supabase
       .from('group_members')
       .delete()
       .eq('group_id', groupId)
       .eq('user_id', userId);
-
     if (error) {
       toast({ title: 'Failed to leave group', description: error.message, variant: 'destructive' });
       setLeaving(false);
       return;
     }
-
     toast({ title: 'You left the group' });
     navigate('/groups');
   };
+
+  const isImageData = (content: string) => content.startsWith('data:image/');
+  const parseContent = (content: string) => {
+    if (isImageData(content)) {
+      const newlineIdx = content.indexOf('\n');
+      if (newlineIdx === -1) return { image: content, text: '' };
+      return { image: content.slice(0, newlineIdx), text: content.slice(newlineIdx + 1) };
+    }
+    return { image: null, text: content };
+  };
+
+  // Loading screen
+  if (loading) {
+    return (
+      <div className="h-[100dvh] flex flex-col bg-background">
+        <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card shrink-0">
+          <button onClick={() => navigate('/groups')} className="p-1.5 text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <Skeleton className="w-8 h-8 rounded-full" />
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <Skeleton className="h-3.5 w-32" />
+            <Skeleton className="h-2.5 w-16" />
+          </div>
+        </header>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground font-medium">Loading group...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-[100dvh] flex flex-col bg-background">
@@ -369,12 +495,7 @@ const GroupChat = () => {
           </button>
         )}
         {!isOwner && userId && (
-          <button
-            onClick={leaveGroup}
-            disabled={leaving}
-            className="p-1.5 text-muted-foreground hover:text-destructive disabled:opacity-50"
-            title="Leave group"
-          >
+          <button onClick={leaveGroup} disabled={leaving} className="p-1.5 text-muted-foreground hover:text-destructive disabled:opacity-50" title="Leave group">
             <LogOut className="w-4 h-4" />
           </button>
         )}
@@ -386,7 +507,6 @@ const GroupChat = () => {
         </button>
       </header>
 
-      {/* Voice Chat */}
       {userId && groupId && (
         <div className="shrink-0 px-4 py-2 border-b border-border">
           <VoiceChat groupId={groupId} userId={userId} />
@@ -399,9 +519,12 @@ const GroupChat = () => {
           <div className="flex flex-wrap gap-2">
             {members.map(m => (
               <div key={m.user_id} className="flex items-center gap-1.5 px-2 py-1 bg-muted rounded-lg">
-                <div className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[8px] font-bold">
-                  {(m.display_name || '?')[0].toUpperCase()}
-                </div>
+                <Avatar className="w-5 h-5">
+                  <AvatarImage src={m.avatar_url || ''} alt={m.display_name} />
+                  <AvatarFallback className="text-[8px] font-bold bg-primary text-primary-foreground">
+                    {(m.display_name || '?')[0].toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
                 <span className="text-[10px] font-medium">{m.display_name}</span>
                 {m.role === 'owner' && <span className="text-[8px] bg-primary text-primary-foreground px-1 rounded">owner</span>}
               </div>
@@ -419,28 +542,56 @@ const GroupChat = () => {
         <div className="text-center py-4">
           <p className="text-xs text-muted-foreground">Type <span className="font-mono bg-muted px-1 rounded">@</span> to mention AI or members</p>
         </div>
-        {messages.map(msg => (
-          <div key={msg.id} className={`flex gap-2 ${msg.user_id === userId ? 'justify-end' : 'justify-start'}`}>
-            {msg.user_id !== userId && (
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold ${msg.is_ai ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                {msg.is_ai ? getModelIcon(msg.ai_model) : getMemberName(msg.user_id)[0]?.toUpperCase()}
-              </div>
-            )}
-            <div className={`max-w-[75%] ${msg.user_id === userId ? 'bg-primary text-primary-foreground' : msg.is_ai ? 'bg-card border border-border' : 'bg-muted'} rounded-2xl px-3 py-2`}>
+        {messages.map(msg => {
+          const parsed = parseContent(msg.content);
+          const avatarUrl = getMemberAvatar(msg.user_id);
+          return (
+            <div key={msg.id} className={`flex gap-2 ${msg.user_id === userId ? 'justify-end' : 'justify-start'}`}>
               {msg.user_id !== userId && (
-                <p className={`text-[9px] font-bold mb-0.5 ${msg.is_ai ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {msg.is_ai ? msg.ai_model.toUpperCase() : getMemberName(msg.user_id)}
-                </p>
+                <Avatar className="w-7 h-7 shrink-0">
+                  {msg.is_ai ? (
+                    <AvatarFallback className="bg-primary text-primary-foreground">
+                      {getModelIcon(msg.ai_model)}
+                    </AvatarFallback>
+                  ) : (
+                    <>
+                      <AvatarImage src={avatarUrl || ''} alt={getMemberName(msg.user_id)} />
+                      <AvatarFallback className="text-[10px] font-bold bg-muted text-muted-foreground">
+                        {getMemberName(msg.user_id)[0]?.toUpperCase()}
+                      </AvatarFallback>
+                    </>
+                  )}
+                </Avatar>
               )}
-              <div className="text-xs prose prose-sm max-w-none">
-                <ReactMarkdown>{msg.content}</ReactMarkdown>
+              <div className={`max-w-[75%] ${msg.user_id === userId ? 'bg-primary text-primary-foreground' : msg.is_ai ? 'bg-card border border-border' : 'bg-muted'} rounded-2xl px-3 py-2`}>
+                {msg.user_id !== userId && (
+                  <p className={`text-[9px] font-bold mb-0.5 ${msg.is_ai ? 'text-primary' : 'text-muted-foreground'}`}>
+                    {msg.is_ai ? msg.ai_model.toUpperCase() : getMemberName(msg.user_id)}
+                  </p>
+                )}
+                {parsed.image && (
+                  <img src={parsed.image} className="max-w-full max-h-[200px] rounded-xl mb-1 object-cover" alt="Shared" />
+                )}
+                {parsed.text && (
+                  <div className="text-xs prose prose-sm max-w-none">
+                    <ReactMarkdown>{parsed.text}</ReactMarkdown>
+                  </div>
+                )}
+                <p className={`text-[8px] mt-1 ${msg.user_id === userId ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>
+                  {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </p>
               </div>
-              <p className={`text-[8px] mt-1 ${msg.user_id === userId ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>
-                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </p>
+              {msg.user_id === userId && (
+                <Avatar className="w-7 h-7 shrink-0">
+                  <AvatarImage src={avatarUrl || ''} alt="You" />
+                  <AvatarFallback className="text-[10px] font-bold bg-primary text-primary-foreground">
+                    {getMemberName(msg.user_id)[0]?.toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="shrink-0 p-3 border-t border-border bg-card relative">
@@ -450,23 +601,59 @@ const GroupChat = () => {
           onSelect={handleMentionSelect}
           visible={showMentionDropdown}
         />
-        <div className="flex gap-2">
+
+        {/* Image preview */}
+        {imageData && (
+          <div className="mb-2 relative inline-block">
+            <img src={imageData} className="h-14 w-14 object-cover rounded-xl border border-border shadow-sm" alt="Preview" />
+            <button onClick={() => { setImageData(null); if (fileRef.current) fileRef.current.value = ''; }}
+              className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground rounded-full p-1 shadow hover:scale-110 transition-transform">
+              <X className="w-2.5 h-2.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Recording indicator */}
+        {isRecording && (
+          <div className="mb-2 flex items-center gap-2 px-3 py-2 bg-destructive/10 rounded-xl border border-destructive/30">
+            <Circle className="w-3 h-3 text-destructive fill-destructive animate-pulse" />
+            <span className="text-xs font-bold text-destructive">Recording {formatTime(recordingTime)}</span>
+            <button onClick={stopRecording} className="ml-auto px-2 py-1 bg-destructive text-destructive-foreground rounded-lg text-[10px] font-bold">Stop</button>
+          </div>
+        )}
+
+        <div className="flex gap-2 items-end">
+          <button onClick={() => fileRef.current?.click()} className="p-2 text-muted-foreground hover:text-foreground rounded-full transition-colors shrink-0">
+            <ImageIcon className="w-4 h-4" />
+          </button>
+          <input type="file" ref={fileRef} className="hidden" accept="image/*" onChange={handleImage} />
+
+          {recognitionRef.current && (
+            <button onClick={toggleVoice}
+              className={`p-2 rounded-full transition-colors shrink-0 ${isListening ? 'text-destructive bg-destructive/10 animate-pulse' : 'text-muted-foreground hover:text-foreground'}`}
+              title="Voice to text">
+              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            </button>
+          )}
+
+          {!isRecording && (
+            <button onClick={startRecording} className="p-2 text-muted-foreground hover:text-foreground rounded-full transition-colors shrink-0" title="Record voice">
+              <Circle className="w-4 h-4" />
+            </button>
+          )}
+
           <input
             ref={inputRef}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => {
-              if (e.key === 'Enter' && !e.shiftKey && !showMentionDropdown) {
-                sendMessage();
-              }
-              if (e.key === 'Escape') {
-                setShowMentionDropdown(false);
-              }
+              if (e.key === 'Enter' && !e.shiftKey && !showMentionDropdown) sendMessage();
+              if (e.key === 'Escape') setShowMentionDropdown(false);
             }}
-            placeholder="Message... (@ to mention)"
+            placeholder={isListening ? 'Listening...' : isRecording ? 'Recording...' : 'Message... (@ to mention)'}
             className="flex-1 px-4 py-2.5 bg-muted rounded-xl text-sm outline-none border border-transparent focus:border-primary"
           />
-          <button onClick={sendMessage} disabled={sending || !input.trim()}
+          <button onClick={sendMessage} disabled={sending || (!input.trim() && !imageData)}
             className="px-4 py-2.5 bg-primary text-primary-foreground rounded-xl disabled:opacity-50">
             <Send className="w-4 h-4" />
           </button>

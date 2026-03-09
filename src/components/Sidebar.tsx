@@ -91,7 +91,7 @@ const Sidebar = ({ onOpenSettings, onOpenPricing, onOpenAnalytics, onOpenPlugins
       {menuOpenId === c.id && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setMenuOpenId(null)} />
-          <div className="absolute right-0 bottom-full mb-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[140px]">
+          <div className="absolute right-0 top-0 -translate-y-full z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[140px]" style={{ maxHeight: '300px', overflowY: 'auto' }}>
             <button onClick={() => startRename(c.id, c.name)} className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-accent">
               <Edit3 className="w-3 h-3" /> Rename
             </button>

@@ -287,12 +287,23 @@ const AdminPanel = () => {
     try {
       const targets = notiMode === 'everyone' ? profiles.map(p => p.id) : notiSelectedUsers;
       for (const uid of targets) {
+        // Insert in-app notification
         await supabase.from('notifications').insert({
           user_id: uid,
           title: notiTitle,
           body: notiBody,
           type: 'admin',
           link: notiLink || null,
+        });
+        // Also send real PWA push notification
+        await supabase.functions.invoke('send-push', {
+          body: {
+            action: 'send',
+            user_id: uid,
+            title: notiTitle,
+            body: notiBody,
+            url: notiLink || '/',
+          },
         });
       }
       toast({ title: `Notification sent to ${targets.length} user(s)` });
