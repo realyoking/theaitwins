@@ -342,6 +342,16 @@ const GroupChat = () => {
             <Settings className="w-4 h-4" />
           </button>
         )}
+        {!isOwner && userId && (
+          <button
+            onClick={leaveGroup}
+            disabled={leaving}
+            className="p-1.5 text-muted-foreground hover:text-destructive disabled:opacity-50"
+            title="Leave group"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        )}
         <button onClick={copyInvite} className="p-1.5 text-muted-foreground hover:text-foreground" title="Copy invite link">
           <Link className="w-4 h-4" />
         </button>

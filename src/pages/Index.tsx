@@ -62,7 +62,32 @@ const Index = () => {
     }
   }, [authLoading, authUser, navigate]);
 
-  const handleCheckout = (type: 'plan' | 'credits', value: string | number, cost: string) => {
+  useEffect(() => {
+    if (!authLoading && authUser && !user) {
+      const loadUserProfileFromCloud = async () => {
+        const { data, error } = await supabase
+          .from('user_app_settings')
+          .select('settings')
+          .eq('user_id', authUser.id)
+          .maybeSingle();
+
+        if (error) return;
+
+        const userProfile = data?.settings && typeof data.settings === 'object'
+          ? (data.settings as Record<string, any>).userProfile
+          : null;
+
+        if (userProfile?.name) {
+          setUser({
+            ...userProfile,
+            initial: userProfile.initial || userProfile.name.charAt(0).toUpperCase(),
+          });
+        }
+      };
+
+      loadUserProfileFromCloud();
+    }
+  }, [authLoading, authUser, user, setUser]);
     setPricingOpen(false);
     setCheckout({ open: true, title: type === 'plan' ? 'Upgrade Plan' : 'Buy Credits', cost, type, value });
   };
