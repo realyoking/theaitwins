@@ -101,8 +101,8 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
   const { customFont, setCustomFont } = useAppStore();
 
   const inputClass = "w-full mt-1 px-3 py-2 bg-muted rounded-lg outline-none border border-transparent focus:border-muted-foreground/30 text-sm";
-  const modelIconComponents: Record<AIModel, any> = { anson67: Ghost, gemini: Cpu, chester: Skull };
-  const modelNames: Record<AIModel, string> = { anson67: 'Anson67', gemini: 'Gemini', chester: 'Chester' };
+  const modelIconComponents: Record<AIModel, any> = { anson67: Ghost, gemini: Cpu, chester: Skull, bobby: Heart };
+  const modelNames: Record<AIModel, string> = { anson67: 'Anson67', gemini: 'Gemini', chester: 'Chester', bobby: 'Bobby' };
 
   const toggleItem = (label: string, value: boolean, setter: (v: boolean) => void) => (
     <div key={label} className="flex items-center justify-between py-2">
