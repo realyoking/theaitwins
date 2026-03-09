@@ -189,7 +189,7 @@ const GroupChat = () => {
     for (const mention of allMentions) {
       const mentionName = mention.slice(1).toLowerCase();
       // Skip AI model names
-      if (['anson67', 'gemini', 'chester', 'bobby'].includes(mentionName)) continue;
+      if (['anson67', 'gemini', 'chester', 'bobby', 'max'].includes(mentionName)) continue;
       // Find member by display name
       const mentionedMember = members.find(m => 
         m.display_name?.toLowerCase() === mentionName
