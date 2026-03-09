@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Send, Users, Copy, Link, Ghost, Cpu, Skull } from 'lucide-react';
 import VoiceChat from '@/components/VoiceChat';
+import MentionDropdown from '@/components/MentionDropdown';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
 import { useAppStore } from '@/lib/store';
@@ -21,7 +22,8 @@ type GroupMessage = {
 type Member = {
   user_id: string;
   role: string;
-  profiles: { display_name: string; email: string } | null;
+  display_name: string;
+  email: string;
 };
 
 const GroupChat = () => {
@@ -34,7 +36,10 @@ const GroupChat = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
+  const [showMentionDropdown, setShowMentionDropdown] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState('');
   const feedRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -45,6 +50,22 @@ const GroupChat = () => {
   useEffect(() => {
     if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
   }, [messages]);
+
+  // Handle @ mention detection
+  useEffect(() => {
+    const lastAtIndex = input.lastIndexOf('@');
+    if (lastAtIndex !== -1) {
+      const textAfterAt = input.slice(lastAtIndex + 1);
+      // Check if there's no space after the @
+      if (!textAfterAt.includes(' ')) {
+        setMentionQuery(textAfterAt);
+        setShowMentionDropdown(true);
+        return;
+      }
+    }
+    setShowMentionDropdown(false);
+    setMentionQuery('');
+  }, [input]);
 
   const init = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -61,9 +82,30 @@ const GroupChat = () => {
     const { data: msgs } = await supabase.from('group_messages').select('*').eq('group_id', groupId).order('created_at');
     if (msgs) setMessages(msgs);
 
-    // Load members
-    const { data: mems } = await supabase.from('group_members').select('user_id, role, profiles(display_name, email)').eq('group_id', groupId);
-    if (mems) setMembers(mems as any);
+    // Load members - separate queries due to no foreign key
+    const { data: memberRows } = await supabase
+      .from('group_members')
+      .select('user_id, role')
+      .eq('group_id', groupId);
+
+    if (memberRows && memberRows.length > 0) {
+      const userIds = memberRows.map(m => m.user_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, display_name, email')
+        .in('id', userIds);
+
+      const membersWithProfiles = memberRows.map(m => {
+        const profile = profiles?.find(p => p.id === m.user_id);
+        return {
+          user_id: m.user_id,
+          role: m.role || 'member',
+          display_name: profile?.display_name || 'Unknown',
+          email: profile?.email || '',
+        };
+      });
+      setMembers(membersWithProfiles);
+    }
 
     // Realtime
     const channel = supabase
@@ -76,6 +118,16 @@ const GroupChat = () => {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
+  };
+
+  const handleMentionSelect = (mentionName: string) => {
+    const lastAtIndex = input.lastIndexOf('@');
+    if (lastAtIndex !== -1) {
+      const newInput = input.slice(0, lastAtIndex) + '@' + mentionName + ' ';
+      setInput(newInput);
+    }
+    setShowMentionDropdown(false);
+    inputRef.current?.focus();
   };
 
   const sendMessage = async () => {
@@ -96,7 +148,7 @@ const GroupChat = () => {
       if (['anson67', 'gemini', 'chester'].includes(mentionName)) continue;
       // Find member by display name
       const mentionedMember = members.find(m => 
-        m.profiles?.display_name?.toLowerCase() === mentionName
+        m.display_name?.toLowerCase() === mentionName
       );
       if (mentionedMember && mentionedMember.user_id !== userId) {
         // Use the security definer function to insert notification
@@ -191,7 +243,7 @@ const GroupChat = () => {
   const getMemberName = (uid: string | null) => {
     if (!uid) return 'AI';
     const m = members.find(m => m.user_id === uid);
-    return m?.profiles?.display_name || 'Unknown';
+    return m?.display_name || 'Unknown';
   };
 
   const copyInvite = () => {
@@ -232,9 +284,9 @@ const GroupChat = () => {
             {members.map(m => (
               <div key={m.user_id} className="flex items-center gap-1.5 px-2 py-1 bg-muted rounded-lg">
                 <div className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[8px] font-bold">
-                  {(m.profiles?.display_name || '?')[0].toUpperCase()}
+                  {(m.display_name || '?')[0].toUpperCase()}
                 </div>
-                <span className="text-[10px] font-medium">{m.profiles?.display_name}</span>
+                <span className="text-[10px] font-medium">{m.display_name}</span>
                 {m.role === 'owner' && <span className="text-[8px] bg-primary text-primary-foreground px-1 rounded">owner</span>}
               </div>
             ))}
@@ -249,7 +301,7 @@ const GroupChat = () => {
 
       <div ref={feedRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3 custom-scrollbar">
         <div className="text-center py-4">
-          <p className="text-xs text-muted-foreground">Type <span className="font-mono bg-muted px-1 rounded">@anson67</span>, <span className="font-mono bg-muted px-1 rounded">@gemini</span>, or <span className="font-mono bg-muted px-1 rounded">@chester</span> to mention an AI</p>
+          <p className="text-xs text-muted-foreground">Type <span className="font-mono bg-muted px-1 rounded">@</span> to mention AI or members</p>
         </div>
         {messages.map(msg => (
           <div key={msg.id} className={`flex gap-2 ${msg.user_id === userId ? 'justify-end' : 'justify-start'}`}>
@@ -275,13 +327,27 @@ const GroupChat = () => {
         ))}
       </div>
 
-      <div className="shrink-0 p-3 border-t border-border bg-card">
+      <div className="shrink-0 p-3 border-t border-border bg-card relative">
+        <MentionDropdown
+          query={mentionQuery}
+          members={members.map(m => ({ user_id: m.user_id, display_name: m.display_name }))}
+          onSelect={handleMentionSelect}
+          visible={showMentionDropdown}
+        />
         <div className="flex gap-2">
           <input
+            ref={inputRef}
             value={input}
             onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-            placeholder="Message... (use @anson67 to mention AI)"
+            onKeyDown={e => {
+              if (e.key === 'Enter' && !e.shiftKey && !showMentionDropdown) {
+                sendMessage();
+              }
+              if (e.key === 'Escape') {
+                setShowMentionDropdown(false);
+              }
+            }}
+            placeholder="Message... (@ to mention)"
             className="flex-1 px-4 py-2.5 bg-muted rounded-xl text-sm outline-none border border-transparent focus:border-primary"
           />
           <button onClick={sendMessage} disabled={sending || !input.trim()}
