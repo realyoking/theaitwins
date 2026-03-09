@@ -22,6 +22,7 @@ const Index = () => {
   const [pluginsOpen, setPluginsOpen] = useState(false);
   const [authUser, setAuthUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
   const navigate = useNavigate();
   const [checkout, setCheckout] = useState<{ open: boolean; title: string; cost: string; type: 'plan' | 'credits'; value: string | number }>({
     open: false, title: '', cost: '', type: 'plan', value: ''
