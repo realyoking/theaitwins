@@ -134,6 +134,7 @@ const Index = () => {
       <AnalyticsModal open={analyticsOpen} onClose={() => setAnalyticsOpen(false)} />
       <PluginSystem open={pluginsOpen} onClose={() => setPluginsOpen(false)} plugins={plugins} setPlugins={setPlugins} />
       <AnnouncementPopup />
+      <PwaNotificationPrompt />
     </div>
   );
 };
