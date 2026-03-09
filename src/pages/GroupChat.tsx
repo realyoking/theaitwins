@@ -187,8 +187,26 @@ const GroupChat = () => {
     setInput('');
     setSending(true);
 
+    // Optimistic update - show message immediately
+    const optimisticId = crypto.randomUUID();
+    const optimisticMsg: GroupMessage = {
+      id: optimisticId,
+      group_id: groupId,
+      user_id: userId,
+      content: text,
+      is_ai: false,
+      ai_model: '',
+      created_at: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, optimisticMsg]);
+
     // Insert user message
-    await supabase.from('group_messages').insert({ group_id: groupId, user_id: userId, content: text });
+    const { data: inserted } = await supabase.from('group_messages').insert({ group_id: groupId, user_id: userId, content: text }).select().single();
+    
+    // Replace optimistic message with real one
+    if (inserted) {
+      setMessages(prev => prev.map(m => m.id === optimisticId ? inserted as GroupMessage : m));
+    }
 
     // Check for @mentions of users → send notifications
     const userMentionRegex = /@(\w+)/gi;
