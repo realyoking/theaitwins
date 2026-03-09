@@ -83,17 +83,25 @@ const GroupChat = () => {
     if (msgs) setMessages(msgs);
 
     // Load members - separate queries due to no foreign key
-    const { data: memberRows } = await supabase
+    const { data: memberRows, error: membersError } = await supabase
       .from('group_members')
       .select('user_id, role')
       .eq('group_id', groupId);
 
+    console.log('Members query result:', { memberRows, membersError, groupId });
+
+    if (membersError) {
+      console.error('Error loading members:', membersError);
+    }
+
     if (memberRows && memberRows.length > 0) {
       const userIds = memberRows.map(m => m.user_id);
-      const { data: profiles } = await supabase
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, display_name, email')
         .in('id', userIds);
+
+      console.log('Profiles query result:', { profiles, profilesError, userIds });
 
       const membersWithProfiles = memberRows.map(m => {
         const profile = profiles?.find(p => p.id === m.user_id);
@@ -105,6 +113,8 @@ const GroupChat = () => {
         };
       });
       setMembers(membersWithProfiles);
+    } else {
+      console.log('No members found for group:', groupId);
     }
 
     // Realtime
