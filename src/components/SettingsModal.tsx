@@ -303,7 +303,7 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                 <div>
                   <label className="text-[10px] font-bold text-muted-foreground uppercase mb-2 block">Select Model</label>
                   <div className="flex gap-2">
-                    {(['anson67', 'gemini', 'chester'] as AIModel[]).map(m => {
+                    {(['anson67', 'gemini', 'chester', 'bobby'] as AIModel[]).map(m => {
                       const Icon = modelIconComponents[m];
                       return (
                         <button key={m} onClick={() => setEditingModel(m)}
