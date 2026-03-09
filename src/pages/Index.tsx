@@ -116,7 +116,7 @@ const Index = () => {
     }
   };
 
-  if (authLoading || !authUser) return null;
+  if (authLoading || !authUser || profileLoading) return null;
   if (!user) return <Onboarding />;
 
   return (
