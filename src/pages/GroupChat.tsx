@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Send, Users, Copy, Link, Ghost, Cpu, Skull, Settings, LogOut } from 'lucide-react';
+import { ArrowLeft, Send, Users, Copy, Link, Ghost, Cpu, Skull, Settings, LogOut, Heart } from 'lucide-react';
 import VoiceChat from '@/components/VoiceChat';
 import MentionDropdown from '@/components/MentionDropdown';
 import GroupSettings from '@/components/GroupSettings';
