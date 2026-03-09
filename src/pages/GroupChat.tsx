@@ -49,7 +49,9 @@ const GroupChat = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    init();
+    let cleanup: (() => void) | undefined;
+    init().then(fn => { cleanup = fn; });
+    return () => { cleanup?.(); };
   }, [groupId]);
 
   useEffect(() => {
@@ -137,7 +139,12 @@ const GroupChat = () => {
       .channel(`group-${groupId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'group_messages', filter: `group_id=eq.${groupId}` },
         (payload) => {
-          setMessages(prev => [...prev, payload.new as GroupMessage]);
+          const newMsg = payload.new as GroupMessage;
+          setMessages(prev => {
+            // Prevent duplicates (from optimistic insert or multiple subscriptions)
+            if (prev.some(m => m.id === newMsg.id)) return prev;
+            return [...prev, newMsg];
+          });
         }
       )
       .on('postgres_changes', { event: '*', schema: 'public', table: 'group_members', filter: `group_id=eq.${groupId}` },
@@ -180,8 +187,26 @@ const GroupChat = () => {
     setInput('');
     setSending(true);
 
+    // Optimistic update - show message immediately
+    const optimisticId = crypto.randomUUID();
+    const optimisticMsg: GroupMessage = {
+      id: optimisticId,
+      group_id: groupId,
+      user_id: userId,
+      content: text,
+      is_ai: false,
+      ai_model: '',
+      created_at: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, optimisticMsg]);
+
     // Insert user message
-    await supabase.from('group_messages').insert({ group_id: groupId, user_id: userId, content: text });
+    const { data: inserted } = await supabase.from('group_messages').insert({ group_id: groupId, user_id: userId, content: text }).select().single();
+    
+    // Replace optimistic message with real one
+    if (inserted) {
+      setMessages(prev => prev.map(m => m.id === optimisticId ? inserted as GroupMessage : m));
+    }
 
     // Check for @mentions of users → send notifications
     const userMentionRegex = /@(\w+)/gi;
