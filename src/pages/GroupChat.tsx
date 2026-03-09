@@ -67,6 +67,46 @@ const GroupChat = () => {
     setMentionQuery('');
   }, [input]);
 
+  const loadMembers = async () => {
+    if (!groupId) return;
+    
+    const { data: memberRows, error: membersError } = await supabase
+      .from('group_members')
+      .select('user_id, role')
+      .eq('group_id', groupId);
+
+    console.log('Members query result:', { memberRows, membersError, groupId });
+
+    if (membersError) {
+      console.error('Error loading members:', membersError);
+      return;
+    }
+
+    if (memberRows && memberRows.length > 0) {
+      const userIds = memberRows.map(m => m.user_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, display_name, email')
+        .in('id', userIds);
+
+      console.log('Profiles query result:', { profiles, profilesError, userIds });
+
+      const membersWithProfiles = memberRows.map(m => {
+        const profile = profiles?.find(p => p.id === m.user_id);
+        return {
+          user_id: m.user_id,
+          role: m.role || 'member',
+          display_name: profile?.display_name || 'Unknown',
+          email: profile?.email || '',
+        };
+      });
+      setMembers(membersWithProfiles);
+    } else {
+      console.log('No members found for group:', groupId);
+      setMembers([]);
+    }
+  };
+
   const init = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate('/auth'); return; }
@@ -82,37 +122,21 @@ const GroupChat = () => {
     const { data: msgs } = await supabase.from('group_messages').select('*').eq('group_id', groupId).order('created_at');
     if (msgs) setMessages(msgs);
 
-    // Load members - separate queries due to no foreign key
-    const { data: memberRows } = await supabase
-      .from('group_members')
-      .select('user_id, role')
-      .eq('group_id', groupId);
+    // Load members
+    await loadMembers();
 
-    if (memberRows && memberRows.length > 0) {
-      const userIds = memberRows.map(m => m.user_id);
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, display_name, email')
-        .in('id', userIds);
-
-      const membersWithProfiles = memberRows.map(m => {
-        const profile = profiles?.find(p => p.id === m.user_id);
-        return {
-          user_id: m.user_id,
-          role: m.role || 'member',
-          display_name: profile?.display_name || 'Unknown',
-          email: profile?.email || '',
-        };
-      });
-      setMembers(membersWithProfiles);
-    }
-
-    // Realtime
+    // Realtime for messages and members
     const channel = supabase
       .channel(`group-${groupId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'group_messages', filter: `group_id=eq.${groupId}` },
         (payload) => {
           setMessages(prev => [...prev, payload.new as GroupMessage]);
+        }
+      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'group_members', filter: `group_id=eq.${groupId}` },
+        () => {
+          // Refetch members when membership changes
+          loadMembers();
         }
       )
       .subscribe();

@@ -40,8 +40,13 @@ const Groups = () => {
     if (!newName.trim() || !userId) return;
     const { data: group, error } = await supabase.from('groups').insert({ name: newName.trim(), description: newDesc.trim(), created_by: userId }).select().single();
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return; }
-    // Add self as owner
-    await supabase.from('group_members').insert({ group_id: group.id, user_id: userId, role: 'owner' });
+    // Add self as owner - wait for this to complete
+    const { error: memberError } = await supabase.from('group_members').insert({ group_id: group.id, user_id: userId, role: 'owner' });
+    if (memberError) { 
+      console.error('Failed to add member:', memberError);
+      toast({ title: 'Error adding you as member', description: memberError.message, variant: 'destructive' }); 
+      return; 
+    }
     toast({ title: 'Group created!' });
     setShowCreate(false);
     setNewName('');
