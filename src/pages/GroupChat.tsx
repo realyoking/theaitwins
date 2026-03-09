@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Send, Users, Copy, Link, Ghost, Cpu, Skull } from 'lucide-react';
+import { ArrowLeft, Send, Users, Copy, Link, Ghost, Cpu, Skull, Settings } from 'lucide-react';
 import VoiceChat from '@/components/VoiceChat';
 import MentionDropdown from '@/components/MentionDropdown';
+import GroupSettings from '@/components/GroupSettings';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
 import { useAppStore } from '@/lib/store';
@@ -32,10 +33,13 @@ const GroupChat = () => {
   const [members, setMembers] = useState<Member[]>([]);
   const [input, setInput] = useState('');
   const [groupName, setGroupName] = useState('');
+  const [groupDescription, setGroupDescription] = useState('');
+  const [groupAvatarUrl, setGroupAvatarUrl] = useState<string | null>(null);
   const [inviteCode, setInviteCode] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [showMentionDropdown, setShowMentionDropdown] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
   const feedRef = useRef<HTMLDivElement>(null);
