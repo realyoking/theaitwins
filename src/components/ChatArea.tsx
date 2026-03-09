@@ -157,9 +157,10 @@ const ChatArea = () => {
               {modelBtn('gemini')}
               {modelBtn('chester')}
               {modelBtn('bobby')}
+              {modelBtn('max')}
             </div>
             <span className="hidden md:inline text-[10px] text-muted-foreground font-medium">
-              {model === 'anson67' ? 'Anson67' : model === 'gemini' ? 'Gemini' : model === 'chester' ? 'Chester' : 'Bobby'}
+              {model === 'anson67' ? 'Anson67' : model === 'gemini' ? 'Gemini' : model === 'chester' ? 'Chester' : model === 'bobby' ? 'Bobby' : 'Max'}
             </span>
           </div>
           <div className="flex items-center gap-1">
