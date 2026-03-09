@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Ghost, Cpu, Menu, Code, Skull, Search, X, Maximize2, Minimize2, BookTemplate, Wand2, Layers, Heart } from 'lucide-react';
+import { Ghost, Cpu, Menu, Code, Skull, Search, X, Maximize2, Minimize2, BookTemplate, Wand2, Layers, Heart, Sandwich } from 'lucide-react';
 import { useAppStore, useMessages, type AIModel } from '@/lib/store';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
@@ -94,6 +94,7 @@ const ChatArea = () => {
     gemini: <Cpu className="w-3.5 h-3.5" />,
     chester: <Skull className="w-3.5 h-3.5" />,
     bobby: <Heart className="w-3.5 h-3.5" />,
+    max: <Sandwich className="w-3.5 h-3.5" />,
   };
 
   const modelBtn = (m: AIModel) => (
@@ -114,6 +115,7 @@ const ChatArea = () => {
   const getGreeting = () => {
     if (model === 'anson67') return { title: 'Sup. What do you want?', sub: 'I write perfect code, answer anything, and roast you.' };
     if (model === 'chester') return { title: '主人，有咩吩咐？', sub: 'Chester聽命於你。' };
+    if (model === 'max') return { title: 'yo whats up', sub: 'i got 10k+ trophies in clash royale btw' };
     return { title: 'How can I assist you?', sub: 'Advanced reasoning, coding, and generation.' };
   };
 
@@ -156,9 +158,10 @@ const ChatArea = () => {
               {modelBtn('gemini')}
               {modelBtn('chester')}
               {modelBtn('bobby')}
+              {modelBtn('max')}
             </div>
             <span className="hidden md:inline text-[10px] text-muted-foreground font-medium">
-              {model === 'anson67' ? 'Anson67' : model === 'gemini' ? 'Gemini' : model === 'chester' ? 'Chester' : 'Bobby'}
+              {model === 'anson67' ? 'Anson67' : model === 'gemini' ? 'Gemini' : model === 'chester' ? 'Chester' : model === 'bobby' ? 'Bobby' : 'Max'}
             </span>
           </div>
           <div className="flex items-center gap-1">

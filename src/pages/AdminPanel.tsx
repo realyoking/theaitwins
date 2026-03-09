@@ -5,7 +5,7 @@ import {
   Shield, Users, ArrowLeft, Trash2, Plus, RefreshCw, Megaphone, Cpu, Plug, Eye,
   ChevronLeft, MessageSquare, Settings, CreditCard, Upload, X, ToggleLeft, ToggleRight,
   Search, UserCheck, UserX, Edit, Save, ExternalLink, FileText, RotateCcw, Bell, Send,
-  Ghost, Skull, Heart, User
+  Ghost, Skull, Heart, User, Sandwich
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { SYSTEM_PROMPTS } from '@/lib/prompts';
@@ -59,7 +59,7 @@ const AdminPanel = () => {
   const [notiSending, setNotiSending] = useState(false);
 
   // Prompt editing
-  const [promptModel, setPromptModel] = useState<'anson67' | 'gemini' | 'chester' | 'bobby'>('anson67');
+  const [promptModel, setPromptModel] = useState<'anson67' | 'gemini' | 'chester' | 'bobby' | 'max'>('anson67');
   const [promptText, setPromptText] = useState('');
   const [promptsLoaded, setPromptsLoaded] = useState(false);
   const [savedPrompts, setSavedPrompts] = useState<Record<string, string>>({});
@@ -613,13 +613,13 @@ const AdminPanel = () => {
             <h2 className="text-sm font-bold">Global System Prompts</h2>
             <p className="text-xs text-muted-foreground">These prompts apply to ALL users. Users can still override them in their own settings.</p>
 
-            <div className="flex gap-2">
-              {(['anson67', 'gemini', 'chester', 'bobby'] as const).map(m => (
+            <div className="flex gap-2 flex-wrap">
+              {(['anson67', 'gemini', 'chester', 'bobby', 'max'] as const).map(m => (
                 <button key={m} onClick={() => setPromptModel(m)}
-                  className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-bold border transition-all capitalize flex items-center justify-center gap-1.5 ${
+                  className={`flex-1 min-w-[80px] px-3 py-2.5 rounded-xl text-xs font-bold border transition-all capitalize flex items-center justify-center gap-1.5 ${
                     promptModel === m ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted border-border hover:bg-accent'}`}>
-                  {m === 'anson67' ? <Ghost className="w-3.5 h-3.5" /> : m === 'gemini' ? <Cpu className="w-3.5 h-3.5" /> : m === 'chester' ? <Skull className="w-3.5 h-3.5" /> : <Heart className="w-3.5 h-3.5" />}
-                  <span className="capitalize">{m === 'anson67' ? 'Anson67' : m === 'gemini' ? 'Gemini' : m === 'chester' ? 'Chester' : 'Bobby'}</span>
+                  {m === 'anson67' ? <Ghost className="w-3.5 h-3.5" /> : m === 'gemini' ? <Cpu className="w-3.5 h-3.5" /> : m === 'chester' ? <Skull className="w-3.5 h-3.5" /> : m === 'bobby' ? <Heart className="w-3.5 h-3.5" /> : <Sandwich className="w-3.5 h-3.5" />}
+                  <span className="capitalize">{m === 'anson67' ? 'Anson67' : m === 'gemini' ? 'Gemini' : m === 'chester' ? 'Chester' : m === 'bobby' ? 'Bobby' : 'Max'}</span>
                 </button>
               ))}
             </div>

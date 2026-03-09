@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { subscribeToPush, unsubscribeFromPush } from '@/lib/push-notifications';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Settings as SettingsIcon, Trash2, Ghost, Cpu, Skull, Palette, Brain, Users, Bell, Volume2, Type, Image, Sparkles, Upload, Check, Copy, Camera, Heart } from 'lucide-react';
+import { X, Settings as SettingsIcon, Trash2, Ghost, Cpu, Skull, Palette, Brain, Users, Bell, Volume2, Type, Image, Sparkles, Upload, Check, Copy, Camera, Heart, Sandwich } from 'lucide-react';
 import { useAppStore, type AIModel, type CustomPersona, THEME_PRESETS, WALLPAPERS } from '@/lib/store';
 import { SYSTEM_PROMPTS } from '@/lib/prompts';
 import { EXTRA_WALLPAPERS } from './WallpaperPicker';
@@ -101,8 +101,8 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
   const { customFont, setCustomFont } = useAppStore();
 
   const inputClass = "w-full mt-1 px-3 py-2 bg-muted rounded-lg outline-none border border-transparent focus:border-muted-foreground/30 text-sm";
-  const modelIconComponents: Record<AIModel, any> = { anson67: Ghost, gemini: Cpu, chester: Skull, bobby: Heart };
-  const modelNames: Record<AIModel, string> = { anson67: 'Anson67', gemini: 'Gemini', chester: 'Chester', bobby: 'Bobby' };
+  const modelIconComponents: Record<AIModel, any> = { anson67: Ghost, gemini: Cpu, chester: Skull, bobby: Heart, max: Sandwich };
+  const modelNames: Record<AIModel, string> = { anson67: 'Anson67', gemini: 'Gemini', chester: 'Chester', bobby: 'Bobby', max: 'Max' };
 
   const toggleItem = (label: string, value: boolean, setter: (v: boolean) => void) => (
     <div key={label} className="flex items-center justify-between py-2">
