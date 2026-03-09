@@ -150,6 +150,20 @@ const GroupChat = () => {
     return () => { supabase.removeChannel(channel); };
   };
 
+  const reloadGroup = async () => {
+    if (!groupId || !userId) return;
+    const { data: group } = await supabase.from('groups').select('*').eq('id', groupId).single();
+    if (group) {
+      setGroupName(group.name);
+      setGroupDescription(group.description || '');
+      setGroupAvatarUrl((group as any).avatar_url || null);
+    }
+    await loadMembers();
+  };
+
+  const isOwner = members.some(m => m.user_id === userId && m.role === 'owner');
+  };
+
   const handleMentionSelect = (mentionName: string) => {
     const lastAtIndex = input.lastIndexOf('@');
     if (lastAtIndex !== -1) {
