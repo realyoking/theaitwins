@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Ghost, Cpu, Menu, Code, Skull, Search, X, Maximize2, Minimize2, BookTemplate, Wand2, Layers, Heart } from 'lucide-react';
+import { Ghost, Cpu, Menu, Code, Skull, Search, X, Maximize2, Minimize2, BookTemplate, Wand2, Layers, Heart, Sandwich } from 'lucide-react';
 import { useAppStore, useMessages, type AIModel } from '@/lib/store';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
