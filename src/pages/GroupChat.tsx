@@ -296,6 +296,28 @@ const GroupChat = () => {
     toast({ title: 'Invite link copied!' });
   };
 
+  const leaveGroup = async () => {
+    if (!groupId || !userId || isOwner || leaving) return;
+    const confirmed = window.confirm('Leave this group? You can rejoin later using an invite link.');
+    if (!confirmed) return;
+
+    setLeaving(true);
+    const { error } = await supabase
+      .from('group_members')
+      .delete()
+      .eq('group_id', groupId)
+      .eq('user_id', userId);
+
+    if (error) {
+      toast({ title: 'Failed to leave group', description: error.message, variant: 'destructive' });
+      setLeaving(false);
+      return;
+    }
+
+    toast({ title: 'You left the group' });
+    navigate('/groups');
+  };
+
   return (
     <div className="h-[100dvh] flex flex-col bg-background">
       <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card shrink-0">
