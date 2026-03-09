@@ -359,9 +359,9 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                   </label>
                   <p className="text-[9px] text-muted-foreground mb-2">Set an emoji icon for each model</p>
                   <div className="space-y-2">
-                    {(['anson67', 'gemini', 'chester'] as AIModel[]).map(m => (
+                    {(['anson67', 'gemini', 'chester', 'bobby'] as AIModel[]).map(m => (
                       <div key={m} className="flex items-center gap-3 bg-muted px-3 py-2 rounded-lg">
-                        <span className="text-lg">{modelIcons[m] || (m === 'anson67' ? '👻' : m === 'gemini' ? '🤖' : '💀')}</span>
+                        <span className="text-lg">{modelIcons[m] || (m === 'anson67' ? '👻' : m === 'gemini' ? '🤖' : m === 'chester' ? '💀' : '💕')}</span>
                         <span className="text-xs font-bold flex-1 capitalize">{modelNames[m]}</span>
                         <input
                           value={modelIcons[m] || ''}

@@ -613,11 +613,11 @@ const AdminPanel = () => {
             <p className="text-xs text-muted-foreground">These prompts apply to ALL users. Users can still override them in their own settings.</p>
 
             <div className="flex gap-2">
-              {(['anson67', 'gemini', 'chester'] as const).map(m => (
+              {(['anson67', 'gemini', 'chester', 'bobby'] as const).map(m => (
                 <button key={m} onClick={() => setPromptModel(m)}
                   className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-bold border transition-all capitalize ${
                     promptModel === m ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted border-border hover:bg-accent'}`}>
-                  {m === 'anson67' ? '👻 Anson67' : m === 'gemini' ? '🤖 Gemini' : '💀 Chester'}
+                  {m === 'anson67' ? '👻 Anson67' : m === 'gemini' ? '🤖 Gemini' : m === 'chester' ? '💀 Chester' : '💕 Bobby'}
                 </button>
               ))}
             </div>
