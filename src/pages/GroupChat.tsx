@@ -67,22 +67,9 @@ const GroupChat = () => {
     setMentionQuery('');
   }, [input]);
 
-  const init = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { navigate('/auth'); return; }
-    setUserId(user.id);
-
-    // Load group
-    const { data: group } = await supabase.from('groups').select('*').eq('id', groupId).single();
-    if (!group) { navigate('/groups'); return; }
-    setGroupName(group.name);
-    setInviteCode(group.invite_code);
-
-    // Load messages
-    const { data: msgs } = await supabase.from('group_messages').select('*').eq('group_id', groupId).order('created_at');
-    if (msgs) setMessages(msgs);
-
-    // Load members - separate queries due to no foreign key
+  const loadMembers = async () => {
+    if (!groupId) return;
+    
     const { data: memberRows, error: membersError } = await supabase
       .from('group_members')
       .select('user_id, role')
@@ -92,6 +79,7 @@ const GroupChat = () => {
 
     if (membersError) {
       console.error('Error loading members:', membersError);
+      return;
     }
 
     if (memberRows && memberRows.length > 0) {
@@ -115,7 +103,27 @@ const GroupChat = () => {
       setMembers(membersWithProfiles);
     } else {
       console.log('No members found for group:', groupId);
+      setMembers([]);
     }
+  };
+
+  const init = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { navigate('/auth'); return; }
+    setUserId(user.id);
+
+    // Load group
+    const { data: group } = await supabase.from('groups').select('*').eq('id', groupId).single();
+    if (!group) { navigate('/groups'); return; }
+    setGroupName(group.name);
+    setInviteCode(group.invite_code);
+
+    // Load messages
+    const { data: msgs } = await supabase.from('group_messages').select('*').eq('group_id', groupId).order('created_at');
+    if (msgs) setMessages(msgs);
+
+    // Load members
+    await loadMembers();
 
     // Realtime for messages and members
     const channel = supabase
