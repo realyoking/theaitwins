@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Send, Users, Copy, Link, Ghost, Cpu, Skull, Settings, LogOut, Heart, ImageIcon, X, Mic, MicOff, Square, Circle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Send, Users, Copy, Link, Ghost, Cpu, Skull, Settings, LogOut, Heart, ImageIcon, X, Mic, MicOff, Square, Circle, Loader2, Share2, Volume2, VolumeX, Check, MoreHorizontal, Pin, Trash2, Sparkles } from 'lucide-react';
 import VoiceChat from '@/components/VoiceChat';
 import MentionDropdown from '@/components/MentionDropdown';
 import GroupSettings from '@/components/GroupSettings';
@@ -11,6 +11,7 @@ import { useAppStore } from '@/lib/store';
 import { SYSTEM_PROMPTS } from '@/lib/prompts';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { motion } from 'framer-motion';
 
 type GroupMessage = {
   id: string;
@@ -28,6 +29,101 @@ type Member = {
   display_name: string;
   email: string;
   avatar_url?: string | null;
+};
+
+// URL regex for link embedding
+const URL_REGEX = /(https?:\/\/[^\s<]+)/g;
+
+const LinkEmbed = ({ url }: { url: string }) => {
+  let displayUrl = url;
+  try { displayUrl = new URL(url).hostname; } catch {}
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer"
+      className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary rounded-md text-xs hover:bg-primary/20 transition-colors break-all">
+      <Link className="w-3 h-3 shrink-0" />
+      {displayUrl}
+    </a>
+  );
+};
+
+const renderContentWithLinks = (text: string) => {
+  const parts = text.split(URL_REGEX);
+  return parts.map((part, i) =>
+    URL_REGEX.test(part) ? <LinkEmbed key={i} url={part} /> : part
+  );
+};
+
+// Typing indicator component
+const TypingBubble = ({ names }: { names: string[] }) => {
+  if (names.length === 0) return null;
+  const label = names.length <= 2 ? names.join(' and ') : `${names[0]} and ${names.length - 1} others`;
+  return (
+    <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 px-2 py-1">
+      <div className="flex items-center gap-1 bg-muted px-3 py-1.5 rounded-full">
+        {[0, 1, 2].map(i => (
+          <span key={i} className="w-1.5 h-1.5 bg-muted-foreground/60 rounded-full animate-pulse" style={{ animationDelay: `${i * 0.15}s` }} />
+        ))}
+      </div>
+      <span className="text-[10px] text-muted-foreground">{label} typing...</span>
+    </motion.div>
+  );
+};
+
+// Message action bar
+const MessageActions = ({ msg, onCopy }: { msg: GroupMessage; onCopy: () => void }) => {
+  const [copied, setCopied] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
+
+  const handleCopy = () => {
+    const parsed = parseContentStatic(msg.content);
+    navigator.clipboard.writeText(parsed.text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    onCopy();
+  };
+
+  const handleShare = () => {
+    const parsed = parseContentStatic(msg.content);
+    if (navigator.share) {
+      navigator.share({ text: parsed.text });
+    } else {
+      handleCopy();
+    }
+  };
+
+  const handleTTS = () => {
+    if (speaking) { speechSynthesis.cancel(); setSpeaking(false); return; }
+    const parsed = parseContentStatic(msg.content);
+    const u = new SpeechSynthesisUtterance(parsed.text);
+    u.onend = () => setSpeaking(false);
+    u.onerror = () => setSpeaking(false);
+    speechSynthesis.speak(u);
+    setSpeaking(true);
+  };
+
+  return (
+    <div className="flex items-center gap-0.5 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+      <button onClick={handleCopy} className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors" title="Copy">
+        {copied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+      </button>
+      <button onClick={handleShare} className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors" title="Share">
+        <Share2 className="w-3 h-3" />
+      </button>
+      <button onClick={handleTTS} className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors" title="Read aloud">
+        {speaking ? <VolumeX className="w-3 h-3 text-primary" /> : <Volume2 className="w-3 h-3" />}
+      </button>
+    </div>
+  );
+};
+
+// Static helper for parsing content
+const parseContentStatic = (content: string) => {
+  if (content.startsWith('data:image/')) {
+    const newlineIdx = content.indexOf('\n');
+    if (newlineIdx === -1) return { image: content, text: '' };
+    return { image: content.slice(0, newlineIdx), text: content.slice(newlineIdx + 1) };
+  }
+  return { image: null, text: content };
 };
 
 const GroupChat = () => {
@@ -51,6 +147,7 @@ const GroupChat = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [isListening, setIsListening] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const feedRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -58,6 +155,8 @@ const GroupChat = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const presenceChannelRef = useRef<any>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -113,10 +212,7 @@ const GroupChat = () => {
       .select('user_id, role')
       .eq('group_id', groupId);
 
-    if (membersError) {
-      console.error('Error loading members:', membersError);
-      return;
-    }
+    if (membersError) { console.error('Error loading members:', membersError); return; }
 
     if (memberRows && memberRows.length > 0) {
       const userIds = memberRows.map(m => m.user_id);
@@ -160,6 +256,7 @@ const GroupChat = () => {
     await loadMembers();
     setLoading(false);
 
+    // Realtime messages
     const channel = supabase
       .channel(`group-${groupId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'group_messages', filter: `group_id=eq.${groupId}` },
@@ -176,8 +273,44 @@ const GroupChat = () => {
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    // Presence for typing indicators
+    const presenceChannel = supabase.channel(`presence-${groupId}`, { config: { presence: { key: user.id } } });
+    
+    presenceChannel.on('presence', { event: 'sync' }, () => {
+      const state = presenceChannel.presenceState();
+      const typing: string[] = [];
+      for (const [uid, presences] of Object.entries(state)) {
+        if (uid === user.id) continue;
+        const p = presences as any[];
+        if (p.some((pr: any) => pr.typing)) {
+          typing.push(uid);
+        }
+      }
+      setTypingUsers(typing);
+    });
+
+    presenceChannel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await presenceChannel.track({ typing: false });
+      }
+    });
+
+    presenceChannelRef.current = presenceChannel;
+
+    return () => {
+      supabase.removeChannel(channel);
+      supabase.removeChannel(presenceChannel);
+    };
   };
+
+  const broadcastTyping = useCallback(() => {
+    if (!presenceChannelRef.current) return;
+    presenceChannelRef.current.track({ typing: true });
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      presenceChannelRef.current?.track({ typing: false });
+    }, 2000);
+  }, []);
 
   const reloadGroup = async () => {
     if (!groupId || !userId) return;
@@ -213,13 +346,8 @@ const GroupChat = () => {
 
   const toggleVoice = () => {
     if (!recognitionRef.current) return;
-    if (isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    } else {
-      recognitionRef.current.start();
-      setIsListening(true);
-    }
+    if (isListening) { recognitionRef.current.stop(); setIsListening(false); }
+    else { recognitionRef.current.start(); setIsListening(true); }
   };
 
   const startRecording = async () => {
@@ -227,43 +355,28 @@ const GroupChat = () => {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
       audioChunksRef.current = [];
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) audioChunksRef.current.push(e.data);
-      };
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
       mediaRecorder.onstop = () => {
         stream.getTracks().forEach(t => t.stop());
         if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
         setRecordingTime(0);
-        // Use transcription from speech recognition if available
-        if (input.trim()) {
-          // Text is already set via speech recognition
-        }
       };
       mediaRecorder.start();
       mediaRecorderRef.current = mediaRecorder;
       setIsRecording(true);
       setRecordingTime(0);
       recordingTimerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
-
       if (recognitionRef.current && !isListening) {
-        try {
-          recognitionRef.current.start();
-          setIsListening(true);
-        } catch {}
+        try { recognitionRef.current.start(); setIsListening(true); } catch {}
       }
-    } catch (err) {
-      console.error('Failed to start recording:', err);
-    }
+    } catch (err) { console.error('Failed to start recording:', err); }
   };
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
-      if (isListening) {
-        recognitionRef.current?.stop();
-        setIsListening(false);
-      }
+      if (isListening) { recognitionRef.current?.stop(); setIsListening(false); }
     }
   };
 
@@ -277,16 +390,13 @@ const GroupChat = () => {
     setImageData(null);
     setSending(true);
 
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
-    }
+    // Stop typing indicator
+    presenceChannelRef.current?.track({ typing: false });
 
-    // Build content with image if present
+    if (isListening) { recognitionRef.current?.stop(); setIsListening(false); }
+
     let content = text;
-    if (img) {
-      content = img + (text ? '\n' + text : '');
-    }
+    if (img) { content = img + (text ? '\n' + text : ''); }
 
     // Optimistic update
     const optimisticId = crypto.randomUUID();
@@ -306,20 +416,34 @@ const GroupChat = () => {
       setMessages(prev => prev.map(m => m.id === optimisticId ? inserted as GroupMessage : m));
     }
 
-    // Check for @mentions of users → send notifications
-    const userMentionRegex = /@(\w+)/gi;
-    const allMentions = text.match(userMentionRegex) || [];
-    for (const mention of allMentions) {
-      const mentionName = mention.slice(1).toLowerCase();
-      if (['anson67', 'gemini', 'chester', 'bobby', 'max'].includes(mentionName)) continue;
-      const mentionedMember = members.find(m => m.display_name?.toLowerCase() === mentionName);
-      if (mentionedMember && mentionedMember.user_id !== userId) {
-        await supabase.rpc('insert_mention_notification', {
-          _user_id: mentionedMember.user_id,
-          _title: `${getMemberName(userId)} mentioned you`,
-          _body: text.length > 100 ? text.slice(0, 100) + '...' : text,
-          _link: `/group/${groupId}`,
-        });
+    // Handle @everyone - notify all members
+    if (text.toLowerCase().includes('@everyone')) {
+      for (const member of members) {
+        if (member.user_id !== userId) {
+          await supabase.rpc('insert_mention_notification', {
+            _user_id: member.user_id,
+            _title: `${getMemberName(userId)} mentioned @everyone`,
+            _body: text.length > 100 ? text.slice(0, 100) + '...' : text,
+            _link: `/group/${groupId}`,
+          });
+        }
+      }
+    } else {
+      // Check individual @mentions
+      const userMentionRegex = /@(\w+)/gi;
+      const allMentions = text.match(userMentionRegex) || [];
+      for (const mention of allMentions) {
+        const mentionName = mention.slice(1).toLowerCase();
+        if (['anson67', 'gemini', 'chester', 'bobby', 'max'].includes(mentionName)) continue;
+        const mentionedMember = members.find(m => m.display_name?.toLowerCase() === mentionName);
+        if (mentionedMember && mentionedMember.user_id !== userId) {
+          await supabase.rpc('insert_mention_notification', {
+            _user_id: mentionedMember.user_id,
+            _title: `${getMemberName(userId)} mentioned you`,
+            _body: text.length > 100 ? text.slice(0, 100) + '...' : text,
+            _link: `/group/${groupId}`,
+          });
+        }
       }
     }
 
@@ -378,9 +502,7 @@ const GroupChat = () => {
               });
             }
           }
-        } catch (err) {
-          console.error('AI error:', err);
-        }
+        } catch (err) { console.error('AI error:', err); }
       }
     }
 
@@ -411,6 +533,10 @@ const GroupChat = () => {
     return m?.avatar_url || null;
   };
 
+  const getTypingNames = () => {
+    return typingUsers.map(uid => getMemberName(uid)).filter(n => n !== 'Unknown');
+  };
+
   const copyInvite = () => {
     const link = `${window.location.origin}/join/${inviteCode}`;
     navigator.clipboard.writeText(link);
@@ -422,11 +548,7 @@ const GroupChat = () => {
     const confirmed = window.confirm('Leave this group? You can rejoin later using an invite link.');
     if (!confirmed) return;
     setLeaving(true);
-    const { error } = await supabase
-      .from('group_members')
-      .delete()
-      .eq('group_id', groupId)
-      .eq('user_id', userId);
+    const { error } = await supabase.from('group_members').delete().eq('group_id', groupId).eq('user_id', userId);
     if (error) {
       toast({ title: 'Failed to leave group', description: error.message, variant: 'destructive' });
       setLeaving(false);
@@ -436,14 +558,27 @@ const GroupChat = () => {
     navigate('/groups');
   };
 
-  const isImageData = (content: string) => content.startsWith('data:image/');
-  const parseContent = (content: string) => {
-    if (isImageData(content)) {
-      const newlineIdx = content.indexOf('\n');
-      if (newlineIdx === -1) return { image: content, text: '' };
-      return { image: content.slice(0, newlineIdx), text: content.slice(newlineIdx + 1) };
-    }
-    return { image: null, text: content };
+  const parseContent = (content: string) => parseContentStatic(content);
+
+  // Render @mentions with highlight
+  const renderText = (text: string, isUserMsg: boolean) => {
+    // Highlight @mentions
+    const mentionRegex = /(@\w+)/g;
+    const parts = text.split(mentionRegex);
+    return parts.map((part, i) => {
+      if (part.match(mentionRegex)) {
+        return (
+          <span key={i} className={`font-bold ${isUserMsg ? 'text-primary-foreground/90' : 'text-primary'}`}>
+            {part}
+          </span>
+        );
+      }
+      // Render links within text
+      const linkParts = part.split(URL_REGEX);
+      return linkParts.map((lp, j) =>
+        URL_REGEX.test(lp) ? <LinkEmbed key={`${i}-${j}`} url={lp} /> : lp
+      );
+    });
   };
 
   // Loading screen
@@ -540,14 +675,15 @@ const GroupChat = () => {
 
       <div ref={feedRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3 custom-scrollbar">
         <div className="text-center py-4">
-          <p className="text-xs text-muted-foreground">Type <span className="font-mono bg-muted px-1 rounded">@</span> to mention AI or members</p>
+          <p className="text-xs text-muted-foreground">Type <span className="font-mono bg-muted px-1 rounded">@</span> to mention AI, members, or @everyone</p>
         </div>
         {messages.map(msg => {
           const parsed = parseContent(msg.content);
           const avatarUrl = getMemberAvatar(msg.user_id);
+          const isMe = msg.user_id === userId;
           return (
-            <div key={msg.id} className={`flex gap-2 ${msg.user_id === userId ? 'justify-end' : 'justify-start'}`}>
-              {msg.user_id !== userId && (
+            <div key={msg.id} className={`flex gap-2 ${isMe ? 'justify-end' : 'justify-start'} group`}>
+              {!isMe && (
                 <Avatar className="w-7 h-7 shrink-0">
                   {msg.is_ai ? (
                     <AvatarFallback className="bg-primary text-primary-foreground">
@@ -563,25 +699,32 @@ const GroupChat = () => {
                   )}
                 </Avatar>
               )}
-              <div className={`max-w-[75%] ${msg.user_id === userId ? 'bg-primary text-primary-foreground' : msg.is_ai ? 'bg-card border border-border' : 'bg-muted'} rounded-2xl px-3 py-2`}>
-                {msg.user_id !== userId && (
-                  <p className={`text-[9px] font-bold mb-0.5 ${msg.is_ai ? 'text-primary' : 'text-muted-foreground'}`}>
-                    {msg.is_ai ? msg.ai_model.toUpperCase() : getMemberName(msg.user_id)}
+              <div className="flex flex-col max-w-[75%]">
+                <div className={`${isMe ? 'bg-primary text-primary-foreground' : msg.is_ai ? 'bg-card border border-border' : 'bg-muted'} rounded-2xl px-3 py-2`}>
+                  {!isMe && (
+                    <p className={`text-[9px] font-bold mb-0.5 ${msg.is_ai ? 'text-primary' : 'text-muted-foreground'}`}>
+                      {msg.is_ai ? msg.ai_model.toUpperCase() : getMemberName(msg.user_id)}
+                    </p>
+                  )}
+                  {parsed.image && (
+                    <img src={parsed.image} className="max-w-full max-h-[200px] rounded-xl mb-1 object-cover" alt="Shared" />
+                  )}
+                  {parsed.text && (
+                    msg.is_ai ? (
+                      <div className="text-xs prose prose-sm max-w-none dark:prose-invert">
+                        <ReactMarkdown>{parsed.text}</ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="text-xs whitespace-pre-wrap">{renderText(parsed.text, isMe)}</p>
+                    )
+                  )}
+                  <p className={`text-[8px] mt-1 ${isMe ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>
+                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
-                )}
-                {parsed.image && (
-                  <img src={parsed.image} className="max-w-full max-h-[200px] rounded-xl mb-1 object-cover" alt="Shared" />
-                )}
-                {parsed.text && (
-                  <div className="text-xs prose prose-sm max-w-none">
-                    <ReactMarkdown>{parsed.text}</ReactMarkdown>
-                  </div>
-                )}
-                <p className={`text-[8px] mt-1 ${msg.user_id === userId ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>
-                  {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
+                </div>
+                <MessageActions msg={msg} onCopy={() => {}} />
               </div>
-              {msg.user_id === userId && (
+              {isMe && (
                 <Avatar className="w-7 h-7 shrink-0">
                   <AvatarImage src={avatarUrl || ''} alt="You" />
                   <AvatarFallback className="text-[10px] font-bold bg-primary text-primary-foreground">
@@ -592,6 +735,7 @@ const GroupChat = () => {
             </div>
           );
         })}
+        <TypingBubble names={getTypingNames()} />
       </div>
 
       <div className="shrink-0 p-3 border-t border-border bg-card relative">
@@ -602,7 +746,6 @@ const GroupChat = () => {
           visible={showMentionDropdown}
         />
 
-        {/* Image preview */}
         {imageData && (
           <div className="mb-2 relative inline-block">
             <img src={imageData} className="h-14 w-14 object-cover rounded-xl border border-border shadow-sm" alt="Preview" />
@@ -613,7 +756,6 @@ const GroupChat = () => {
           </div>
         )}
 
-        {/* Recording indicator */}
         {isRecording && (
           <div className="mb-2 flex items-center gap-2 px-3 py-2 bg-destructive/10 rounded-xl border border-destructive/30">
             <Circle className="w-3 h-3 text-destructive fill-destructive animate-pulse" />
@@ -645,7 +787,7 @@ const GroupChat = () => {
           <input
             ref={inputRef}
             value={input}
-            onChange={e => setInput(e.target.value)}
+            onChange={e => { setInput(e.target.value); broadcastTyping(); }}
             onKeyDown={e => {
               if (e.key === 'Enter' && !e.shiftKey && !showMentionDropdown) sendMessage();
               if (e.key === 'Escape') setShowMentionDropdown(false);

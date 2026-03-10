@@ -1,10 +1,10 @@
-import { Ghost, Cpu, Skull, User, Heart, Sandwich } from 'lucide-react';
+import { Ghost, Cpu, Skull, User, Heart, Sandwich, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type MentionOption = {
   id: string;
   name: string;
-  type: 'ai' | 'user';
+  type: 'ai' | 'user' | 'special';
   icon?: React.ReactNode;
 };
 
@@ -23,15 +23,15 @@ const AI_MODELS: MentionOption[] = [
   { id: 'max', name: 'max', type: 'ai', icon: <Sandwich className="w-4 h-4" /> },
 ];
 
+const SPECIAL_MENTIONS: MentionOption[] = [
+  { id: 'everyone', name: 'everyone', type: 'special', icon: <Users className="w-4 h-4" /> },
+];
+
 const MentionDropdown = ({ query, members, onSelect, visible }: MentionDropdownProps) => {
   const searchTerm = query.toLowerCase();
   
-  // Filter AI models
-  const filteredAI = AI_MODELS.filter(m => 
-    m.name.toLowerCase().includes(searchTerm)
-  );
-  
-  // Filter members
+  const filteredSpecial = SPECIAL_MENTIONS.filter(m => m.name.includes(searchTerm));
+  const filteredAI = AI_MODELS.filter(m => m.name.toLowerCase().includes(searchTerm));
   const filteredMembers = members
     .filter(m => m.display_name?.toLowerCase().includes(searchTerm))
     .map(m => ({
@@ -41,7 +41,7 @@ const MentionDropdown = ({ query, members, onSelect, visible }: MentionDropdownP
       icon: <User className="w-4 h-4" />,
     }));
 
-  const allOptions = [...filteredAI, ...filteredMembers];
+  const allOptions = [...filteredSpecial, ...filteredAI, ...filteredMembers];
 
   if (!visible || allOptions.length === 0) return null;
 
@@ -53,7 +53,26 @@ const MentionDropdown = ({ query, members, onSelect, visible }: MentionDropdownP
         exit={{ opacity: 0, y: 10 }}
         className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-border rounded-xl shadow-lg overflow-hidden max-h-64 overflow-y-auto"
       >
-        {/* AI Models Section - Pinned at top */}
+        {/* @everyone */}
+        {filteredSpecial.length > 0 && (
+          <div className="p-2 border-b border-border">
+            {filteredSpecial.map(option => (
+              <button
+                key={option.id}
+                onClick={() => onSelect(option.name)}
+                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted rounded-lg transition-colors"
+              >
+                <div className="w-6 h-6 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center">
+                  {option.icon}
+                </div>
+                <span className="text-sm font-medium">@{option.name}</span>
+                <span className="text-[10px] text-amber-600 bg-amber-500/10 px-1.5 py-0.5 rounded ml-auto">All</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* AI Models */}
         {filteredAI.length > 0 && (
           <div className="p-2 border-b border-border">
             <p className="text-[9px] font-bold text-muted-foreground uppercase px-2 mb-1">AI Models</p>
@@ -73,7 +92,7 @@ const MentionDropdown = ({ query, members, onSelect, visible }: MentionDropdownP
           </div>
         )}
 
-        {/* Members Section */}
+        {/* Members */}
         {filteredMembers.length > 0 && (
           <div className="p-2">
             <p className="text-[9px] font-bold text-muted-foreground uppercase px-2 mb-1">Members</p>
