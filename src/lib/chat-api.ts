@@ -79,19 +79,43 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
       return msg;
     });
 
-    const resp = await fetch(CHAT_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-      },
-      body: JSON.stringify({ messages: history, systemPrompt: finalSysPrompt, mode }),
-      signal: abortController.signal,
-    });
+    // Retry logic for rate limits
+    let resp: Response | null = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      resp = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ messages: history, systemPrompt: finalSysPrompt, mode }),
+        signal: abortController.signal,
+      });
 
-    if (!resp.ok) {
-      const errorData = await resp.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP Error ${resp.status}`);
+      if (resp.status === 429) {
+        const wait = (attempt + 1) * 3000; // 3s, 6s, 9s
+        store.addMessage({ role: 'bot', type: 'text', text: `⏳ Rate limited, retrying in ${wait / 1000}s...` });
+        await new Promise(r => setTimeout(r, wait));
+        // Remove the retry message
+        const st = useAppStore.getState();
+        const aid = st.activeConversationId;
+        const updated = st.conversations.map(c => {
+          if (c.id !== aid) return c;
+          const msgs = c.messages.filter((_, i) => i !== c.messages.length - 1);
+          return { ...c, messages: msgs };
+        });
+        useAppStore.setState({ conversations: updated });
+        continue;
+      }
+      break;
+    }
+
+    if (!resp || !resp.ok) {
+      const errorData = await resp?.json().catch(() => ({})) || {};
+      if (resp?.status === 429) {
+        throw new Error('Rate limit exceeded. Free models have 20 req/min limit. Please wait a moment and try again.');
+      }
+      throw new Error(errorData.error || `HTTP Error ${resp?.status}`);
     }
 
     if (!resp.body) throw new Error('No response body');
