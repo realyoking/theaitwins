@@ -407,23 +407,8 @@ const GroupChat = () => {
     let content = text;
     if (img) { content = img + (text ? '\n' + text : ''); }
 
-    // Optimistic update
-    const optimisticId = crypto.randomUUID();
-    const optimisticMsg: GroupMessage = {
-      id: optimisticId,
-      group_id: groupId,
-      user_id: userId,
-      content,
-      is_ai: false,
-      ai_model: '',
-      created_at: new Date().toISOString(),
-    };
-    setMessages(prev => [...prev, optimisticMsg]);
-
-    const { data: inserted } = await supabase.from('group_messages').insert({ group_id: groupId, user_id: userId, content }).select().single();
-    if (inserted) {
-      setMessages(prev => prev.map(m => m.id === optimisticId ? inserted as GroupMessage : m));
-    }
+    // Insert message — realtime subscription will add it to the UI
+    await supabase.from('group_messages').insert({ group_id: groupId, user_id: userId, content });
 
     // Handle @everyone - notify all members
     if (text.toLowerCase().includes('@everyone')) {
