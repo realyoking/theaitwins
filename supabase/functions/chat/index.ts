@@ -8,7 +8,7 @@ const corsHeaders = {
 // ── AI Config ──────────────────────────────────────
 // Change model or endpoint here anytime!
 const AI_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
-const DEFAULT_MODEL = "meta-llama/llama-4-scout:free";
+const DEFAULT_MODEL = "meta-llama/llama-3.3-70b-instruct:free";
 // ────────────────────────────────────────────────────
 
 serve(async (req) => {

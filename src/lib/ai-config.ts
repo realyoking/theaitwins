@@ -12,13 +12,13 @@ export const AI_CONFIG = {
   endpoint: 'https://openrouter.ai/api/v1/chat/completions',
 
   // Default model — change this anytime!
-  // Free models on OpenRouter:
-  //   - "google/gemma-3-4b-it:free"                  (fast, good quality)
-  //   - "meta-llama/llama-4-scout:free"              (good general)
-  //   - "microsoft/phi-4:free"                       (compact, smart)
-  //   - "qwen/qwen3-14b:free"                       (good reasoning)
-  //   - "deepseek/deepseek-r1:free"                  (reasoning)
-  defaultModel: 'meta-llama/llama-4-scout:free',
+  // Free models on OpenRouter (append :free):
+  //   - "meta-llama/llama-3.3-70b-instruct:free"    (GPT-4 level, 131k context)
+  //   - "google/gemini-2.0-flash-exp:free"           (1M context, multimodal)
+  //   - "deepseek/deepseek-r1-0528:free"             (reasoning)
+  //   - "qwen/qwen3-235b-a22b:free"                 (thinking, 40k context)
+  //   - "mistralai/devstral-2512:free"               (coding)
+  defaultModel: 'meta-llama/llama-3.3-70b-instruct:free',
 
   // The secret name stored in Supabase secrets
   apiKeySecret: 'OPENROUTER_API_KEY',
