@@ -8,7 +8,7 @@ const corsHeaders = {
 // ── AI Config ──────────────────────────────────────
 // Change model or endpoint here anytime!
 const AI_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
-const DEFAULT_MODEL = "deepseek/deepseek-chat-v3-0324:free";
+const DEFAULT_MODEL = "google/gemma-3-4b-it:free";
 // ────────────────────────────────────────────────────
 
 serve(async (req) => {
