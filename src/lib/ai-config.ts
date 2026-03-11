@@ -18,7 +18,7 @@ export const AI_CONFIG = {
   //   - "microsoft/phi-4:free"                       (compact, smart)
   //   - "qwen/qwen3-14b:free"                       (good reasoning)
   //   - "deepseek/deepseek-r1:free"                  (reasoning)
-  defaultModel: 'google/gemma-3-4b-it:free',
+  defaultModel: 'meta-llama/llama-4-scout:free',
 
   // The secret name stored in Supabase secrets
   apiKeySecret: 'OPENROUTER_API_KEY',
