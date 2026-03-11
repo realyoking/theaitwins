@@ -256,22 +256,31 @@ const GroupChat = () => {
     await loadMembers();
     setLoading(false);
 
-    // Realtime messages
+    // Realtime messages — use a stable channel name and handle dedup properly
     const channel = supabase
-      .channel(`group-${groupId}`)
+      .channel(`group-messages-${groupId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'group_messages', filter: `group_id=eq.${groupId}` },
         (payload) => {
           const newMsg = payload.new as GroupMessage;
           setMessages(prev => {
-            if (prev.some(m => m.id === newMsg.id)) return prev;
-            return [...prev, newMsg];
+            // Deduplicate: skip if already exists, also replace optimistic messages
+            const withoutOptimistic = prev.filter(m => {
+              // Remove optimistic msg from same user with same content
+              if (m.user_id === newMsg.user_id && m.content === newMsg.content && m.id !== newMsg.id) {
+                return false;
+              }
+              return m.id !== newMsg.id;
+            });
+            return [...withoutOptimistic, newMsg];
           });
         }
       )
       .on('postgres_changes', { event: '*', schema: 'public', table: 'group_members', filter: `group_id=eq.${groupId}` },
         () => { loadMembers(); }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+      });
 
     // Presence for typing indicators
     const presenceChannel = supabase.channel(`presence-${groupId}`, { config: { presence: { key: user.id } } });

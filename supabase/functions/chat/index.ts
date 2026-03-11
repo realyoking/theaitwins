@@ -5,111 +5,85 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// ── AI Config ──────────────────────────────────────
+// Change model or endpoint here anytime!
+const AI_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
+const DEFAULT_MODEL = "deepseek/deepseek-chat-v3-0324:free";
+// ────────────────────────────────────────────────────
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { messages, systemPrompt, mode } = await req.json();
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
+    const { messages, systemPrompt, mode, model } = await req.json();
+    const API_KEY = Deno.env.get("OPENROUTER_API_KEY");
+    if (!API_KEY) throw new Error("OPENROUTER_API_KEY is not configured");
 
     const finalSystemPrompt = systemPrompt || "You are a helpful AI assistant.";
+    const chosenModel = model || DEFAULT_MODEL;
 
-    // Build Gemini-compatible contents array
-    const contents: any[] = [];
-    
+    // Build OpenAI-compatible messages
+    const chatMessages: any[] = [
+      { role: "system", content: finalSystemPrompt },
+    ];
+
     for (const m of messages) {
-      const role = m.role === "assistant" ? "model" : "user";
-      const parts: any[] = [];
-      
+      const role = m.role === "assistant" ? "assistant" : "user";
       if (m.imageData) {
-        parts.push({ text: m.content || "What do you see in this image?" });
-        // Extract base64 from data URL
+        const content: any[] = [
+          { type: "text", text: m.content || "What do you see in this image?" },
+        ];
         const match = m.imageData.match(/^data:([^;]+);base64,(.+)$/);
         if (match) {
-          parts.push({ inline_data: { mime_type: match[1], data: match[2] } });
+          content.push({
+            type: "image_url",
+            image_url: { url: m.imageData },
+          });
         }
+        chatMessages.push({ role, content });
       } else {
-        parts.push({ text: m.content });
+        chatMessages.push({ role, content: m.content });
       }
-      
-      contents.push({ role, parts });
     }
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: finalSystemPrompt }] },
-          contents,
-        }),
-      }
-    );
+    const response = await fetch(AI_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${API_KEY}`,
+        "HTTP-Referer": "https://theaitwins.lovable.app",
+        "X-Title": "The AI Twins",
+      },
+      body: JSON.stringify({
+        model: chosenModel,
+        messages: chatMessages,
+        stream: true,
+      }),
+    });
 
     if (!response.ok) {
       const t = await response.text();
-      console.error("Gemini API error:", response.status, t);
+      console.error("OpenRouter API error:", response.status, t);
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded, please try again later." }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      return new Response(JSON.stringify({ error: "AI API error" }), {
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ error: "Payment required or insufficient credits." }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ error: `AI API error: ${response.status}` }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Transform Gemini SSE stream to OpenAI-compatible SSE stream
-    const { readable, writable } = new TransformStream();
-    const writer = writable.getWriter();
-    const encoder = new TextEncoder();
-
-    (async () => {
-      const reader = response.body!.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-
-          let idx;
-          while ((idx = buffer.indexOf("\n")) !== -1) {
-            let line = buffer.slice(0, idx);
-            buffer = buffer.slice(idx + 1);
-            if (line.endsWith("\r")) line = line.slice(0, -1);
-            if (!line.startsWith("data: ")) continue;
-            const jsonStr = line.slice(6).trim();
-            if (!jsonStr) continue;
-
-            try {
-              const parsed = JSON.parse(jsonStr);
-              const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (text) {
-                // Convert to OpenAI-compatible format
-                const chunk = JSON.stringify({
-                  choices: [{ delta: { content: text } }],
-                });
-                await writer.write(encoder.encode(`data: ${chunk}\n\n`));
-              }
-            } catch {}
-          }
-        }
-        await writer.write(encoder.encode("data: [DONE]\n\n"));
-      } catch (e) {
-        console.error("Stream error:", e);
-      } finally {
-        writer.close();
-      }
-    })();
-
-    return new Response(readable, {
+    // Stream the SSE response directly (OpenRouter uses OpenAI-compatible SSE)
+    return new Response(response.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
