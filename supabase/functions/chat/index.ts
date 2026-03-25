@@ -5,24 +5,20 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// ── AI Config ──────────────────────────────────────
-// Change model or endpoint here anytime!
-const AI_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
-const DEFAULT_MODEL = "meta-llama/llama-3.3-70b-instruct:free";
-// ────────────────────────────────────────────────────
+const AI_ENDPOINT = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const DEFAULT_MODEL = "google/gemini-3-flash-preview";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const { messages, systemPrompt, mode, model } = await req.json();
-    const API_KEY = Deno.env.get("OPENROUTER_API_KEY");
-    if (!API_KEY) throw new Error("OPENROUTER_API_KEY is not configured");
+    const API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     const finalSystemPrompt = systemPrompt || "You are a helpful AI assistant.";
     const chosenModel = model || DEFAULT_MODEL;
 
-    // Build OpenAI-compatible messages
     const chatMessages: any[] = [
       { role: "system", content: finalSystemPrompt },
     ];
@@ -51,8 +47,6 @@ serve(async (req) => {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${API_KEY}`,
-        "HTTP-Referer": "https://theaitwins.lovable.app",
-        "X-Title": "The AI Twins",
       },
       body: JSON.stringify({
         model: chosenModel,
@@ -63,15 +57,15 @@ serve(async (req) => {
 
     if (!response.ok) {
       const t = await response.text();
-      console.error("OpenRouter API error:", response.status, t);
+      console.error("AI gateway error:", response.status, t);
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded, please try again later." }), {
+        return new Response(JSON.stringify({ error: "Rate limited, please try again later." }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required or insufficient credits." }), {
+        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add funds in Settings > Workspace > Usage." }), {
           status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -82,7 +76,6 @@ serve(async (req) => {
       });
     }
 
-    // Stream the SSE response directly (OpenRouter uses OpenAI-compatible SSE)
     return new Response(response.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
