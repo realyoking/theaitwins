@@ -1,5 +1,7 @@
 import { SYSTEM_PROMPTS } from './prompts';
 import { useAppStore } from './store';
+import { getSelectedModel } from '@/components/ModelPicker';
+import { chatWebLLM, getLoadedModelId, loadWebLLMModel } from './webllm';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
@@ -52,6 +54,7 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
   const startTime = Date.now();
 
   try {
+    const selectedModel = getSelectedModel();
     const { globalPrompts } = store;
     let finalSysPrompt = modelPrompts[model] || globalPrompts[model] || SYSTEM_PROMPTS[model] || SYSTEM_PROMPTS.gemini;
     finalSysPrompt += `\n\nUSER PROFILE:\nName: ${user!.name}\nAge: ${user!.age}\nGender: ${user!.gender}\nHobbies: ${user!.hobbies}\nLanguage Pref: ${language}\nUse this context to personalize responses.`;
@@ -79,7 +82,69 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
       return msg;
     });
 
-    // Retry logic for rate limits
+    // === WebLLM path (on-device) ===
+    if (selectedModel.provider === 'webllm') {
+      // Ensure model is loaded
+      if (getLoadedModelId() !== selectedModel.modelId) {
+        store.addMessage({ role: 'bot', type: 'text', text: '⏳ Loading model in browser...' });
+        const ok = await loadWebLLMModel(selectedModel.modelId);
+        // Remove loading message
+        const st2 = useAppStore.getState();
+        const aid2 = st2.activeConversationId;
+        const upd2 = st2.conversations.map(c => {
+          if (c.id !== aid2) return c;
+          return { ...c, messages: c.messages.filter((_, i) => i !== c.messages.length - 1) };
+        });
+        useAppStore.setState({ conversations: upd2 });
+        if (!ok) {
+          store.addMessage({ role: 'bot', type: 'text', text: '⚠️ Failed to load WebLLM model. Try a cloud model instead.' });
+          store.setIsGenerating(false);
+          return;
+        }
+      }
+
+      const webllmMessages = [
+        { role: 'system', content: finalSysPrompt },
+        ...history.map((m: any) => ({ role: m.role, content: m.content })),
+      ];
+
+      let fullText = '';
+      let messageAdded = false;
+      const startTimeLocal = Date.now();
+
+      await chatWebLLM(
+        webllmMessages,
+        (delta) => {
+          fullText += delta;
+          const responseTime = Date.now() - startTimeLocal;
+          if (!messageAdded) {
+            store.addMessage({ role: 'bot', type: 'text', text: fullText, responseTime });
+            messageAdded = true;
+          } else {
+            const currentState = useAppStore.getState();
+            const activeId = currentState.activeConversationId;
+            const updated = currentState.conversations.map(c => {
+              if (c.id !== activeId) return c;
+              const msgs = [...c.messages];
+              msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], text: fullText, responseTime };
+              return { ...c, messages: msgs };
+            });
+            useAppStore.setState({ conversations: updated });
+            localStorage.setItem('tat_convos', JSON.stringify(updated));
+          }
+        },
+        () => {},
+        abortController.signal
+      );
+
+      if (!messageAdded) {
+        store.addMessage({ role: 'bot', type: 'text', text: 'No response from local model.' });
+      }
+      store.setIsGenerating(false);
+      return;
+    }
+
+    // === Cloud (Lovable AI) path ===
     let resp: Response | null = null;
     for (let attempt = 0; attempt < 3; attempt++) {
       resp = await fetch(CHAT_URL, {
@@ -88,7 +153,7 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
           'Content-Type': 'application/json',
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: history, systemPrompt: finalSysPrompt, mode }),
+        body: JSON.stringify({ messages: history, systemPrompt: finalSysPrompt, mode, model: selectedModel.modelId }),
         signal: abortController.signal,
       });
 
