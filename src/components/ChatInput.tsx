@@ -3,6 +3,7 @@ import { Send, ImageIcon, X, Zap, Mic, MicOff, Square, Circle } from 'lucide-rea
 import { useAppStore, type ChatMode } from '@/lib/store';
 import { sendChatMessage, abortChat } from '@/lib/chat-api';
 import { executePlugin } from './PluginSystem';
+import ModelPicker from './ModelPicker';
 
 const ChatInput = () => {
   const { mode, setMode, isGenerating, addMessage, deductCredits, setIsGenerating, sendOnEnter, stopGenerating, trackMessage, model, plugins } = useAppStore();
