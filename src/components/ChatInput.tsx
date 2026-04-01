@@ -168,15 +168,18 @@ const ChatInput = () => {
     <div className="shrink-0 p-2 md:p-4 md:px-20 bg-background border-t border-border z-20">
       <div className="max-w-3xl mx-auto">
         <div className="flex justify-between items-end mb-2 px-1">
-          <div className="flex bg-muted p-0.5 rounded-lg border border-border shadow-sm">
-            {(['fast', 'thinking', 'pro'] as ChatMode[]).map((m) => (
-              <button key={m} onClick={() => setMode(m)}
-                className={`px-2 py-1 text-[10px] font-bold rounded transition-all flex items-center gap-1 ${mode === m
-                  ? 'bg-card shadow-sm text-foreground'
-                  : 'text-muted-foreground hover:text-foreground'}`}>
-                {modeLabels[m]}
-              </button>
-            ))}
+          <div className="flex items-center gap-2">
+            <ModelPicker />
+            <div className="flex bg-muted p-0.5 rounded-lg border border-border shadow-sm">
+              {(['fast', 'thinking', 'pro'] as ChatMode[]).map((m) => (
+                <button key={m} onClick={() => setMode(m)}
+                  className={`px-2 py-1 text-[10px] font-bold rounded transition-all flex items-center gap-1 ${mode === m
+                    ? 'bg-card shadow-sm text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'}`}>
+                  {modeLabels[m]}
+                </button>
+              ))}
+            </div>
           </div>
           <span className="text-[10px] font-bold text-muted-foreground bg-muted px-2 py-1 rounded-md border border-border flex items-center gap-1">
             Cost: {costMap[mode]} <Zap className="w-3 h-3 text-amber-accent" />
