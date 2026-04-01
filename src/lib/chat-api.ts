@@ -54,6 +54,7 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
   const startTime = Date.now();
 
   try {
+    const selectedModel = getSelectedModel();
     const { globalPrompts } = store;
     let finalSysPrompt = modelPrompts[model] || globalPrompts[model] || SYSTEM_PROMPTS[model] || SYSTEM_PROMPTS.gemini;
     finalSysPrompt += `\n\nUSER PROFILE:\nName: ${user!.name}\nAge: ${user!.age}\nGender: ${user!.gender}\nHobbies: ${user!.hobbies}\nLanguage Pref: ${language}\nUse this context to personalize responses.`;
