@@ -203,27 +203,45 @@ export type Database = {
           ai_model: string | null
           content: string
           created_at: string | null
+          file_name: string | null
+          file_type: string | null
+          file_url: string | null
           group_id: string
           id: string
           is_ai: boolean | null
+          pinned: boolean | null
+          reactions: Json | null
+          reply_to: string | null
           user_id: string | null
         }
         Insert: {
           ai_model?: string | null
           content: string
           created_at?: string | null
+          file_name?: string | null
+          file_type?: string | null
+          file_url?: string | null
           group_id: string
           id?: string
           is_ai?: boolean | null
+          pinned?: boolean | null
+          reactions?: Json | null
+          reply_to?: string | null
           user_id?: string | null
         }
         Update: {
           ai_model?: string | null
           content?: string
           created_at?: string | null
+          file_name?: string | null
+          file_type?: string | null
+          file_url?: string | null
           group_id?: string
           id?: string
           is_ai?: boolean | null
+          pinned?: boolean | null
+          reactions?: Json | null
+          reply_to?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -232,6 +250,13 @@ export type Database = {
             columns: ["group_id"]
             isOneToOne: false
             referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_messages_reply_to_fkey"
+            columns: ["reply_to"]
+            isOneToOne: false
+            referencedRelation: "group_messages"
             referencedColumns: ["id"]
           },
         ]
