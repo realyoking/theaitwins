@@ -1,5 +1,7 @@
 import { SYSTEM_PROMPTS } from './prompts';
 import { useAppStore } from './store';
+import { getSelectedModel } from '@/components/ModelPicker';
+import { chatWebLLM, getLoadedModelId, loadWebLLMModel } from './webllm';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
