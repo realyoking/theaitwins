@@ -98,9 +98,22 @@ const MessageBubble = ({ msg, msgIndex, userInitial, model, onRenderCode, onQuic
         {msg.image && isUser && (
           <img src={msg.image} className="max-w-[200px] rounded-xl mb-2 shadow-sm" alt="User upload" />
         )}
-        {msg.type === 'image' && !isUser && msg.url && (
-          <img src={msg.url} className="w-full max-w-md rounded-2xl border border-border" alt="AI generated" />
+        {!isUser && (msg.type === 'image') && (msg.url || msg.image) && (
+          <div className="relative group/img w-full max-w-md mb-2">
+            <img src={(msg.url || msg.image) as string} className="w-full rounded-2xl border border-border shadow-soft" alt={msg.text || 'AI generated'} />
+            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover/img:opacity-100 transition-opacity">
+              <button onClick={() => window.open((msg.url || msg.image) as string, '_blank')}
+                className="p-1.5 rounded-lg bg-background/80 backdrop-blur border border-border hover:bg-card" title="Open full size">
+                <Maximize2 className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => downloadImage((msg.url || msg.image) as string, `ai-image-${Date.now()}.png`)}
+                className="p-1.5 rounded-lg bg-background/80 backdrop-blur border border-border hover:bg-card" title="Download">
+                <Download className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
         )}
+
 
         {/* Editing mode */}
         {isEditing ? (
