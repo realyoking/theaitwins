@@ -107,7 +107,7 @@ const CodePlayground = () => {
   };
 
   const chatPane = (
-    <div className="flex flex-col h-full min-h-0 bg-background">
+    <div className="flex flex-col h-full w-full min-h-0 bg-background">
       <div ref={feedRef} className="flex-1 overflow-y-auto custom-scrollbar p-3 md:p-4 space-y-3">
         {messages.length === 0 && (
           <div className="h-full flex flex-col items-center justify-center text-center px-4">
@@ -165,7 +165,7 @@ const CodePlayground = () => {
   );
 
   const workbench = (
-    <div className="flex flex-col h-full min-h-0 bg-surface-sunken border-l border-border/60">
+    <div className="flex flex-col h-full w-full min-h-0 bg-surface-sunken border-l border-border/60">
       <div className="shrink-0 h-11 flex items-center gap-2 px-2 border-b border-border/60 bg-card/70 backdrop-blur">
         <div className="flex bg-muted p-0.5 rounded-lg">
           <button onClick={() => setRightTab('preview')}
