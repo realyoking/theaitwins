@@ -146,8 +146,10 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
       if (!messageAdded) {
         store.addMessage({ role: 'bot', type: 'text', text: 'No response from local model.' });
       }
+      await runToolDirectives(fullText);
       store.setIsGenerating(false);
       return;
+
     }
 
     // === BYOK path (user's own OpenAI-compatible endpoint) ===
