@@ -9,6 +9,7 @@ export interface ByokConfig {
   apiKey: string;
   models: string[];
   selectedModel: string;
+  imageModel: string;
 }
 
 const KEY = 'tat_byok_config';
@@ -18,7 +19,9 @@ const DEFAULT: ByokConfig = {
   apiKey: '',
   models: [],
   selectedModel: '',
+  imageModel: 'gpt-image-1',
 };
+
 
 export function getByokConfig(): ByokConfig {
   try {
