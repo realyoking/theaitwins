@@ -3,6 +3,7 @@ import { useAppStore } from './store';
 import { getSelectedModel } from '@/components/ModelPicker';
 import { chatWebLLM, getLoadedModelId, loadWebLLMModel } from './webllm';
 import { streamByokChat } from './byok';
+import { FULL_SYSTEM_SUFFIX, parseDirectives, executeAction, generateImage } from './ai-tools';
 
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
@@ -16,6 +17,25 @@ export function abortChat() {
   }
 }
 
+/** Runs any tool directives the model emitted and appends their results. */
+async function runToolDirectives(fullText: string) {
+  const store = useAppStore.getState();
+  const { actions } = parseDirectives(fullText);
+  for (const action of actions.slice(0, 2)) {
+    if (action.tool === 'generate_image') {
+      store.addMessage({ role: 'bot', type: 'text', text: `🎨 Generating image: _${action.prompt}_` });
+    }
+    const res = await executeAction(action);
+    if (res.error) {
+      store.addMessage({ role: 'bot', type: 'text', text: `⚠️ Tool \`${res.tool}\` failed: ${res.error}` });
+    } else if (res.imageUrl) {
+      store.addMessage({ role: 'bot', type: 'image', text: String(action.prompt || ''), url: res.imageUrl, image: res.imageUrl } as any);
+    } else if (res.output !== undefined) {
+      store.addMessage({ role: 'bot', type: 'text', text: `**Output**\n\n\`\`\`\n${res.output}\n\`\`\`` });
+    }
+  }
+}
+
 export async function sendChatMessage(userText: string, imageData?: string | null) {
   const store = useAppStore.getState();
   const { model, mode, user, modelPrompts, language, memories, notificationsEnabled } = store;
@@ -24,33 +44,15 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
   if (isDraw) {
     const drawPrompt = userText.slice(5).trim() || 'A beautiful landscape';
     try {
-      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/draw`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({ prompt: drawPrompt }),
-      });
-
-      if (!resp.ok) {
-        const errData = await resp.json().catch(() => ({}));
-        throw new Error(errData.error || `Error ${resp.status}`);
-      }
-
-      const data = await resp.json();
-      const imageUrl = data.images?.[0]?.image_url?.url;
-      if (imageUrl) {
-        store.addMessage({ role: 'bot', type: 'image', text: data.text || `Generated: "${drawPrompt}"`, image: imageUrl });
-      } else {
-        store.addMessage({ role: 'bot', type: 'text', text: data.text || 'Image generation returned no image.' });
-      }
+      const { url, note } = await generateImage(drawPrompt);
+      store.addMessage({ role: 'bot', type: 'image', text: note || `Generated: "${drawPrompt}"`, url, image: url } as any);
     } catch (e: any) {
       store.addMessage({ role: 'bot', type: 'text', text: `⚠️ **Draw Error:** ${e.message}` });
     }
     store.setIsGenerating(false);
     return;
   }
+
 
   abortController = new AbortController();
   const startTime = Date.now();
