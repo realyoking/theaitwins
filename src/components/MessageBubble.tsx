@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
-import { Ghost, Cpu, Skull, Copy, Check, Share2, ThumbsUp, Heart, Laugh, Lightbulb, Pin, Edit3, Trash2, Volume2, VolumeX, RefreshCw, MoreHorizontal, Sparkles, Languages, ListChecks, Play, Loader2 } from 'lucide-react';
+import { Ghost, Cpu, Skull, Copy, Check, Share2, ThumbsUp, Heart, Laugh, Lightbulb, Pin, Edit3, Trash2, Volume2, VolumeX, RefreshCw, MoreHorizontal, Sparkles, Languages, ListChecks, Play, Loader2, Download, Maximize2 } from 'lucide-react';
 import type { ChatMessage, AIModel } from '@/lib/store';
 import { useAppStore } from '@/lib/store';
 import { detectLanguage, getLanguageLabel, getLanguageColor, runCode, type SupportedLanguage } from '@/lib/code-runner';
+import { parseDirectives, stripPartialDirective, downloadImage } from '@/lib/ai-tools';
+import AskChoices from './AskChoices';
 import { toast } from 'sonner';
+
 
 interface MessageBubbleProps {
   msg: ChatMessage;
@@ -74,6 +77,8 @@ const MessageBubble = ({ msg, msgIndex, userInitial, model, onRenderCode, onQuic
 
   const textSizeClass = fontSize === 'sm' ? 'text-[13px]' : fontSize === 'lg' ? 'text-[16px]' : 'text-[14px]';
   const wordCount = msg.text?.split(/\s+/).filter(Boolean).length || 0;
+  const parsed = parseDirectives(stripPartialDirective(msg.text || ''));
+
 
   return (
     <motion.div
@@ -98,9 +103,22 @@ const MessageBubble = ({ msg, msgIndex, userInitial, model, onRenderCode, onQuic
         {msg.image && isUser && (
           <img src={msg.image} className="max-w-[200px] rounded-xl mb-2 shadow-sm" alt="User upload" />
         )}
-        {msg.type === 'image' && !isUser && msg.url && (
-          <img src={msg.url} className="w-full max-w-md rounded-2xl border border-border" alt="AI generated" />
+        {!isUser && (msg.type === 'image') && (msg.url || msg.image) && (
+          <div className="relative group/img w-full max-w-md mb-2">
+            <img src={(msg.url || msg.image) as string} className="w-full rounded-2xl border border-border shadow-soft" alt={msg.text || 'AI generated'} />
+            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover/img:opacity-100 transition-opacity">
+              <button onClick={() => window.open((msg.url || msg.image) as string, '_blank')}
+                className="p-1.5 rounded-lg bg-background/80 backdrop-blur border border-border hover:bg-card" title="Open full size">
+                <Maximize2 className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => downloadImage((msg.url || msg.image) as string, `ai-image-${Date.now()}.png`)}
+                className="p-1.5 rounded-lg bg-background/80 backdrop-blur border border-border hover:bg-card" title="Download">
+                <Download className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
         )}
+
 
         {/* Editing mode */}
         {isEditing ? (
@@ -196,7 +214,11 @@ const MessageBubble = ({ msg, msgIndex, userInitial, model, onRenderCode, onQuic
                       );
                     },
                   }}
-                >{msg.text}</ReactMarkdown>
+                >{parsed.text}</ReactMarkdown>
+                {parsed.asks.map((ask, i) => (
+                  <AskChoices key={i} ask={ask} onAnswer={(answer) => onQuickAction?.('', answer)} />
+                ))}
+
               </div>
             )}
             {msg.edited && <span className="text-[9px] text-muted-foreground ml-1">(edited)</span>}
