@@ -285,6 +285,10 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
       store.addMessage({ role: 'bot', type: 'text', text: 'No response from API.' });
     }
 
+    await runToolDirectives(fullText);
+
+
+
     // Send notification when AI is done and user is away
     if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
       const preview = fullText.slice(0, 80) + (fullText.length > 80 ? '...' : '');
