@@ -24,7 +24,7 @@ ${canvasCode.includes('<html') ? canvasCode : `<div class="p-4">${canvasCode}</d
   };
 
   return (
-    <div className="w-full md:w-1/2 bg-background border-l border-border shadow-2xl z-40 flex flex-col">
+    <div className="fixed inset-0 z-50 md:static md:z-40 w-full md:w-1/2 bg-background border-l border-border shadow-2xl flex flex-col">
       <div className="h-14 border-b border-border flex items-center justify-between px-3 bg-card shrink-0">
         <div className="flex items-center gap-2">
           <div className="p-1.5 bg-primary text-primary-foreground rounded-md"><Play className="w-3 h-3 fill-current" /></div>
