@@ -212,6 +212,13 @@ const ModelPicker = () => {
                     placeholder="sk-..."
                     className="w-full px-2.5 py-2 text-[11px] bg-muted rounded-xl border border-border outline-none focus:ring-1 ring-ring/40"
                   />
+                  <input
+                    value={cfg.imageModel}
+                    onChange={(e) => setCfg(saveByokConfig({ imageModel: e.target.value }))}
+                    placeholder="Image model (e.g. gpt-image-1)"
+                    className="w-full px-2.5 py-2 text-[11px] bg-muted rounded-xl border border-border outline-none focus:ring-1 ring-ring/40"
+                  />
+
                   <button
                     onClick={handleFetchModels}
                     disabled={fetching || !cfg.baseUrl.trim()}
