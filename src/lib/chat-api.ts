@@ -181,8 +181,10 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
         abortController.signal,
       );
       if (!messageAdded) store.addMessage({ role: 'bot', type: 'text', text: 'No response from your endpoint.' });
+      await runToolDirectives(fullText);
       store.setIsGenerating(false);
       return;
+
     }
 
     // === Cloud (Lovable AI) path ===
