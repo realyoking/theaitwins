@@ -165,23 +165,24 @@ const ChatInput = () => {
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   return (
-    <div className="shrink-0 p-2 md:p-4 md:px-20 bg-background border-t border-border z-20">
+    <div className="shrink-0 p-2 md:p-4 md:px-20 bg-background/85 backdrop-blur-xl border-t border-border/60 z-20 safe-bottom">
       <div className="max-w-3xl mx-auto">
-        <div className="flex justify-between items-end mb-2 px-1">
-          <div className="flex items-center gap-2">
+        <div className="flex justify-between items-center gap-2 mb-2 px-1">
+          <div className="flex items-center gap-1.5 min-w-0">
             <ModelPicker />
-            <div className="flex bg-muted p-0.5 rounded-lg border border-border shadow-sm">
+            <div className="flex bg-muted/70 p-0.5 rounded-full border border-border/60 shadow-sm shrink-0">
               {(['fast', 'thinking', 'pro'] as ChatMode[]).map((m) => (
                 <button key={m} onClick={() => setMode(m)}
-                  className={`px-2 py-1 text-[10px] font-bold rounded transition-all flex items-center gap-1 ${mode === m
+                  className={`px-1.5 md:px-2.5 py-1 text-[10px] font-bold rounded-full transition-all flex items-center gap-1 ${mode === m
                     ? 'bg-card shadow-sm text-foreground'
                     : 'text-muted-foreground hover:text-foreground'}`}>
-                  {modeLabels[m]}
+                  <span className="md:hidden">{modeLabels[m].split(' ')[0]}</span>
+                  <span className="hidden md:inline">{modeLabels[m]}</span>
                 </button>
               ))}
             </div>
           </div>
-          <span className="text-[10px] font-bold text-muted-foreground bg-muted px-2 py-1 rounded-md border border-border flex items-center gap-1">
+          <span className="hidden sm:flex text-[10px] font-bold text-muted-foreground bg-muted/70 px-2 py-1 rounded-full border border-border/60 items-center gap-1 shrink-0">
             Cost: {costMap[mode]} <Zap className="w-3 h-3 text-amber-accent" />
           </span>
         </div>
@@ -207,7 +208,7 @@ const ChatInput = () => {
           </div>
         )}
 
-        <div className="bg-muted/90 backdrop-blur-xl rounded-2xl md:rounded-3xl border border-border/50 shadow-lg focus-within:ring-1 ring-ring/30 transition-all flex items-end p-1">
+        <div className="bg-muted/70 backdrop-blur-xl rounded-[1.4rem] md:rounded-3xl border border-border/60 shadow-soft focus-within:ring-2 ring-primary/25 transition-all flex items-end p-1">
           <button onClick={() => fileRef.current?.click()}
             className="p-2 mb-0.5 ml-0.5 text-muted-foreground hover:text-foreground hover:bg-card rounded-full transition-colors shrink-0">
             <ImageIcon className="w-4 h-4 md:w-5 md:h-5" />
@@ -249,7 +250,7 @@ const ChatInput = () => {
             </button>
           ) : (
             <button onClick={handleSend} disabled={!text.trim() && !imageData}
-              className="p-2 mb-0.5 mr-0.5 bg-primary text-primary-foreground rounded-full hover:scale-105 disabled:opacity-20 disabled:hover:scale-100 transition-all shrink-0">
+              className="p-2 mb-0.5 mr-0.5 bg-gradient-primary text-primary-foreground rounded-full shadow-glow hover:scale-105 disabled:opacity-30 disabled:shadow-none disabled:hover:scale-100 transition-all shrink-0">
               <Send className="w-4 h-4" />
             </button>
           )}
