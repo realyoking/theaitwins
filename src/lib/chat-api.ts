@@ -2,6 +2,8 @@ import { SYSTEM_PROMPTS } from './prompts';
 import { useAppStore } from './store';
 import { getSelectedModel } from '@/components/ModelPicker';
 import { chatWebLLM, getLoadedModelId, loadWebLLMModel } from './webllm';
+import { streamByokChat } from './byok';
+
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
@@ -144,7 +146,41 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
       return;
     }
 
+    // === BYOK path (user's own OpenAI-compatible endpoint) ===
+    if (selectedModel.provider === 'byok') {
+      let fullText = '';
+      let messageAdded = false;
+      await streamByokChat(
+        [{ role: 'system', content: finalSysPrompt }, ...history.map((m: any) => ({ role: m.role, content: m.content }))],
+        selectedModel.modelId,
+        (delta) => {
+          fullText += delta;
+          const responseTime = Date.now() - startTime;
+          if (!messageAdded) {
+            store.addMessage({ role: 'bot', type: 'text', text: fullText, responseTime });
+            messageAdded = true;
+          } else {
+            const cs = useAppStore.getState();
+            const activeId = cs.activeConversationId;
+            const updated = cs.conversations.map(c => {
+              if (c.id !== activeId) return c;
+              const ms = [...c.messages];
+              ms[ms.length - 1] = { ...ms[ms.length - 1], text: fullText, responseTime };
+              return { ...c, messages: ms };
+            });
+            useAppStore.setState({ conversations: updated });
+            localStorage.setItem('tat_convos', JSON.stringify(updated));
+          }
+        },
+        abortController.signal,
+      );
+      if (!messageAdded) store.addMessage({ role: 'bot', type: 'text', text: 'No response from your endpoint.' });
+      store.setIsGenerating(false);
+      return;
+    }
+
     // === Cloud (Lovable AI) path ===
+
     let resp: Response | null = null;
     for (let attempt = 0; attempt < 3; attempt++) {
       resp = await fetch(CHAT_URL, {

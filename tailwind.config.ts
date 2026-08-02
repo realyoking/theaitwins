@@ -43,6 +43,16 @@ export default {
         "chat-user": "hsl(var(--chat-user-bg))",
         "chat-bot": "hsl(var(--chat-bot-bg))",
       },
+      backgroundImage: {
+        "gradient-primary": "var(--gradient-primary)",
+        "gradient-surface": "var(--gradient-surface)",
+        "gradient-sheen": "var(--gradient-sheen)",
+      },
+      boxShadow: {
+        glow: "var(--shadow-glow)",
+        elevated: "var(--shadow-elevated)",
+        soft: "var(--shadow-soft)",
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
