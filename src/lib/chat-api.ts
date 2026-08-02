@@ -62,6 +62,8 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
     const { globalPrompts } = store;
     let finalSysPrompt = modelPrompts[model] || globalPrompts[model] || SYSTEM_PROMPTS[model] || SYSTEM_PROMPTS.gemini;
     finalSysPrompt += `\n\nUSER PROFILE:\nName: ${user!.name}\nAge: ${user!.age}\nGender: ${user!.gender}\nHobbies: ${user!.hobbies}\nLanguage Pref: ${language}\nUse this context to personalize responses.`;
+    finalSysPrompt += `\n${FULL_SYSTEM_SUFFIX}`;
+
 
     // Add memories
     if (memories.length > 0) {
