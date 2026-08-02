@@ -212,7 +212,11 @@ const MessageBubble = ({ msg, msgIndex, userInitial, model, onRenderCode, onQuic
                       );
                     },
                   }}
-                >{msg.text}</ReactMarkdown>
+                >{parsed.text}</ReactMarkdown>
+                {parsed.asks.map((ask, i) => (
+                  <AskChoices key={i} ask={ask} onAnswer={(answer) => onQuickAction?.('', answer)} />
+                ))}
+
               </div>
             )}
             {msg.edited && <span className="text-[9px] text-muted-foreground ml-1">(edited)</span>}
