@@ -77,6 +77,8 @@ const MessageBubble = ({ msg, msgIndex, userInitial, model, onRenderCode, onQuic
 
   const textSizeClass = fontSize === 'sm' ? 'text-[13px]' : fontSize === 'lg' ? 'text-[16px]' : 'text-[14px]';
   const wordCount = msg.text?.split(/\s+/).filter(Boolean).length || 0;
+  const parsed = parseDirectives(stripPartialDirective(msg.text || ''));
+
 
   return (
     <motion.div
