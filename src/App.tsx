@@ -31,6 +31,7 @@ const App = () => (
           <Route path="/join/:code" element={<JoinGroup />} />
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/playground" element={<CodePlayground />} />
+          <Route path="/p/:id" element={<PublicProject />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
