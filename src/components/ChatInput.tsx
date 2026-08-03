@@ -1,14 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, ImageIcon, X, Zap, Mic, MicOff, Square, Circle } from 'lucide-react';
+import { Send, ImageIcon, X, Zap, Mic, MicOff, Square, Circle, Sparkles, Reply } from 'lucide-react';
 import { useAppStore, type ChatMode } from '@/lib/store';
 import { sendChatMessage, abortChat } from '@/lib/chat-api';
 import { executePlugin } from './PluginSystem';
 import ModelPicker from './ModelPicker';
+import SkillsModal from './SkillsModal';
 
 const ChatInput = () => {
   const { mode, setMode, isGenerating, addMessage, deductCredits, setIsGenerating, sendOnEnter, stopGenerating, trackMessage, model, plugins } = useAppStore();
   const [text, setText] = useState('');
   const [imageData, setImageData] = useState<string | null>(null);
+  const [replyQuote, setReplyQuote] = useState<string | null>(null);
+  const [videoRef2, setVideoRef2] = useState<string | null>(null);
+  const [showSkills, setShowSkills] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -21,6 +25,27 @@ const ChatInput = () => {
 
   const costMap: Record<ChatMode, number> = { fast: 1, thinking: 3, pro: 5 };
   const modeLabels: Record<ChatMode, string> = { fast: '⚡ Fast', thinking: '🧠 Thinking', pro: '💎 Pro' };
+
+  // Attach / reply bus (from message bubbles)
+  useEffect(() => {
+    const onAttach = (e: Event) => {
+      const { url, kind } = (e as CustomEvent).detail || {};
+      if (kind === 'video') setVideoRef2(url);
+      else setImageData(url);
+      textareaRef.current?.focus();
+    };
+    const onReply = (e: Event) => {
+      setReplyQuote(String((e as CustomEvent).detail || ''));
+      textareaRef.current?.focus();
+    };
+    window.addEventListener('tat:attach', onAttach);
+    window.addEventListener('tat:reply', onReply);
+    return () => {
+      window.removeEventListener('tat:attach', onAttach);
+      window.removeEventListener('tat:reply', onReply);
+    };
+  }, []);
+
 
   // Speech recognition for live transcription
   useEffect(() => {
