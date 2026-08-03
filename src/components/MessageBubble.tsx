@@ -31,7 +31,7 @@ const REACTION_ICONS = [
 
 const MessageBubble = ({ msg, msgIndex, userInitial, model, onRenderCode, onQuickAction }: MessageBubbleProps) => {
   const isUser = msg.role === 'user';
-  const { showTimestamps, compactMode, fontSize, toggleReaction, pinMessage, editMessage, deleteMessage, ttsEnabled } = useAppStore();
+  const { showTimestamps, compactMode, fontSize, toggleReaction, pinMessage, editMessage, deleteMessage, ttsEnabled, setWallpaper } = useAppStore();
   const [copied, setCopied] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
