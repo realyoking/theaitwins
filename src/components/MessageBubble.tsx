@@ -102,16 +102,29 @@ const MessageBubble = ({ msg, msgIndex, userInitial, model, onRenderCode, onQuic
       </div>
 
       <div className={`flex flex-col max-w-[85%] md:max-w-[75%] ${isUser ? 'items-end' : 'items-start'}`}>
+        {msg.replyTo && (
+          <div className="mb-1 px-3 py-1.5 rounded-xl bg-muted/60 border-l-2 border-primary text-[11px] text-muted-foreground max-w-full truncate">
+            ↩︎ {msg.replyTo}
+          </div>
+        )}
         {msg.image && isUser && (
           <img src={msg.image} className="max-w-[200px] rounded-xl mb-2 shadow-sm" alt="User upload" />
         )}
         {!isUser && (msg.type === 'image') && (msg.url || msg.image) && (
           <div className="relative group/img w-full max-w-md mb-2">
             <img src={(msg.url || msg.image) as string} className="w-full rounded-2xl border border-border shadow-soft" alt={msg.text || 'AI generated'} />
-            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover/img:opacity-100 transition-opacity">
+            <div className="absolute top-2 right-2 flex gap-1 md:opacity-0 group-hover/img:opacity-100 transition-opacity">
               <button onClick={() => window.open((msg.url || msg.image) as string, '_blank')}
                 className="p-1.5 rounded-lg bg-background/80 backdrop-blur border border-border hover:bg-card" title="Open full size">
                 <Maximize2 className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => { attachToComposer((msg.url || msg.image) as string, 'image'); toast.success('Attached — ask the AI to remix it'); }}
+                className="p-1.5 rounded-lg bg-background/80 backdrop-blur border border-border hover:bg-card" title="Remix / reflect this image">
+                <Wand2 className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => { setWallpaper((msg.url || msg.image) as string); toast.success('Background updated'); }}
+                className="p-1.5 rounded-lg bg-background/80 backdrop-blur border border-border hover:bg-card" title="Use as background">
+                <ImageIco className="w-3.5 h-3.5" />
               </button>
               <button onClick={() => downloadImage((msg.url || msg.image) as string, `ai-image-${Date.now()}.png`)}
                 className="p-1.5 rounded-lg bg-background/80 backdrop-blur border border-border hover:bg-card" title="Download">
@@ -120,6 +133,26 @@ const MessageBubble = ({ msg, msgIndex, userInitial, model, onRenderCode, onQuic
             </div>
           </div>
         )}
+        {!isUser && msg.type === 'video' && msg.url && (
+          <div className="relative w-full max-w-md mb-2">
+            <video src={msg.url} controls loop playsInline className="w-full rounded-2xl border border-border shadow-soft bg-black" />
+            <div className="flex gap-1 mt-1">
+              <button onClick={() => downloadUrl(msg.url!, `ai-video-${Date.now()}.webm`)}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-muted hover:bg-accent text-[10px] font-bold">
+                <Download className="w-3 h-3" /> Download
+              </button>
+              <button onClick={() => { attachToComposer(msg.url!, 'video'); toast.success('Video referenced in composer'); }}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-muted hover:bg-accent text-[10px] font-bold">
+                <Wand2 className="w-3 h-3" /> Reuse
+              </button>
+              <button onClick={() => window.open(msg.url!, '_blank')}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-muted hover:bg-accent text-[10px] font-bold">
+                <Maximize2 className="w-3 h-3" /> Open
+              </button>
+            </div>
+          </div>
+        )}
+
 
 
         {/* Editing mode */}
