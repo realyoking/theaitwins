@@ -3,7 +3,8 @@ import { useAppStore } from './store';
 import { getSelectedModel } from '@/components/ModelPicker';
 import { chatWebLLM, getLoadedModelId, loadWebLLMModel } from './webllm';
 import { streamByokChat } from './byok';
-import { FULL_SYSTEM_SUFFIX, parseDirectives, executeAction, generateImage } from './ai-tools';
+import { buildSystemSuffix, parseDirectives, executeAction, generateImage, generateVideo } from './ai-tools';
+import { downscaleImage } from './media';
 
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
@@ -17,6 +18,27 @@ export function abortChat() {
   }
 }
 
+function replaceLastMessage(text: string) {
+  const st = useAppStore.getState();
+  const aid = st.activeConversationId;
+  const updated = st.conversations.map(c => {
+    if (c.id !== aid) return c;
+    const ms = [...c.messages];
+    ms[ms.length - 1] = { ...ms[ms.length - 1], text };
+    return { ...c, messages: ms };
+  });
+  useAppStore.setState({ conversations: updated });
+}
+
+function popLastMessage() {
+  const st = useAppStore.getState();
+  const aid = st.activeConversationId;
+  const updated = st.conversations.map(c =>
+    c.id !== aid ? c : { ...c, messages: c.messages.slice(0, -1) },
+  );
+  useAppStore.setState({ conversations: updated });
+}
+
 /** Runs any tool directives the model emitted and appends their results. */
 async function runToolDirectives(fullText: string) {
   const store = useAppStore.getState();
@@ -25,11 +47,17 @@ async function runToolDirectives(fullText: string) {
     if (action.tool === 'generate_image') {
       store.addMessage({ role: 'bot', type: 'text', text: `🎨 Generating image: _${action.prompt}_` });
     }
-    const res = await executeAction(action);
+    if (action.tool === 'generate_video') {
+      store.addMessage({ role: 'bot', type: 'text', text: `🎬 Generating video: _${action.prompt}_` });
+    }
+    const res = await executeAction(action, (msg) => replaceLastMessage(`🎬 ${msg}`));
+    if (action.tool === 'generate_image' || action.tool === 'generate_video') popLastMessage();
     if (res.error) {
       store.addMessage({ role: 'bot', type: 'text', text: `⚠️ Tool \`${res.tool}\` failed: ${res.error}` });
     } else if (res.imageUrl) {
       store.addMessage({ role: 'bot', type: 'image', text: String(action.prompt || ''), url: res.imageUrl, image: res.imageUrl } as any);
+    } else if (res.videoUrl) {
+      store.addMessage({ role: 'bot', type: 'video', text: String(action.prompt || ''), url: res.videoUrl } as any);
     } else if (res.output !== undefined) {
       store.addMessage({ role: 'bot', type: 'text', text: `**Output**\n\n\`\`\`\n${res.output}\n\`\`\`` });
     }
@@ -40,8 +68,9 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
   const store = useAppStore.getState();
   const { model, mode, user, modelPrompts, language, memories, notificationsEnabled } = store;
 
-  const isDraw = userText.toLowerCase().startsWith('/draw');
-  if (isDraw) {
+  const lower = userText.toLowerCase();
+
+  if (lower.startsWith('/draw')) {
     const drawPrompt = userText.slice(5).trim() || 'A beautiful landscape';
     try {
       const { url, note } = await generateImage(drawPrompt);
@@ -52,6 +81,22 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
     store.setIsGenerating(false);
     return;
   }
+
+  if (lower.startsWith('/video')) {
+    const vPrompt = userText.slice(6).trim() || 'A cinematic landscape';
+    store.addMessage({ role: 'bot', type: 'text', text: '🎬 Starting video…' });
+    try {
+      const url = await generateVideo(vPrompt, 3, (m) => replaceLastMessage(`🎬 ${m}`));
+      popLastMessage();
+      store.addMessage({ role: 'bot', type: 'video', text: `Generated video: "${vPrompt}"`, url } as any);
+    } catch (e: any) {
+      popLastMessage();
+      store.addMessage({ role: 'bot', type: 'text', text: `⚠️ **Video Error:** ${e.message}` });
+    }
+    store.setIsGenerating(false);
+    return;
+  }
+
 
 
   abortController = new AbortController();
