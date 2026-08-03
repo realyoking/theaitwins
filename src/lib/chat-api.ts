@@ -107,7 +107,7 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
     const { globalPrompts } = store;
     let finalSysPrompt = modelPrompts[model] || globalPrompts[model] || SYSTEM_PROMPTS[model] || SYSTEM_PROMPTS.gemini;
     finalSysPrompt += `\n\nUSER PROFILE:\nName: ${user!.name}\nAge: ${user!.age}\nGender: ${user!.gender}\nHobbies: ${user!.hobbies}\nLanguage Pref: ${language}\nUse this context to personalize responses.`;
-    finalSysPrompt += `\n${FULL_SYSTEM_SUFFIX}`;
+    finalSysPrompt += `\n${buildSystemSuffix()}`;
 
 
     // Add memories
@@ -120,18 +120,28 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
     if (mode === 'pro') finalSysPrompt += '\nMODE: PRO. Provide an extremely exhaustive, expert-level response.';
 
     if (imageData) {
-      finalSysPrompt += '\nThe user may attach images. Analyze them thoroughly and respond about what you see.';
+      finalSysPrompt += '\nThe user attached an image. Analyze it thoroughly and respond about what you see.';
     }
 
     const state = useAppStore.getState();
     const convo = state.conversations.find(c => c.id === state.activeConversationId);
     const msgs = convo?.messages || [];
 
-    const history = msgs.slice(-12).map((m) => {
-      const msg: any = { role: m.role === 'bot' ? 'assistant' : 'user', content: m.text || '[Image]' };
-      if (m.image && m.role === 'user') msg.imageData = m.image;
-      return msg;
-    });
+    const slice = msgs.slice(-12);
+    const history = slice.map((m) => ({
+      role: m.role === 'bot' ? 'assistant' : 'user',
+      content: m.text || '[Image]',
+    })) as any[];
+
+    // Only the newest user image is sent (downscaled) — sending every historical
+    // image made vision requests huge and appear to hang.
+    if (imageData) {
+      const small = await downscaleImage(imageData);
+      for (let i = history.length - 1; i >= 0; i--) {
+        if (history[i].role === 'user') { history[i].imageData = small; break; }
+      }
+    }
+
 
     // === WebLLM path (on-device) ===
     if (selectedModel.provider === 'webllm') {
