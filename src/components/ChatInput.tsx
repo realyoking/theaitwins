@@ -217,10 +217,36 @@ const ChatInput = () => {
               ))}
             </div>
           </div>
-          <span className="hidden sm:flex text-[10px] font-bold text-muted-foreground bg-muted/70 px-2 py-1 rounded-full border border-border/60 items-center gap-1 shrink-0">
-            Cost: {costMap[mode]} <Zap className="w-3 h-3 text-amber-accent" />
-          </span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button onClick={() => setShowSkills(true)}
+              className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground hover:text-foreground bg-muted/70 px-2 py-1 rounded-full border border-border/60"
+              title="Skills">
+              <Sparkles className="w-3 h-3 text-amber-accent" /> <span className="hidden sm:inline">Skills</span>
+            </button>
+            <span className="hidden sm:flex text-[10px] font-bold text-muted-foreground bg-muted/70 px-2 py-1 rounded-full border border-border/60 items-center gap-1">
+              {costMap[mode]} <Zap className="w-3 h-3 text-amber-accent" />
+            </span>
+          </div>
         </div>
+
+        {showSkills && <SkillsModal onClose={() => setShowSkills(false)} />}
+
+        {replyQuote && (
+          <div className="mb-2 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/60 border-l-2 border-primary">
+            <Reply className="w-3 h-3 text-primary shrink-0" />
+            <span className="text-[11px] text-muted-foreground truncate flex-1">{replyQuote}</span>
+            <button onClick={() => setReplyQuote(null)}><X className="w-3 h-3" /></button>
+          </div>
+        )}
+
+        {videoRef2 && (
+          <div className="mb-2 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/60 border border-border/60">
+            <span className="text-[11px] text-muted-foreground truncate flex-1">🎬 Video attached as reference</span>
+            <button onClick={() => setVideoRef2(null)}><X className="w-3 h-3" /></button>
+          </div>
+        )}
+
+
 
         {imageData && (
           <div className="mb-2 relative inline-block">
