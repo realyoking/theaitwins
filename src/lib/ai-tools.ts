@@ -7,29 +7,34 @@
 import { getSelectedModel } from '@/components/ModelPicker';
 import { generateByokImage } from './byok';
 import { runCode, detectLanguage } from './code-runner';
+import { addAsset, allAssets, assetsPromptBlock, renderKenBurnsVideo, downloadUrl } from './media';
+import { skillsPromptBlock } from './skills';
+import { useAppStore } from './store';
 
 export const APP_CONTEXT = `
 ## WHERE YOU ARE
 You are an AI running inside **TheAiTwins**, a premium AI web app (PWA). You are aware of the whole app and can guide the user around it.
 
 App map (routes):
-- \`/\` — Main chat. Personas (Anson67, Gemini, Chester, Bobby, Max), image attachments, voice chat, reactions, pinning, editing, message search, tabs/workspaces, wallpapers, themes, plugins, memory.
-- \`/playground\` — Code Playground: Lovable-style split view. AI chat on the left, live Preview + editable Code on the right (single-file HTML/CSS/JS). Has chat history, snapshots, download, open-in-new-tab.
+- \`/\` — Main chat. Personas (Anson67, Gemini, Chester, Bobby, Max), image attachments, voice chat, reactions, pinning, replies, editing, message search, tabs/workspaces, wallpapers, themes, plugins, skills, memory.
+- \`/playground\` — Code Playground: Lovable-style split view. AI chat on the left, live Preview + editable Code on the right (single-file HTML/CSS/JS). Has chat history, saved projects, publishing/sharing, snapshots and download.
+- \`/p/:id\` — Public page for a published playground project.
 - \`/groups\`, \`/group/:id\` — Real-time group chats with mentions, presence and file sharing.
 - \`/auth\`, \`/admin\` — Auth and admin panel.
 
 Things the user can do that you should mention when relevant:
 - Switch model from the model picker (Cloud models, BYOK = their own OpenAI-compatible endpoint, or Local on-device WebLLM).
-- Type \`/draw <prompt>\` in chat to generate an image.
+- Type \`/draw <prompt>\` for an image, \`/video <prompt>\` for a short generated video.
+- Reply to a specific message so you know exactly which one they mean.
+- Set any generated image as the chat background/wallpaper, remix it, or download it.
 - Run code blocks (JS, TS, Python, Java) with the Run button, or Render HTML/React in the canvas.
-- Every image and code block you produce can be previewed and downloaded.
 `;
 
 export const TOOL_PROTOCOL = `
 ## TOOLS (very important)
 You can take real actions by emitting fenced directive blocks. They are parsed by the app and never shown raw to the user.
 
-1) Ask the user a question with choices — USE THIS whenever the request is ambiguous or you need a decision instead of guessing:
+1) Ask the user a question with choices — USE THIS whenever the request is ambiguous:
 \`\`\`ask
 {"question":"Which style do you want?","options":["Minimal","Playful","Corporate"],"multi":false}
 \`\`\`
@@ -39,17 +44,33 @@ You can take real actions by emitting fenced directive blocks. They are parsed b
 {"tool":"generate_image","prompt":"a neon cyberpunk cat, 4k"}
 \`\`\`
 
-3) Execute code and get the output back:
+3) Generate a short video (built from AI keyframes):
+\`\`\`action
+{"tool":"generate_video","prompt":"a rocket launching at sunrise","frames":3}
+\`\`\`
+
+4) Execute code and get the output back:
 \`\`\`action
 {"tool":"run_code","language":"python","code":"print(2+2)"}
+\`\`\`
+
+5) Set the chat background to a generated image:
+\`\`\`action
+{"tool":"set_wallpaper","assetId":"a1abc"}
 \`\`\`
 
 Rules:
 - Emit at most 2 directive blocks per reply.
 - Always write a short sentence of normal text before a directive block.
 - JSON must be valid. Do not wrap directives in extra prose inside the block.
-- Prefer \`ask\` over assuming. If the user's request is vague, ask ONE clear question with 2-4 options.
+- When you write HTML that should show a generated image or video, use \`ASSET:<id>\` as the src — the app swaps it for the real URL.
+- Prefer \`ask\` over assuming. If the request is vague, ask ONE clear question with 2-4 options.
 `;
+
+/** Full suffix, recomputed each call so skills + assets stay fresh. */
+export function buildSystemSuffix(): string {
+  return `${APP_CONTEXT}\n${TOOL_PROTOCOL}\n${skillsPromptBlock()}\n${assetsPromptBlock()}`;
+}
 
 export const FULL_SYSTEM_SUFFIX = `${APP_CONTEXT}\n${TOOL_PROTOCOL}`;
 
@@ -59,7 +80,7 @@ export interface AskDirective {
   multi?: boolean;
 }
 export interface ActionDirective {
-  tool: 'generate_image' | 'run_code' | string;
+  tool: 'generate_image' | 'generate_video' | 'run_code' | 'set_wallpaper' | string;
   [k: string]: any;
 }
 
@@ -106,6 +127,7 @@ export async function generateImage(prompt: string): Promise<{ url: string; note
 
   if (selected.provider === 'byok') {
     const url = await generateByokImage(prompt);
+    addAsset('image', url, prompt);
     return { url };
   }
 
@@ -124,21 +146,61 @@ export async function generateImage(prompt: string): Promise<{ url: string; note
   const data = await resp.json();
   const url = data.images?.[0]?.image_url?.url;
   if (!url) throw new Error(data.text || 'No image returned.');
+  addAsset('image', url, prompt);
   return { url, note: data.text };
+}
+
+/** Generates a short video: N AI keyframes → Ken Burns / cross-fade render. */
+export async function generateVideo(
+  prompt: string,
+  frames = 3,
+  onProgress?: (msg: string) => void,
+): Promise<string> {
+  const shots = [
+    `${prompt} — cinematic wide establishing shot, film still`,
+    `${prompt} — medium shot, dramatic lighting, film still`,
+    `${prompt} — close up detail, shallow depth of field, film still`,
+    `${prompt} — final hero shot, golden hour, film still`,
+  ].slice(0, Math.max(2, Math.min(4, frames)));
+
+  const urls: string[] = [];
+  for (let i = 0; i < shots.length; i++) {
+    onProgress?.(`Rendering keyframe ${i + 1}/${shots.length}…`);
+    const { url } = await generateImage(shots[i]);
+    urls.push(url);
+  }
+  onProgress?.('Compositing video…');
+  const videoUrl = await renderKenBurnsVideo(urls, { seconds: 2 * urls.length });
+  addAsset('video', videoUrl, prompt);
+  return videoUrl;
 }
 
 export interface ActionResult {
   tool: string;
   imageUrl?: string;
+  videoUrl?: string;
   output?: string;
   error?: string;
 }
 
-export async function executeAction(action: ActionDirective): Promise<ActionResult> {
+export async function executeAction(
+  action: ActionDirective,
+  onProgress?: (msg: string) => void,
+): Promise<ActionResult> {
   try {
     if (action.tool === 'generate_image') {
       const { url } = await generateImage(String(action.prompt || 'an image'));
       return { tool: action.tool, imageUrl: url };
+    }
+    if (action.tool === 'generate_video') {
+      const url = await generateVideo(String(action.prompt || 'a short clip'), Number(action.frames) || 3, onProgress);
+      return { tool: action.tool, videoUrl: url };
+    }
+    if (action.tool === 'set_wallpaper') {
+      const asset = allAssets().find((a) => a.id === action.assetId) || allAssets()[0];
+      if (!asset) throw new Error('No generated image available yet.');
+      useAppStore.getState().setWallpaper(asset.url);
+      return { tool: action.tool, output: 'Background updated.' };
     }
     if (action.tool === 'run_code') {
       const lang = detectLanguage(String(action.language || 'javascript'));
@@ -154,14 +216,5 @@ export async function executeAction(action: ActionDirective): Promise<ActionResu
 
 /** Download any image url (data: or remote) to disk. */
 export async function downloadImage(url: string, filename = 'image.png') {
-  try {
-    const blob = url.startsWith('data:') ? await (await fetch(url)).blob() : await (await fetch(url)).blob();
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-  } catch {
-    window.open(url, '_blank');
-  }
+  await downloadUrl(url, filename);
 }
