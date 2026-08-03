@@ -14,8 +14,9 @@ export type ChatMessage = {
   role: 'user' | 'bot';
   text?: string;
   image?: string;
-  type?: 'text' | 'image';
+  type?: 'text' | 'image' | 'video';
   url?: string;
+  replyTo?: string;
   timestamp?: number;
   reactions?: string[];
   pinned?: boolean;

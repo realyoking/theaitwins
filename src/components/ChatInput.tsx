@@ -1,14 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, ImageIcon, X, Zap, Mic, MicOff, Square, Circle } from 'lucide-react';
+import { Send, ImageIcon, X, Zap, Mic, MicOff, Square, Circle, Sparkles, Reply } from 'lucide-react';
 import { useAppStore, type ChatMode } from '@/lib/store';
 import { sendChatMessage, abortChat } from '@/lib/chat-api';
 import { executePlugin } from './PluginSystem';
 import ModelPicker from './ModelPicker';
+import SkillsModal from './SkillsModal';
 
 const ChatInput = () => {
   const { mode, setMode, isGenerating, addMessage, deductCredits, setIsGenerating, sendOnEnter, stopGenerating, trackMessage, model, plugins } = useAppStore();
   const [text, setText] = useState('');
   const [imageData, setImageData] = useState<string | null>(null);
+  const [replyQuote, setReplyQuote] = useState<string | null>(null);
+  const [videoRef2, setVideoRef2] = useState<string | null>(null);
+  const [showSkills, setShowSkills] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -21,6 +25,27 @@ const ChatInput = () => {
 
   const costMap: Record<ChatMode, number> = { fast: 1, thinking: 3, pro: 5 };
   const modeLabels: Record<ChatMode, string> = { fast: '⚡ Fast', thinking: '🧠 Thinking', pro: '💎 Pro' };
+
+  // Attach / reply bus (from message bubbles)
+  useEffect(() => {
+    const onAttach = (e: Event) => {
+      const { url, kind } = (e as CustomEvent).detail || {};
+      if (kind === 'video') setVideoRef2(url);
+      else setImageData(url);
+      textareaRef.current?.focus();
+    };
+    const onReply = (e: Event) => {
+      setReplyQuote(String((e as CustomEvent).detail || ''));
+      textareaRef.current?.focus();
+    };
+    window.addEventListener('tat:attach', onAttach);
+    window.addEventListener('tat:reply', onReply);
+    return () => {
+      window.removeEventListener('tat:attach', onAttach);
+      window.removeEventListener('tat:reply', onReply);
+    };
+  }, []);
+
 
   // Speech recognition for live transcription
   useEffect(() => {
@@ -126,14 +151,24 @@ const ChatInput = () => {
     }
 
     if (!deductCredits()) return;
-    addMessage({ role: 'user', text: userText, image: imageData || undefined });
+    const quote = replyQuote;
+    const vRef = videoRef2;
+    addMessage({ role: 'user', text: userText, image: imageData || undefined, replyTo: quote || undefined });
     setText('');
     setImageData(null);
+    setReplyQuote(null);
+    setVideoRef2(null);
     if (textareaRef.current) textareaRef.current.style.height = '20px';
     setIsGenerating(true);
     trackMessage(model, mode);
-    await sendChatMessage(userText, imageData);
+    const payload = [
+      quote ? `[Replying to this earlier message: "${quote}"]` : '',
+      vRef ? `[The user is referring to this generated video: ${vRef}]` : '',
+      userText,
+    ].filter(Boolean).join('\n');
+    await sendChatMessage(payload, imageData);
   };
+
 
   const handleSend = async () => {
     if ((!text.trim() && !imageData) || isGenerating) return;
@@ -182,10 +217,36 @@ const ChatInput = () => {
               ))}
             </div>
           </div>
-          <span className="hidden sm:flex text-[10px] font-bold text-muted-foreground bg-muted/70 px-2 py-1 rounded-full border border-border/60 items-center gap-1 shrink-0">
-            Cost: {costMap[mode]} <Zap className="w-3 h-3 text-amber-accent" />
-          </span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button onClick={() => setShowSkills(true)}
+              className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground hover:text-foreground bg-muted/70 px-2 py-1 rounded-full border border-border/60"
+              title="Skills">
+              <Sparkles className="w-3 h-3 text-amber-accent" /> <span className="hidden sm:inline">Skills</span>
+            </button>
+            <span className="hidden sm:flex text-[10px] font-bold text-muted-foreground bg-muted/70 px-2 py-1 rounded-full border border-border/60 items-center gap-1">
+              {costMap[mode]} <Zap className="w-3 h-3 text-amber-accent" />
+            </span>
+          </div>
         </div>
+
+        {showSkills && <SkillsModal onClose={() => setShowSkills(false)} />}
+
+        {replyQuote && (
+          <div className="mb-2 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/60 border-l-2 border-primary">
+            <Reply className="w-3 h-3 text-primary shrink-0" />
+            <span className="text-[11px] text-muted-foreground truncate flex-1">{replyQuote}</span>
+            <button onClick={() => setReplyQuote(null)}><X className="w-3 h-3" /></button>
+          </div>
+        )}
+
+        {videoRef2 && (
+          <div className="mb-2 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/60 border border-border/60">
+            <span className="text-[11px] text-muted-foreground truncate flex-1">🎬 Video attached as reference</span>
+            <button onClick={() => setVideoRef2(null)}><X className="w-3 h-3" /></button>
+          </div>
+        )}
+
+
 
         {imageData && (
           <div className="mb-2 relative inline-block">

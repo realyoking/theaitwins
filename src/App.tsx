@@ -11,6 +11,7 @@ import GroupChat from "./pages/GroupChat";
 import JoinGroup from "./pages/JoinGroup";
 import AdminPanel from "./pages/AdminPanel";
 import CodePlayground from "./pages/CodePlayground";
+import PublicProject from "./pages/PublicProject";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/join/:code" element={<JoinGroup />} />
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/playground" element={<CodePlayground />} />
+          <Route path="/p/:id" element={<PublicProject />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -1,16 +1,33 @@
 import { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Send, Loader2, Code2, Eye, Monitor, Smartphone, Download, Sparkles, MessageSquare, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, Code2, Eye, Monitor, Smartphone, Download, Sparkles, MessageSquare, RotateCcw, Save, History, Globe, Copy, Plus, Trash2, Image as ImageIco } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { streamCompletion } from '@/lib/completion';
 import ModelPicker from '@/components/ModelPicker';
+import SkillsModal from '@/components/SkillsModal';
+import { skillsPromptBlock } from '@/lib/skills';
+import { assetsPromptBlock, resolveAssetRefs, allAssets } from '@/lib/media';
+import { generateImage, parseDirectives } from '@/lib/ai-tools';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface Msg { role: 'user' | 'assistant'; content: string }
+interface Project { id: string; title: string; code: string; messages: Msg[]; updatedAt: number; remoteId?: string; published?: boolean }
 
-const SYSTEM = `You are an elite frontend engineer. The user asks for web UIs.
+const baseSystem = () => `You are an elite frontend engineer working inside TheAiTwins Code Playground.
 ALWAYS reply with ONE complete, self-contained HTML document inside a single \`\`\`html code block.
-Use HTML + CSS + vanilla JavaScript only (you may use the Tailwind CDN). No React, no build steps.
-Make it beautiful, responsive and production-quality. Add one short sentence of explanation AFTER the code block.`;
+Use HTML + CSS + vanilla JavaScript only (the Tailwind CDN is allowed). No React, no build steps.
+Make it beautiful, responsive and production-quality. Add one short sentence of explanation AFTER the code block.
+
+If the request is ambiguous, ask first with:
+\`\`\`ask
+{"question":"...","options":["A","B"]}
+\`\`\`
+If the page needs an image, request one with:
+\`\`\`action
+{"tool":"generate_image","prompt":"..."}
+\`\`\`
+and use ASSET:<id> as the img src — the app swaps in the real URL.
+${skillsPromptBlock()}${assetsPromptBlock()}`;
 
 const STARTER = `<!DOCTYPE html>
 <html lang="en">
@@ -27,12 +44,15 @@ const STARTER = `<!DOCTYPE html>
 </head>
 <body>
   <div style="text-align:center">
-    <h1>Hello, Playground 👋</h1>
+    <h1>Hello, Playground</h1>
     <p>Ask the AI on the left to build something.</p>
   </div>
-  <script>console.log('ready');<\/script>
 </body>
 </html>`;
+
+const PKEY = 'tat_playground_projects';
+const loadProjects = (): Project[] => { try { return JSON.parse(localStorage.getItem(PKEY) || '[]'); } catch { return []; } };
+const saveProjects = (p: Project[]) => localStorage.setItem(PKEY, JSON.stringify(p.slice(0, 40)));
 
 function extractHtml(text: string): string | null {
   const fence = text.match(/```(?:html|HTML)?\s*\n([\s\S]*?)(?:```|$)/);
@@ -42,6 +62,9 @@ function extractHtml(text: string): string | null {
 }
 
 const CodePlayground = () => {
+  const [projects, setProjects] = useState<Project[]>(loadProjects());
+  const [projectId, setProjectId] = useState<string>(() => loadProjects()[0]?.id || `p${Date.now().toString(36)}`);
+  const [title, setTitle] = useState('Untitled');
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -50,14 +73,85 @@ const CodePlayground = () => {
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
   const [mobilePane, setMobilePane] = useState<'chat' | 'workbench'>('chat');
   const [runKey, setRunKey] = useState(0);
+  const [showHistory, setShowHistory] = useState(false);
+  const [showSkills, setShowSkills] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [publicUrl, setPublicUrl] = useState<string | null>(null);
   const feedRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const p = loadProjects().find((x) => x.id === projectId);
+    if (p) { setTitle(p.title); setCode(p.code); setMessages(p.messages || []); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
   }, [messages]);
 
-  const send = async () => {
-    const text = input.trim();
+  const persist = (patch: Partial<Project> = {}) => {
+    const list = loadProjects();
+    const idx = list.findIndex((p) => p.id === projectId);
+    const next: Project = {
+      id: projectId, title, code, messages, updatedAt: Date.now(),
+      ...(idx >= 0 ? list[idx] : {}), ...{ title, code, messages, updatedAt: Date.now() }, ...patch,
+    };
+    if (idx >= 0) list[idx] = next; else list.unshift(next);
+    saveProjects(list);
+    setProjects(list);
+    return next;
+  };
+
+  const newProject = () => {
+    persist();
+    const id = `p${Date.now().toString(36)}`;
+    setProjectId(id); setTitle('Untitled'); setCode(STARTER); setMessages([]); setPublicUrl(null);
+    setShowHistory(false);
+  };
+
+  const openProject = (p: Project) => {
+    persist();
+    setProjectId(p.id); setTitle(p.title); setCode(p.code); setMessages(p.messages || []);
+    setPublicUrl(p.remoteId && p.published ? `${window.location.origin}/p/${p.remoteId}` : null);
+    setShowHistory(false); setRunKey((k) => k + 1);
+  };
+
+  const removeProject = (id: string) => {
+    const list = loadProjects().filter((p) => p.id !== id);
+    saveProjects(list); setProjects(list);
+  };
+
+  const publish = async () => {
+    setPublishing(true);
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) { toast.error('Sign in to publish'); return; }
+      const existing = loadProjects().find((p) => p.id === projectId);
+      let remoteId = existing?.remoteId;
+      if (remoteId) {
+        const { error } = await supabase.from('playground_projects')
+          .update({ title, code, published: true, updated_at: new Date().toISOString() }).eq('id', remoteId);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase.from('playground_projects')
+          .insert({ title, code, published: true, user_id: auth.user.id }).select('id').single();
+        if (error) throw error;
+        remoteId = data.id;
+      }
+      persist({ remoteId, published: true });
+      const url = `${window.location.origin}/p/${remoteId}`;
+      setPublicUrl(url);
+      navigator.clipboard?.writeText(url).catch(() => {});
+      toast.success('Published — link copied');
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const send = async (override?: string) => {
+    const text = (override ?? input).trim();
     if (!text || busy) return;
     const next: Msg[] = [...messages, { role: 'user', content: text }];
     setMessages([...next, { role: 'assistant', content: '' }]);
@@ -68,7 +162,7 @@ const CodePlayground = () => {
     let full = '';
     try {
       await streamCompletion(
-        SYSTEM,
+        baseSystem(),
         [
           ...next.slice(-8),
           { role: 'user', content: `Current code:\n\`\`\`html\n${code}\n\`\`\`` },
@@ -84,8 +178,26 @@ const CodePlayground = () => {
           if (html) setCode(html);
         },
       );
-      const html = extractHtml(full);
-      if (html) { setCode(html); setRunKey((k) => k + 1); setRightTab('preview'); setMobilePane('workbench'); }
+
+      // run any tools the model asked for (image generation), then re-resolve refs
+      const { actions } = parseDirectives(full);
+      for (const a of actions.slice(0, 2)) {
+        if (a.tool === 'generate_image') {
+          setMessages((m) => [...m, { role: 'assistant', content: `🎨 Generating image: ${a.prompt}` }]);
+          try { await generateImage(String(a.prompt || 'an image')); } catch (e: any) { toast.error(e.message); }
+        }
+      }
+
+      let html = extractHtml(full);
+      if (html) {
+        html = resolveAssetRefs(html);
+        // if the model asked for an image but forgot the ref, inject the newest one
+        const latest = allAssets().find((x) => x.kind === 'image');
+        if (latest && html.includes('ASSET:')) html = html.replace(/ASSET:[a-z0-9]+/gi, latest.url);
+        setCode(html); setRunKey((k) => k + 1); setRightTab('preview'); setMobilePane('workbench');
+        if (title === 'Untitled') setTitle(text.slice(0, 40));
+      }
+      setTimeout(() => persist(), 50);
     } catch (e: any) {
       toast.error(e.message);
       setMessages((m) => {
@@ -102,7 +214,7 @@ const CodePlayground = () => {
     const blob = new Blob([code], { type: 'text/html' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'playground.html';
+    a.download = `${title || 'playground'}.html`;
     a.click();
   };
 
@@ -117,7 +229,7 @@ const CodePlayground = () => {
             <h2 className="text-lg font-bold tracking-tight">Build with AI</h2>
             <p className="text-xs text-muted-foreground mt-1 mb-5">HTML · CSS · JavaScript — described in plain words.</p>
             <div className="grid gap-2 w-full max-w-xs">
-              {['A pricing page with 3 tiers', 'Animated login form', 'Snake game in canvas', 'Glassmorphism dashboard'].map((q) => (
+              {['A pricing page with 3 tiers', 'Animated login form', 'Snake game in canvas', 'Landing page with a generated hero image'].map((q) => (
                 <button key={q} onClick={() => setInput(q)}
                   className="px-3 py-2.5 bg-muted/70 hover:bg-accent border border-border/60 rounded-xl text-xs font-medium text-left transition-colors">
                   {q}
@@ -133,9 +245,28 @@ const CodePlayground = () => {
                 ? 'bg-primary text-primary-foreground rounded-br-md'
                 : 'bg-muted/70 border border-border/60 rounded-bl-md'
             }`}>
-              {m.role === 'assistant'
-                ? (m.content.replace(/```[\s\S]*?(```|$)/g, '\n📦 _generated code → see the workbench_\n').trim() || (busy ? 'Thinking…' : ''))
-                : m.content}
+              {m.role === 'assistant' ? (() => {
+                const p = parseDirectives(m.content);
+                const body = p.text.replace(/```[\s\S]*?(```|$)/g, '\n📦 generated code → see the workbench\n').trim();
+                return (
+                  <>
+                    {body || (busy ? 'Thinking…' : '')}
+                    {p.asks.map((ask, k) => (
+                      <div key={k} className="mt-2">
+                        <div className="text-[12px] font-bold mb-1">{ask.question}</div>
+                        <div className="flex flex-wrap gap-1">
+                          {ask.options.map((o) => (
+                            <button key={o} onClick={() => send(o)}
+                              className="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-bold border border-primary/20">
+                              {o}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                );
+              })() : m.content}
             </div>
           </div>
         ))}
@@ -143,8 +274,12 @@ const CodePlayground = () => {
       </div>
 
       <div className="shrink-0 p-2 md:p-3 border-t border-border/60 bg-background">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-1.5 mb-2">
           <ModelPicker />
+          <button onClick={() => setShowSkills(true)}
+            className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground hover:text-foreground bg-muted/70 px-2 py-1 rounded-full border border-border/60">
+            <Sparkles className="w-3 h-3 text-amber-accent" /> Skills
+          </button>
         </div>
         <div className="flex items-end gap-1 bg-muted/70 border border-border/60 rounded-2xl p-1 shadow-sm focus-within:ring-1 ring-ring/30">
           <textarea
@@ -155,7 +290,7 @@ const CodePlayground = () => {
             placeholder="Describe what to build or change..."
             className="flex-1 bg-transparent outline-none resize-none px-3 py-2 text-sm max-h-32 custom-scrollbar"
           />
-          <button onClick={send} disabled={busy || !input.trim()}
+          <button onClick={() => send()} disabled={busy || !input.trim()}
             className="p-2 bg-primary text-primary-foreground rounded-full disabled:opacity-30 shrink-0">
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
@@ -179,7 +314,7 @@ const CodePlayground = () => {
         </div>
         <div className="ml-auto flex items-center gap-1">
           {rightTab === 'preview' && (
-            <div className="flex bg-muted p-0.5 rounded-lg mr-1">
+            <div className="hidden sm:flex bg-muted p-0.5 rounded-lg mr-1">
               <button onClick={() => setDevice('desktop')} className={`p-1 rounded ${device === 'desktop' ? 'bg-card shadow-sm' : 'text-muted-foreground'}`}><Monitor className="w-3.5 h-3.5" /></button>
               <button onClick={() => setDevice('mobile')} className={`p-1 rounded ${device === 'mobile' ? 'bg-card shadow-sm' : 'text-muted-foreground'}`}><Smartphone className="w-3.5 h-3.5" /></button>
             </div>
@@ -187,11 +322,25 @@ const CodePlayground = () => {
           <button onClick={() => setRunKey((k) => k + 1)} className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted" title="Re-run">
             <RotateCcw className="w-4 h-4" />
           </button>
+          <button onClick={() => { persist(); toast.success('Saved'); }} className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted" title="Save">
+            <Save className="w-4 h-4" />
+          </button>
+          <button onClick={publish} disabled={publishing} className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted" title="Publish">
+            {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Globe className="w-4 h-4" />}
+          </button>
           <button onClick={download} className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted" title="Download">
             <Download className="w-4 h-4" />
           </button>
         </div>
       </div>
+
+      {publicUrl && (
+        <div className="shrink-0 flex items-center gap-2 px-3 py-1.5 bg-primary/10 border-b border-border/60">
+          <Globe className="w-3 h-3 text-primary" />
+          <a href={publicUrl} target="_blank" rel="noreferrer" className="text-[11px] text-primary truncate flex-1 underline">{publicUrl}</a>
+          <button onClick={() => { navigator.clipboard.writeText(publicUrl); toast.success('Copied'); }}><Copy className="w-3 h-3" /></button>
+        </div>
+      )}
 
       {rightTab === 'preview' ? (
         <div className="flex-1 min-h-0 flex justify-center items-start p-3 overflow-auto">
@@ -214,7 +363,7 @@ const CodePlayground = () => {
 
   return (
     <div className="h-[100dvh] flex flex-col bg-background text-foreground overflow-hidden">
-      <header className="shrink-0 h-12 md:h-14 flex items-center justify-between px-2 md:px-4 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+      <header className="shrink-0 h-12 md:h-14 flex items-center justify-between gap-2 px-2 md:px-4 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="flex items-center gap-2 min-w-0">
           <Link to="/" className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors">
             <ArrowLeft className="w-4 h-4" />
@@ -222,18 +371,26 @@ const CodePlayground = () => {
           <div className="w-7 h-7 rounded-lg bg-gradient-primary grid place-items-center shrink-0">
             <Code2 className="w-4 h-4 text-primary-foreground" />
           </div>
-          <span className="font-bold text-sm tracking-tight truncate">Playground</span>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} onBlur={() => persist()}
+            className="font-bold text-sm tracking-tight bg-transparent outline-none min-w-0 w-24 sm:w-48 truncate" />
         </div>
-        {/* Mobile pane switcher */}
-        <div className="md:hidden flex bg-muted p-0.5 rounded-lg">
-          <button onClick={() => setMobilePane('chat')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold ${mobilePane === 'chat' ? 'bg-card shadow-sm' : 'text-muted-foreground'}`}>
-            <MessageSquare className="w-3.5 h-3.5" /> Chat
+        <div className="flex items-center gap-1">
+          <button onClick={() => setShowHistory(true)} className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted" title="History">
+            <History className="w-4 h-4" />
           </button>
-          <button onClick={() => setMobilePane('workbench')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold ${mobilePane === 'workbench' ? 'bg-card shadow-sm' : 'text-muted-foreground'}`}>
-            <Eye className="w-3.5 h-3.5" /> Build
+          <button onClick={newProject} className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted" title="New project">
+            <Plus className="w-4 h-4" />
           </button>
+          <div className="md:hidden flex bg-muted p-0.5 rounded-lg ml-1">
+            <button onClick={() => setMobilePane('chat')}
+              className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold ${mobilePane === 'chat' ? 'bg-card shadow-sm' : 'text-muted-foreground'}`}>
+              <MessageSquare className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={() => setMobilePane('workbench')}
+              className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold ${mobilePane === 'workbench' ? 'bg-card shadow-sm' : 'text-muted-foreground'}`}>
+              <Eye className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -245,6 +402,32 @@ const CodePlayground = () => {
           {workbench}
         </div>
       </div>
+
+      {showSkills && <SkillsModal onClose={() => setShowSkills(false)} />}
+
+      {showHistory && (
+        <div className="fixed inset-0 z-50 bg-background/70 backdrop-blur-sm flex items-end md:items-center justify-center" onClick={() => setShowHistory(false)}>
+          <div onClick={(e) => e.stopPropagation()}
+            className="w-full md:max-w-md max-h-[80dvh] overflow-y-auto custom-scrollbar bg-card border border-border rounded-t-3xl md:rounded-3xl p-4 space-y-2">
+            <h3 className="font-bold text-sm mb-2">Projects</h3>
+            {projects.length === 0 && <p className="text-xs text-muted-foreground">Nothing saved yet.</p>}
+            {projects.map((p) => (
+              <div key={p.id} className="flex items-center gap-2 p-2.5 rounded-xl border border-border/60 bg-muted/40">
+                <button onClick={() => openProject(p)} className="flex-1 text-left min-w-0">
+                  <div className="text-xs font-bold truncate">{p.title || 'Untitled'}</div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {new Date(p.updatedAt).toLocaleString()} · {p.messages?.length || 0} msgs {p.published ? '· published' : ''}
+                  </div>
+                </button>
+                <button onClick={() => removeProject(p.id)} className="p-1 text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>
+              </div>
+            ))}
+            <button onClick={newProject} className="w-full py-2 rounded-xl border border-dashed border-border text-xs font-bold text-muted-foreground">
+              + New project
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
