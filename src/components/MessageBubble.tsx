@@ -291,9 +291,13 @@ const MessageBubble = ({ msg, msgIndex, userInitial, model, onRenderCode, onQuic
           <button onClick={handleCopy} className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors" title="Copy">
             {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
           </button>
+          <button onClick={() => replyToMessage((msg.text || '[media]').slice(0, 120))} className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors" title="Reply to this message">
+            <Reply className="w-3.5 h-3.5" />
+          </button>
           <button onClick={handleShare} className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors" title="Share">
             <Share2 className="w-3.5 h-3.5" />
           </button>
+
           <button onClick={handleTTS} className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors" title="Read aloud">
             {isSpeaking ? <VolumeX className="w-3.5 h-3.5 text-primary" /> : <Volume2 className="w-3.5 h-3.5" />}
           </button>
