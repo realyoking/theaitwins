@@ -151,14 +151,24 @@ const ChatInput = () => {
     }
 
     if (!deductCredits()) return;
-    addMessage({ role: 'user', text: userText, image: imageData || undefined });
+    const quote = replyQuote;
+    const vRef = videoRef2;
+    addMessage({ role: 'user', text: userText, image: imageData || undefined, replyTo: quote || undefined });
     setText('');
     setImageData(null);
+    setReplyQuote(null);
+    setVideoRef2(null);
     if (textareaRef.current) textareaRef.current.style.height = '20px';
     setIsGenerating(true);
     trackMessage(model, mode);
-    await sendChatMessage(userText, imageData);
+    const payload = [
+      quote ? `[Replying to this earlier message: "${quote}"]` : '',
+      vRef ? `[The user is referring to this generated video: ${vRef}]` : '',
+      userText,
+    ].filter(Boolean).join('\n');
+    await sendChatMessage(payload, imageData);
   };
+
 
   const handleSend = async () => {
     if ((!text.trim() && !imageData) || isGenerating) return;
