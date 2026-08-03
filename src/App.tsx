@@ -11,6 +11,7 @@ import GroupChat from "./pages/GroupChat";
 import JoinGroup from "./pages/JoinGroup";
 import AdminPanel from "./pages/AdminPanel";
 import CodePlayground from "./pages/CodePlayground";
+import PublicProject from "./pages/PublicProject";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
