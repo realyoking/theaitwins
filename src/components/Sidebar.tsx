@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Settings, Zap, Sun, Moon, X, Cpu, ChevronUp, MessageSquare, Pin, Trash2, Edit3, Search, MoreHorizontal, Copy, Download, Archive, Tag, BarChart3, Users, Gift, Shield, LogOut, Terminal, Puzzle } from 'lucide-react';
+import { Plus, Settings, Zap, Sun, Moon, X, Cpu, ChevronUp, MessageSquare, Pin, Trash2, Edit3, Search, MoreHorizontal, Copy, Download, Archive, Tag, BarChart3, Users, Gift, Shield, LogOut, Terminal, Puzzle, Wand2 } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import { useAppStore } from '@/lib/store';
 import { supabase } from '@/integrations/supabase/client';
@@ -245,6 +245,11 @@ const Sidebar = ({ onOpenSettings, onOpenPricing, onOpenAnalytics, onOpenPlugins
               className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-accent rounded-lg transition-colors">
               <Terminal className="w-4 h-4" /> Code Playground
             </button>
+            <button onClick={() => navigate('/workspace')}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-accent rounded-lg transition-colors">
+              <Wand2 className="w-4 h-4" /> AI Workspace
+            </button>
+
             <button onClick={onOpenAnalytics}
               className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-accent rounded-lg transition-colors">
               <BarChart3 className="w-4 h-4" /> Analytics

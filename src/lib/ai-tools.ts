@@ -10,6 +10,7 @@ import { runCode, detectLanguage } from './code-runner';
 import { addAsset, allAssets, assetsPromptBlock, renderKenBurnsVideo, downloadUrl } from './media';
 import { skillsPromptBlock } from './skills';
 import { useAppStore } from './store';
+import { startProgress, setProgress, endProgress } from './progress';
 
 export const APP_CONTEXT = `
 ## WHERE YOU ARE
@@ -163,16 +164,25 @@ export async function generateVideo(
     `${prompt} — final hero shot, golden hour, film still`,
   ].slice(0, Math.max(2, Math.min(4, frames)));
 
-  const urls: string[] = [];
-  for (let i = 0; i < shots.length; i++) {
-    onProgress?.(`Rendering keyframe ${i + 1}/${shots.length}…`);
-    const { url } = await generateImage(shots[i]);
-    urls.push(url);
+  startProgress('Starting video render…');
+  try {
+    const urls: string[] = [];
+    for (let i = 0; i < shots.length; i++) {
+      setProgress((i / (shots.length + 1)) * 100, `Rendering keyframe ${i + 1}/${shots.length}…`);
+      onProgress?.(`Rendering keyframe ${i + 1}/${shots.length}…`);
+      const { url } = await generateImage(shots[i]);
+      urls.push(url);
+    }
+    setProgress((shots.length / (shots.length + 1)) * 100, 'Compositing video…');
+    onProgress?.('Compositing video…');
+    const videoUrl = await renderKenBurnsVideo(urls, { seconds: 2 * urls.length });
+    addAsset('video', videoUrl, prompt);
+    endProgress('Video ready');
+    return videoUrl;
+  } catch (e) {
+    endProgress('Failed');
+    throw e;
   }
-  onProgress?.('Compositing video…');
-  const videoUrl = await renderKenBurnsVideo(urls, { seconds: 2 * urls.length });
-  addAsset('video', videoUrl, prompt);
-  return videoUrl;
 }
 
 export interface ActionResult {

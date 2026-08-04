@@ -12,14 +12,19 @@ import JoinGroup from "./pages/JoinGroup";
 import AdminPanel from "./pages/AdminPanel";
 import CodePlayground from "./pages/CodePlayground";
 import PublicProject from "./pages/PublicProject";
+import Workspace from "./pages/Workspace";
+import ProgressOverlay from "./components/ProgressOverlay";
 import NotFound from "./pages/NotFound";
+
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      <ProgressOverlay />
       <Toaster />
+
       <Sonner />
       <BrowserRouter>
         <Routes>
@@ -31,6 +36,8 @@ const App = () => (
           <Route path="/join/:code" element={<JoinGroup />} />
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/playground" element={<CodePlayground />} />
+          <Route path="/workspace" element={<Workspace />} />
+
           <Route path="/p/:id" element={<PublicProject />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
