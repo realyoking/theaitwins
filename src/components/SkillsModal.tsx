@@ -17,9 +17,9 @@ const SkillsModal = ({ onClose }: { onClose: () => void }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/70 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-6" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-background/70 backdrop-blur-sm flex items-center justify-center p-3 md:p-6" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()}
-        className="w-full md:max-w-lg max-h-[85dvh] overflow-y-auto custom-scrollbar bg-card border border-border rounded-t-3xl md:rounded-3xl shadow-2xl p-4 md:p-5">
+        className="w-full md:max-w-lg max-h-[80dvh] overflow-y-auto custom-scrollbar bg-card border border-border rounded-3xl shadow-2xl p-4 md:p-5">
         <div className="flex items-center gap-2 mb-4">
           <div className="w-8 h-8 rounded-xl bg-gradient-primary grid place-items-center">
             <Sparkles className="w-4 h-4 text-primary-foreground" />
