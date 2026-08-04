@@ -12,7 +12,10 @@ import JoinGroup from "./pages/JoinGroup";
 import AdminPanel from "./pages/AdminPanel";
 import CodePlayground from "./pages/CodePlayground";
 import PublicProject from "./pages/PublicProject";
+import Workspace from "./pages/Workspace";
+import ProgressOverlay from "./components/ProgressOverlay";
 import NotFound from "./pages/NotFound";
+
 
 const queryClient = new QueryClient();
 
