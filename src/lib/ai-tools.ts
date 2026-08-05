@@ -218,6 +218,39 @@ export async function executeAction(
       useAppStore.getState().setWallpaper(asset.url);
       return { tool: action.tool, output: 'Background updated.' };
     }
+    if (action.tool === 'create_doc') {
+      const kind = (['design', 'slides', 'doc', 'sheet', 'video', 'code'].includes(String(action.kind))
+        ? action.kind
+        : 'doc') as DocKind;
+      const p = String(action.prompt || 'a new document');
+      const id = `w${Date.now().toString(36)}`;
+      startProgress(`Building ${kind} in AI Workspace…`);
+      const stop = creepProgress(85);
+      try {
+        if (kind === 'video') {
+          const project = await writeScript(p);
+          setProgress(35, 'Storyboarding scenes…');
+          for (let i = 0; i < project.scenes.length; i++) {
+            setProgress(35 + (i / project.scenes.length) * 40, `Scene ${i + 1}/${project.scenes.length}…`);
+            try {
+              project.scenes[i].imageUrl = await makeSceneImage(project.scenes[i], project.character?.description);
+            } catch {}
+          }
+          project.videoUrl = await renderMovie(project, (pct, l) => setProgress(75 + pct * 0.2, l));
+          upsertDoc({ id, kind, title: project.title, content: project, updatedAt: Date.now() });
+        } else {
+          const { title, content } = await generateDoc(kind, p);
+          upsertDoc({ id, kind, title, content, updatedAt: Date.now() });
+        }
+      } finally {
+        stop();
+        endProgress('Ready in Workspace');
+      }
+      return {
+        tool: action.tool,
+        output: `__WORKSPACE__${id}|${kind}|${p.slice(0, 60)}`,
+      };
+    }
     if (action.tool === 'run_code') {
       const lang = detectLanguage(String(action.language || 'javascript'));
       if (!lang || lang === 'react') throw new Error('Unsupported language for execution');
