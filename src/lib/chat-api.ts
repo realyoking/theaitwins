@@ -58,6 +58,13 @@ async function runToolDirectives(fullText: string) {
       store.addMessage({ role: 'bot', type: 'image', text: String(action.prompt || ''), url: res.imageUrl, image: res.imageUrl } as any);
     } else if (res.videoUrl) {
       store.addMessage({ role: 'bot', type: 'video', text: String(action.prompt || ''), url: res.videoUrl } as any);
+    } else if (typeof res.output === 'string' && res.output.startsWith('__WORKSPACE__')) {
+      const [id, kind, label] = res.output.replace('__WORKSPACE__', '').split('|');
+      store.addMessage({
+        role: 'bot',
+        type: 'text',
+        text: `✅ Your **${kind}** is ready in the AI Workspace — _${label}_\n\n[▶ Open in AI Workspace](/workspace?doc=${id})`,
+      });
     } else if (res.output !== undefined) {
       store.addMessage({ role: 'bot', type: 'text', text: `**Output**\n\n\`\`\`\n${res.output}\n\`\`\`` });
     }
