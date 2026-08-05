@@ -59,7 +59,7 @@ const Workspace = () => {
   useEffect(() => {
     const name = (() => { try { return JSON.parse(localStorage.getItem('tat_user') || '{}')?.name || 'Guest'; } catch { return 'Guest'; } })();
     collab.current = joinWorkspace('main', { id: meId, name }, setPeers);
-    return () => collab.current?.leave();
+    return () => { collab.current?.leave(); };
   }, []);
 
   const onMove = useCallback((e: React.MouseEvent) => {
