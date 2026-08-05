@@ -63,6 +63,15 @@ Return ONLY:
 \`\`\`json
 [["Header A","Header B"],["a","b"]]
 \`\`\``,
+  code: `You are a senior front-end engineer. Return ONE self-contained HTML document (inline CSS + JS, CDN allowed) that is a complete, working, beautiful app.
+No explanations outside the code block. Output only:
+\`\`\`html
+...
+\`\`\``,
+  video: `You are a film director. Return ONLY JSON describing a short video:
+\`\`\`json
+{"title":"...","scenes":[{"caption":"...","imagePrompt":"...","seconds":3}]}
+\`\`\``,
 };
 
 function extractBlock(text: string, lang?: string): string {
