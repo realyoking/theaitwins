@@ -91,8 +91,7 @@ export async function generateDoc(
     onDelta?.(d, full);
   });
 
-  if (kind === 'design') return { title: prompt.slice(0, 40), content: extractBlock(full, 'html') };
-  if (kind === 'doc') return { title: prompt.slice(0, 40), content: extractBlock(full, 'markdown') };
+  if (kind === 'design' || kind === 'code') return { title: prompt.slice(0, 40), content: extractBlock(full, 'html') };
   try {
     const parsed = JSON.parse(extractBlock(full, 'json'));
     return { title: prompt.slice(0, 40), content: parsed };
