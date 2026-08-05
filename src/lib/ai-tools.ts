@@ -10,7 +10,9 @@ import { runCode, detectLanguage } from './code-runner';
 import { addAsset, allAssets, assetsPromptBlock, renderKenBurnsVideo, downloadUrl } from './media';
 import { skillsPromptBlock } from './skills';
 import { useAppStore } from './store';
-import { startProgress, setProgress, endProgress } from './progress';
+import { startProgress, setProgress, endProgress, creepProgress, getProgress } from './progress';
+import { upsertDoc, generateDoc, type DocKind } from './workspace';
+import { writeScript, makeSceneImage, renderMovie } from './video-studio';
 
 export const APP_CONTEXT = `
 ## WHERE YOU ARE
@@ -59,6 +61,12 @@ You can take real actions by emitting fenced directive blocks. They are parsed b
 \`\`\`action
 {"tool":"set_wallpaper","assetId":"a1abc"}
 \`\`\`
+
+6) Build something in the AI Workspace (presentation, poster, document, spreadsheet, AI video, or a code app). USE THIS whenever the user asks for a PPT/deck, poster/design, report/document, spreadsheet, video or a web app:
+\`\`\`action
+{"tool":"create_doc","kind":"slides","prompt":"6-slide pitch deck for an AI coffee startup"}
+\`\`\`
+kind is one of: design | slides | doc | sheet | video | code.
 
 Rules:
 - Emit at most 2 directive blocks per reply.
@@ -125,30 +133,41 @@ export function stripPartialDirective(raw: string): string {
 /** Generate an image through BYOK (if selected) or the cloud draw function. */
 export async function generateImage(prompt: string): Promise<{ url: string; note?: string }> {
   const selected = getSelectedModel();
+  const owns = !getProgress().active;
+  if (owns) {
+    startProgress('Generating image…');
+    var stop = creepProgress(88);
+  }
+  try {
+    if (selected.provider === 'byok') {
+      const url = await generateByokImage(prompt);
+      addAsset('image', url, prompt);
+      return { url };
+    }
 
-  if (selected.provider === 'byok') {
-    const url = await generateByokImage(prompt);
+    const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/draw`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({ prompt }),
+    });
+    if (!resp.ok) {
+      const e = await resp.json().catch(() => ({} as any));
+      throw new Error(e.error || `Image error ${resp.status}`);
+    }
+    const data = await resp.json();
+    const url = data.images?.[0]?.image_url?.url;
+    if (!url) throw new Error(data.text || 'No image returned.');
     addAsset('image', url, prompt);
-    return { url };
+    return { url, note: data.text };
+  } finally {
+    if (owns) {
+      stop?.();
+      endProgress('Image ready');
+    }
   }
-
-  const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/draw`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-    },
-    body: JSON.stringify({ prompt }),
-  });
-  if (!resp.ok) {
-    const e = await resp.json().catch(() => ({} as any));
-    throw new Error(e.error || `Image error ${resp.status}`);
-  }
-  const data = await resp.json();
-  const url = data.images?.[0]?.image_url?.url;
-  if (!url) throw new Error(data.text || 'No image returned.');
-  addAsset('image', url, prompt);
-  return { url, note: data.text };
 }
 
 /** Generates a short video: N AI keyframes → Ken Burns / cross-fade render. */
@@ -211,6 +230,39 @@ export async function executeAction(
       if (!asset) throw new Error('No generated image available yet.');
       useAppStore.getState().setWallpaper(asset.url);
       return { tool: action.tool, output: 'Background updated.' };
+    }
+    if (action.tool === 'create_doc') {
+      const kind = (['design', 'slides', 'doc', 'sheet', 'video', 'code'].includes(String(action.kind))
+        ? action.kind
+        : 'doc') as DocKind;
+      const p = String(action.prompt || 'a new document');
+      const id = `w${Date.now().toString(36)}`;
+      startProgress(`Building ${kind} in AI Workspace…`);
+      const stop = creepProgress(85);
+      try {
+        if (kind === 'video') {
+          const project = await writeScript(p);
+          setProgress(35, 'Storyboarding scenes…');
+          for (let i = 0; i < project.scenes.length; i++) {
+            setProgress(35 + (i / project.scenes.length) * 40, `Scene ${i + 1}/${project.scenes.length}…`);
+            try {
+              project.scenes[i].imageUrl = await makeSceneImage(project.scenes[i], project.character?.description);
+            } catch {}
+          }
+          project.videoUrl = await renderMovie(project, (pct, l) => setProgress(75 + pct * 0.2, l));
+          upsertDoc({ id, kind, title: project.title, content: project, updatedAt: Date.now() });
+        } else {
+          const { title, content } = await generateDoc(kind, p);
+          upsertDoc({ id, kind, title, content, updatedAt: Date.now() });
+        }
+      } finally {
+        stop();
+        endProgress('Ready in Workspace');
+      }
+      return {
+        tool: action.tool,
+        output: `__WORKSPACE__${id}|${kind}|${p.slice(0, 60)}`,
+      };
     }
     if (action.tool === 'run_code') {
       const lang = detectLanguage(String(action.language || 'javascript'));

@@ -1,6 +1,6 @@
 import { streamCompletion } from './completion';
 
-export type DocKind = 'design' | 'slides' | 'doc' | 'sheet';
+export type DocKind = 'design' | 'slides' | 'doc' | 'sheet' | 'video' | 'code';
 
 export interface WorkDoc {
   id: string;
@@ -37,6 +37,8 @@ export const KIND_META: Record<DocKind, { label: string; blurb: string; accent: 
   slides: { label: 'Slides', blurb: 'Presentation deck (PPT)', accent: 'from-amber-500 to-orange-500' },
   doc: { label: 'Document', blurb: 'Word-style rich document', accent: 'from-sky-500 to-blue-600' },
   sheet: { label: 'Spreadsheet', blurb: 'Excel-style data sheet', accent: 'from-emerald-500 to-teal-600' },
+  video: { label: 'Video', blurb: 'AI movie: script, characters, captions', accent: 'from-red-500 to-pink-600' },
+  code: { label: 'Code', blurb: 'Live HTML/CSS/JS app with preview', accent: 'from-violet-500 to-indigo-600' },
 };
 
 const SYSTEMS: Record<DocKind, string> = {
@@ -61,6 +63,15 @@ Return ONLY:
 \`\`\`json
 [["Header A","Header B"],["a","b"]]
 \`\`\``,
+  code: `You are a senior front-end engineer. Return ONE self-contained HTML document (inline CSS + JS, CDN allowed) that is a complete, working, beautiful app.
+No explanations outside the code block. Output only:
+\`\`\`html
+...
+\`\`\``,
+  video: `You are a film director. Return ONLY JSON describing a short video:
+\`\`\`json
+{"title":"...","scenes":[{"caption":"...","imagePrompt":"...","seconds":3}]}
+\`\`\``,
 };
 
 function extractBlock(text: string, lang?: string): string {
@@ -80,7 +91,7 @@ export async function generateDoc(
     onDelta?.(d, full);
   });
 
-  if (kind === 'design') return { title: prompt.slice(0, 40), content: extractBlock(full, 'html') };
+  if (kind === 'design' || kind === 'code') return { title: prompt.slice(0, 40), content: extractBlock(full, 'html') };
   if (kind === 'doc') return { title: prompt.slice(0, 40), content: extractBlock(full, 'markdown') };
   try {
     const parsed = JSON.parse(extractBlock(full, 'json'));
@@ -112,8 +123,19 @@ function mdToHtml(md: string) {
 
 export function exportDoc(doc: WorkDoc) {
   const safe = (doc.title || 'export').replace(/[^\w\- ]+/g, '').slice(0, 40) || 'export';
-  if (doc.kind === 'design') {
+  if (doc.kind === 'design' || doc.kind === 'code') {
     download(`${safe}.html`, doc.content, 'text/html');
+  } else if (doc.kind === 'video') {
+    const url = doc.content?.videoUrl;
+    if (!url) return;
+    fetch(url)
+      .then((r) => r.blob())
+      .then((b) => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(b);
+        a.download = `${safe}.webm`;
+        a.click();
+      });
   } else if (doc.kind === 'doc') {
     const html = `<html xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${safe}</title></head><body style="font-family:Calibri,sans-serif"><p>${mdToHtml(String(doc.content))}</p></body></html>`;
     download(`${safe}.doc`, html, 'application/msword');
