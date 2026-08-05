@@ -1,6 +1,6 @@
 import { streamCompletion } from './completion';
 
-export type DocKind = 'design' | 'slides' | 'doc' | 'sheet';
+export type DocKind = 'design' | 'slides' | 'doc' | 'sheet' | 'video' | 'code';
 
 export interface WorkDoc {
   id: string;
@@ -37,6 +37,8 @@ export const KIND_META: Record<DocKind, { label: string; blurb: string; accent: 
   slides: { label: 'Slides', blurb: 'Presentation deck (PPT)', accent: 'from-amber-500 to-orange-500' },
   doc: { label: 'Document', blurb: 'Word-style rich document', accent: 'from-sky-500 to-blue-600' },
   sheet: { label: 'Spreadsheet', blurb: 'Excel-style data sheet', accent: 'from-emerald-500 to-teal-600' },
+  video: { label: 'Video', blurb: 'AI movie: script, characters, captions', accent: 'from-red-500 to-pink-600' },
+  code: { label: 'Code', blurb: 'Live HTML/CSS/JS app with preview', accent: 'from-violet-500 to-indigo-600' },
 };
 
 const SYSTEMS: Record<DocKind, string> = {
