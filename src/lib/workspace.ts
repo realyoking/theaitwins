@@ -92,6 +92,7 @@ export async function generateDoc(
   });
 
   if (kind === 'design' || kind === 'code') return { title: prompt.slice(0, 40), content: extractBlock(full, 'html') };
+  if (kind === 'doc') return { title: prompt.slice(0, 40), content: extractBlock(full, 'markdown') };
   try {
     const parsed = JSON.parse(extractBlock(full, 'json'));
     return { title: prompt.slice(0, 40), content: parsed };
