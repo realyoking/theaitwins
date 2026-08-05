@@ -10,7 +10,9 @@ import { runCode, detectLanguage } from './code-runner';
 import { addAsset, allAssets, assetsPromptBlock, renderKenBurnsVideo, downloadUrl } from './media';
 import { skillsPromptBlock } from './skills';
 import { useAppStore } from './store';
-import { startProgress, setProgress, endProgress } from './progress';
+import { startProgress, setProgress, endProgress, creepProgress } from './progress';
+import { upsertDoc, generateDoc, type DocKind } from './workspace';
+import { writeScript, makeSceneImage, renderMovie } from './video-studio';
 
 export const APP_CONTEXT = `
 ## WHERE YOU ARE
