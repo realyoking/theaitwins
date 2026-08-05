@@ -60,6 +60,12 @@ You can take real actions by emitting fenced directive blocks. They are parsed b
 {"tool":"set_wallpaper","assetId":"a1abc"}
 \`\`\`
 
+6) Build something in the AI Workspace (presentation, poster, document, spreadsheet, AI video, or a code app). USE THIS whenever the user asks for a PPT/deck, poster/design, report/document, spreadsheet, video or a web app:
+\`\`\`action
+{"tool":"create_doc","kind":"slides","prompt":"6-slide pitch deck for an AI coffee startup"}
+\`\`\`
+kind is one of: design | slides | doc | sheet | video | code.
+
 Rules:
 - Emit at most 2 directive blocks per reply.
 - Always write a short sentence of normal text before a directive block.
