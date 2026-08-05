@@ -133,30 +133,41 @@ export function stripPartialDirective(raw: string): string {
 /** Generate an image through BYOK (if selected) or the cloud draw function. */
 export async function generateImage(prompt: string): Promise<{ url: string; note?: string }> {
   const selected = getSelectedModel();
+  const owns = !getProgress().active;
+  if (owns) {
+    startProgress('Generating image…');
+    var stop = creepProgress(88);
+  }
+  try {
+    if (selected.provider === 'byok') {
+      const url = await generateByokImage(prompt);
+      addAsset('image', url, prompt);
+      return { url };
+    }
 
-  if (selected.provider === 'byok') {
-    const url = await generateByokImage(prompt);
+    const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/draw`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({ prompt }),
+    });
+    if (!resp.ok) {
+      const e = await resp.json().catch(() => ({} as any));
+      throw new Error(e.error || `Image error ${resp.status}`);
+    }
+    const data = await resp.json();
+    const url = data.images?.[0]?.image_url?.url;
+    if (!url) throw new Error(data.text || 'No image returned.');
     addAsset('image', url, prompt);
-    return { url };
+    return { url, note: data.text };
+  } finally {
+    if (owns) {
+      stop?.();
+      endProgress('Image ready');
+    }
   }
-
-  const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/draw`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-    },
-    body: JSON.stringify({ prompt }),
-  });
-  if (!resp.ok) {
-    const e = await resp.json().catch(() => ({} as any));
-    throw new Error(e.error || `Image error ${resp.status}`);
-  }
-  const data = await resp.json();
-  const url = data.images?.[0]?.image_url?.url;
-  if (!url) throw new Error(data.text || 'No image returned.');
-  addAsset('image', url, prompt);
-  return { url, note: data.text };
 }
 
 /** Generates a short video: N AI keyframes → Ken Burns / cross-fade render. */
