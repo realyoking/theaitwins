@@ -123,8 +123,19 @@ function mdToHtml(md: string) {
 
 export function exportDoc(doc: WorkDoc) {
   const safe = (doc.title || 'export').replace(/[^\w\- ]+/g, '').slice(0, 40) || 'export';
-  if (doc.kind === 'design') {
+  if (doc.kind === 'design' || doc.kind === 'code') {
     download(`${safe}.html`, doc.content, 'text/html');
+  } else if (doc.kind === 'video') {
+    const url = doc.content?.videoUrl;
+    if (!url) return;
+    fetch(url)
+      .then((r) => r.blob())
+      .then((b) => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(b);
+        a.download = `${safe}.webm`;
+        a.click();
+      });
   } else if (doc.kind === 'doc') {
     const html = `<html xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${safe}</title></head><body style="font-family:Calibri,sans-serif"><p>${mdToHtml(String(doc.content))}</p></body></html>`;
     download(`${safe}.doc`, html, 'application/msword');
