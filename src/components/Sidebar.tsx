@@ -144,11 +144,14 @@ const Sidebar = ({ onOpenSettings, onOpenPricing, onOpenAnalytics, onOpenPlugins
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-20 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      <aside className={`w-64 shrink-0 border-r border-border bg-sidebar flex flex-col transition-all duration-300 z-30
+      <aside className={`w-64 shrink-0 border-r border-sidebar-border bg-sidebar/80 backdrop-blur-2xl flex flex-col transition-all duration-300 z-30
         ${sidebarOpen ? 'fixed inset-y-0 left-0' : 'hidden'} md:relative md:flex`}>
-        <div className="h-14 flex items-center justify-between px-4 shrink-0">
-          <div className="flex items-center gap-2 font-bold text-sm">
-            <Cpu className="w-4 h-4" /> TheAiTwins
+        <div className="h-14 flex items-center justify-between px-4 shrink-0 border-b border-sidebar-border/60">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-gradient-primary flex items-center justify-center shadow-glow">
+              <Cpu className="w-3.5 h-3.5 text-primary-foreground" />
+            </div>
+            <span className="font-display text-sm font-extrabold tracking-tight">TheAiTwins</span>
           </div>
           <div className="flex gap-1">
             <NotificationBell />
@@ -163,9 +166,10 @@ const Sidebar = ({ onOpenSettings, onOpenPricing, onOpenAnalytics, onOpenPlugins
 
         <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4 custom-scrollbar">
           <button onClick={() => clearMessages()}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-bold shadow-md hover:scale-[1.02] transition-transform">
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-gradient-primary text-primary-foreground rounded-xl text-xs font-bold shadow-glow hover:brightness-110 active:scale-[.99] transition-all">
             <Plus className="w-4 h-4" /> New Chat
           </button>
+
 
           {/* Search */}
           <div className="relative">
