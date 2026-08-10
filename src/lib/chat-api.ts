@@ -91,8 +91,6 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
     return;
   }
 
-  if (lower.startsWith('/video')) {
-    const vPrompt = userText.slice(6).trim() || 'A cinematic landscape';
   if (lower.startsWith('/gif')) {
     const gq = userText.slice(4).trim() || 'reaction';
     try {
