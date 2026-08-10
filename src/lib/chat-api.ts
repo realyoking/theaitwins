@@ -58,6 +58,8 @@ async function runToolDirectives(fullText: string) {
       store.addMessage({ role: 'bot', type: 'image', text: String(action.prompt || ''), url: res.imageUrl, image: res.imageUrl } as any);
     } else if (res.videoUrl) {
       store.addMessage({ role: 'bot', type: 'video', text: String(action.prompt || ''), url: res.videoUrl } as any);
+    } else if (res.gifUrl) {
+      store.addMessage({ role: 'bot', type: 'gif', text: res.gifTitle || String(action.query || ''), url: res.gifUrl } as any);
     } else if (typeof res.output === 'string' && res.output.startsWith('__WORKSPACE__')) {
       const [id, kind, label] = res.output.replace('__WORKSPACE__', '').split('|');
       store.addMessage({
@@ -84,6 +86,20 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
       store.addMessage({ role: 'bot', type: 'image', text: note || `Generated: "${drawPrompt}"`, url, image: url } as any);
     } catch (e: any) {
       store.addMessage({ role: 'bot', type: 'text', text: `⚠️ **Draw Error:** ${e.message}` });
+    }
+    store.setIsGenerating(false);
+    return;
+  }
+
+  if (lower.startsWith('/gif')) {
+    const gq = userText.slice(4).trim() || 'reaction';
+    try {
+      const { pickGif, rememberGif } = await import('./gifs');
+      const item = await pickGif(gq);
+      rememberGif(item);
+      store.addMessage({ role: 'bot', type: 'gif', text: item.title || gq, url: item.url } as any);
+    } catch (e: any) {
+      store.addMessage({ role: 'bot', type: 'text', text: `⚠️ **GIF Error:** ${e.message}` });
     }
     store.setIsGenerating(false);
     return;

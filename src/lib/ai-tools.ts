@@ -12,6 +12,7 @@ import { skillsPromptBlock } from './skills';
 import { useAppStore } from './store';
 import { startProgress, setProgress, endProgress, creepProgress, getProgress } from './progress';
 import { upsertDoc, generateDoc, type DocKind } from './workspace';
+import { pickGif, rememberGif, type GifMedia } from './gifs';
 import { writeScript, makeSceneImage, renderMovie } from './video-studio';
 
 export const APP_CONTEXT = `
@@ -67,6 +68,12 @@ You can take real actions by emitting fenced directive blocks. They are parsed b
 {"tool":"create_doc","kind":"slides","prompt":"6-slide pitch deck for an AI coffee startup"}
 \`\`\`
 kind is one of: design | slides | doc | sheet | video | code.
+
+7) Send a real GIF / sticker / short clip (KLIPY library — great for reactions and jokes):
+\`\`\`action
+{"tool":"send_gif","query":"mind blown","media":"gifs"}
+\`\`\`
+media is one of: gifs | stickers | clips | emojis. Use this when the user asks for a GIF/sticker, or when a reaction GIF makes the reply more fun.
 
 Rules:
 - Emit at most 2 directive blocks per reply.
@@ -208,6 +215,8 @@ export interface ActionResult {
   tool: string;
   imageUrl?: string;
   videoUrl?: string;
+  gifUrl?: string;
+  gifTitle?: string;
   output?: string;
   error?: string;
 }
@@ -263,6 +272,14 @@ export async function executeAction(
         tool: action.tool,
         output: `__WORKSPACE__${id}|${kind}|${p.slice(0, 60)}`,
       };
+    }
+    if (action.tool === 'send_gif') {
+      const media = (['gifs', 'stickers', 'clips', 'emojis'].includes(String(action.media))
+        ? action.media
+        : 'gifs') as GifMedia;
+      const item = await pickGif(String(action.query || action.prompt || 'reaction'), media);
+      rememberGif(item);
+      return { tool: action.tool, gifUrl: item.url, gifTitle: item.title };
     }
     if (action.tool === 'run_code') {
       const lang = detectLanguage(String(action.language || 'javascript'));

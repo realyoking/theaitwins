@@ -5,6 +5,8 @@ import { sendChatMessage, abortChat } from '@/lib/chat-api';
 import { executePlugin } from './PluginSystem';
 import ModelPicker from './ModelPicker';
 import SkillsModal from './SkillsModal';
+import GifPicker from './GifPicker';
+import { rememberGif } from '@/lib/gifs';
 
 const ChatInput = () => {
   const { mode, setMode, isGenerating, addMessage, deductCredits, setIsGenerating, sendOnEnter, stopGenerating, trackMessage, model, plugins } = useAppStore();
@@ -13,6 +15,7 @@ const ChatInput = () => {
   const [replyQuote, setReplyQuote] = useState<string | null>(null);
   const [videoRef2, setVideoRef2] = useState<string | null>(null);
   const [showSkills, setShowSkills] = useState(false);
+  const [showGifs, setShowGifs] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -230,6 +233,15 @@ const ChatInput = () => {
         </div>
 
         {showSkills && <SkillsModal onClose={() => setShowSkills(false)} />}
+        {showGifs && (
+          <GifPicker
+            onClose={() => setShowGifs(false)}
+            onPick={(item) => {
+              rememberGif(item);
+              addMessage({ role: 'user', type: 'gif', text: item.title, url: item.url } as any);
+            }}
+          />
+        )}
 
         {replyQuote && (
           <div className="mb-2 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/60 border-l-2 border-primary">
@@ -275,6 +287,11 @@ const ChatInput = () => {
             <ImageIcon className="w-4 h-4 md:w-5 md:h-5" />
           </button>
           <input type="file" ref={fileRef} className="hidden" accept="image/*" onChange={handleImage} />
+
+          <button onClick={() => setShowGifs(true)} title="Send a GIF"
+            className="px-2 py-1.5 mb-0.5 text-[10px] font-black tracking-wide text-muted-foreground hover:text-foreground hover:bg-card rounded-full transition-colors shrink-0 border border-border/50">
+            GIF
+          </button>
 
           {/* Voice buttons - hidden on small screens for cleaner UI */}
           {recognitionRef.current && (

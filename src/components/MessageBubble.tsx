@@ -133,6 +133,15 @@ const MessageBubble = ({ msg, msgIndex, userInitial, model, onRenderCode, onQuic
             </div>
           </div>
         )}
+        {msg.type === 'gif' && msg.url && (
+          <div className="relative w-full max-w-[260px] mb-2 group/gif">
+            <img src={msg.url} alt={msg.text || 'GIF'} className="w-full rounded-2xl border border-border shadow-soft" />
+            <button onClick={() => { navigator.clipboard.writeText(msg.url!); toast.success('GIF link copied'); }}
+              className="absolute top-2 right-2 p-1.5 rounded-lg bg-background/80 backdrop-blur border border-border md:opacity-0 group-hover/gif:opacity-100 transition-opacity" title="Copy link">
+              <Copy className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
         {!isUser && msg.type === 'video' && msg.url && (
           <div className="relative w-full max-w-md mb-2">
             <video src={msg.url} controls loop playsInline className="w-full rounded-2xl border border-border shadow-soft bg-black" />
