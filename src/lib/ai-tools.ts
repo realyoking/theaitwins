@@ -273,6 +273,14 @@ export async function executeAction(
         output: `__WORKSPACE__${id}|${kind}|${p.slice(0, 60)}`,
       };
     }
+    if (action.tool === 'send_gif') {
+      const media = (['gifs', 'stickers', 'clips', 'emojis'].includes(String(action.media))
+        ? action.media
+        : 'gifs') as GifMedia;
+      const item = await pickGif(String(action.query || action.prompt || 'reaction'), media);
+      rememberGif(item);
+      return { tool: action.tool, gifUrl: item.url, gifTitle: item.title };
+    }
     if (action.tool === 'run_code') {
       const lang = detectLanguage(String(action.language || 'javascript'));
       if (!lang || lang === 'react') throw new Error('Unsupported language for execution');
