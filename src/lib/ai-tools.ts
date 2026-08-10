@@ -12,6 +12,7 @@ import { skillsPromptBlock } from './skills';
 import { useAppStore } from './store';
 import { startProgress, setProgress, endProgress, creepProgress, getProgress } from './progress';
 import { upsertDoc, generateDoc, type DocKind } from './workspace';
+import { pickGif, rememberGif, type GifMedia } from './gifs';
 import { writeScript, makeSceneImage, renderMovie } from './video-studio';
 
 export const APP_CONTEXT = `
@@ -214,6 +215,8 @@ export interface ActionResult {
   tool: string;
   imageUrl?: string;
   videoUrl?: string;
+  gifUrl?: string;
+  gifTitle?: string;
   output?: string;
   error?: string;
 }
