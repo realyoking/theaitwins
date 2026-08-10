@@ -68,6 +68,12 @@ You can take real actions by emitting fenced directive blocks. They are parsed b
 \`\`\`
 kind is one of: design | slides | doc | sheet | video | code.
 
+7) Send a real GIF / sticker / short clip (KLIPY library — great for reactions and jokes):
+\`\`\`action
+{"tool":"send_gif","query":"mind blown","media":"gifs"}
+\`\`\`
+media is one of: gifs | stickers | clips | emojis. Use this when the user asks for a GIF/sticker, or when a reaction GIF makes the reply more fun.
+
 Rules:
 - Emit at most 2 directive blocks per reply.
 - Always write a short sentence of normal text before a directive block.
