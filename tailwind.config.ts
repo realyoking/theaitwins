@@ -42,6 +42,7 @@ export default {
         "surface-elevated": "hsl(var(--surface-elevated))",
         "surface-sunken": "hsl(var(--surface-sunken))",
         amber: { accent: "hsl(var(--amber-accent))" },
+        teal: { accent: "hsl(var(--teal-accent))" },
         "chat-user": "hsl(var(--chat-user-bg))",
         "chat-bot": "hsl(var(--chat-bot-bg))",
       },
