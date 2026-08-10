@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,93 +6,100 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 98%;
-    --card-foreground: 240 10% 3.9%;
+    --background: 240 30% 97%;
+    --foreground: 240 45% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 45% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
-    --radius: 0.75rem;
+    --popover-foreground: 240 45% 10%;
+    --primary: 243 75% 59%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 30% 94%;
+    --secondary-foreground: 240 45% 14%;
+    --muted: 240 25% 94%;
+    --muted-foreground: 240 12% 42%;
+    --accent: 243 70% 95%;
+    --accent-foreground: 243 75% 40%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 22% 88%;
+    --input: 240 22% 88%;
+    --ring: 243 75% 59%;
+    --radius: 1rem;
 
-    --surface-elevated: 0 0% 96%;
-    --surface-sunken: 240 5% 93%;
-    --amber-accent: 38 92% 50%;
-    --chat-user-bg: 240 4.8% 95.9%;
+    --surface-elevated: 0 0% 100%;
+    --surface-sunken: 240 28% 95%;
+    --amber-accent: 243 75% 59%;
+    --chat-user-bg: 243 75% 59%;
     --chat-bot-bg: 0 0% 100%;
 
-    --sidebar-background: 0 0% 97%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 240 32% 95%;
+    --sidebar-foreground: 240 20% 25%;
+    --sidebar-primary: 243 75% 59%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 243 60% 92%;
+    --sidebar-accent-foreground: 243 75% 40%;
+    --sidebar-border: 240 22% 88%;
+    --sidebar-ring: 243 75% 59%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(258 90% 60%), hsl(199 89% 52%));
-    --gradient-surface: linear-gradient(180deg, hsl(0 0% 100%), hsl(240 20% 97%));
+    --gradient-primary: linear-gradient(135deg, hsl(243 75% 59%), hsl(268 80% 62%));
+    --gradient-surface: linear-gradient(180deg, hsl(0 0% 100%), hsl(240 30% 97%));
+    --gradient-mesh: radial-gradient(60% 60% at 15% 10%, hsl(243 75% 59% / .16) 0%, transparent 60%),
+      radial-gradient(50% 50% at 90% 5%, hsl(268 80% 62% / .14) 0%, transparent 60%),
+      radial-gradient(55% 55% at 70% 95%, hsl(210 90% 55% / .12) 0%, transparent 60%);
     --gradient-sheen: linear-gradient(120deg, hsl(0 0% 100% / 0) 30%, hsl(0 0% 100% / .35) 50%, hsl(0 0% 100% / 0) 70%);
-    --shadow-glow: 0 8px 30px -8px hsl(258 90% 60% / .45);
-    --shadow-elevated: 0 20px 50px -24px hsl(240 30% 20% / .35);
-    --shadow-soft: 0 1px 2px hsl(240 10% 10% / .06), 0 8px 24px -16px hsl(240 10% 10% / .25);
+    --shadow-glow: 0 10px 40px -10px hsl(243 75% 59% / .45);
+    --shadow-elevated: 0 24px 60px -28px hsl(240 45% 20% / .35);
+    --shadow-soft: 0 1px 2px hsl(240 30% 10% / .05), 0 10px 28px -20px hsl(240 30% 10% / .3);
   }
 
   .dark {
-    --background: 0 0% 4%;
-    --foreground: 0 0% 95%;
-    --card: 0 0% 7%;
-    --card-foreground: 0 0% 95%;
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 15%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 0 0% 15%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
-    --ring: 0 0% 83.1%;
+    --background: 240 43% 6%;
+    --foreground: 240 25% 96%;
+    --card: 240 40% 10%;
+    --card-foreground: 240 25% 96%;
+    --popover: 240 42% 9%;
+    --popover-foreground: 240 25% 96%;
+    --primary: 243 80% 66%;
+    --primary-foreground: 240 45% 8%;
+    --secondary: 240 38% 15%;
+    --secondary-foreground: 240 25% 96%;
+    --muted: 240 34% 15%;
+    --muted-foreground: 240 16% 68%;
+    --accent: 240 45% 20%;
+    --accent-foreground: 240 25% 96%;
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 32% 18%;
+    --input: 240 32% 18%;
+    --ring: 243 80% 66%;
 
-    --surface-elevated: 0 0% 9%;
-    --surface-sunken: 0 0% 6%;
-    --amber-accent: 38 92% 50%;
-    --chat-user-bg: 0 0% 10%;
-    --chat-bot-bg: 0 0% 4%;
+    --surface-elevated: 240 40% 12%;
+    --surface-sunken: 240 45% 5%;
+    --amber-accent: 243 80% 66%;
+    --chat-user-bg: 243 75% 59%;
+    --chat-bot-bg: 240 40% 10%;
 
-    --sidebar-background: 0 0% 7%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 0 0% 98%;
-    --sidebar-primary-foreground: 0 0% 9%;
-    --sidebar-accent: 0 0% 15%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 0 0% 15%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 240 45% 7%;
+    --sidebar-foreground: 240 18% 80%;
+    --sidebar-primary: 243 80% 66%;
+    --sidebar-primary-foreground: 240 45% 8%;
+    --sidebar-accent: 240 40% 15%;
+    --sidebar-accent-foreground: 240 25% 96%;
+    --sidebar-border: 240 32% 16%;
+    --sidebar-ring: 243 80% 66%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(258 90% 66%), hsl(199 89% 55%));
-    --gradient-surface: linear-gradient(180deg, hsl(0 0% 8%), hsl(0 0% 5%));
-    --gradient-sheen: linear-gradient(120deg, hsl(0 0% 100% / 0) 30%, hsl(0 0% 100% / .12) 50%, hsl(0 0% 100% / 0) 70%);
-    --shadow-glow: 0 8px 34px -8px hsl(258 90% 66% / .5);
-    --shadow-elevated: 0 24px 60px -28px hsl(0 0% 0% / .8);
-    --shadow-soft: 0 1px 2px hsl(0 0% 0% / .4), 0 10px 30px -20px hsl(0 0% 0% / .7);
+    --gradient-primary: linear-gradient(135deg, hsl(243 80% 66%), hsl(272 85% 68%));
+    --gradient-surface: linear-gradient(180deg, hsl(240 40% 11%), hsl(240 45% 7%));
+    --gradient-mesh: radial-gradient(60% 60% at 15% 10%, hsl(243 80% 66% / .22) 0%, transparent 60%),
+      radial-gradient(50% 50% at 90% 5%, hsl(272 85% 68% / .18) 0%, transparent 60%),
+      radial-gradient(55% 55% at 70% 95%, hsl(199 89% 55% / .14) 0%, transparent 60%);
+    --gradient-sheen: linear-gradient(120deg, hsl(0 0% 100% / 0) 30%, hsl(0 0% 100% / .1) 50%, hsl(0 0% 100% / 0) 70%);
+    --shadow-glow: 0 12px 44px -10px hsl(243 80% 66% / .55);
+    --shadow-elevated: 0 28px 70px -30px hsl(240 60% 2% / .9);
+    --shadow-soft: 0 1px 2px hsl(240 60% 2% / .5), 0 12px 34px -22px hsl(240 60% 2% / .8);
   }
+
 }
 
 @layer base {
@@ -104,9 +111,13 @@
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior: none;
+  }
+  h1, h2, h3, .font-display {
+    font-family: 'Syne', 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: -0.02em;
   }
 }
 
@@ -117,10 +128,17 @@
   .custom-scrollbar::-webkit-scrollbar-thumb:hover { @apply bg-muted-foreground/30; }
 
   .glass {
-    @apply bg-card/70 backdrop-blur-xl border border-border/60;
+    @apply bg-card/60 backdrop-blur-2xl border border-border/60;
   }
   .premium-card {
     @apply bg-card border border-border/60 rounded-2xl shadow-soft;
+    position: relative;
+  }
+  .mesh-bg {
+    background-image: var(--gradient-mesh);
+  }
+  .ring-glow {
+    box-shadow: var(--shadow-glow);
   }
   .text-gradient {
     background: var(--gradient-primary);
@@ -131,4 +149,11 @@
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   .safe-bottom { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
+  .animate-float { animation: float 9s ease-in-out infinite; }
 }
+
+@keyframes float {
+  0%, 100% { transform: translate3d(0,0,0) scale(1); }
+  50% { transform: translate3d(0,-16px,0) scale(1.03); }
+}
+
