@@ -93,6 +93,22 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
 
   if (lower.startsWith('/video')) {
     const vPrompt = userText.slice(6).trim() || 'A cinematic landscape';
+  if (lower.startsWith('/gif')) {
+    const gq = userText.slice(4).trim() || 'reaction';
+    try {
+      const { pickGif, rememberGif } = await import('./gifs');
+      const item = await pickGif(gq);
+      rememberGif(item);
+      store.addMessage({ role: 'bot', type: 'gif', text: item.title || gq, url: item.url } as any);
+    } catch (e: any) {
+      store.addMessage({ role: 'bot', type: 'text', text: `⚠️ **GIF Error:** ${e.message}` });
+    }
+    store.setIsGenerating(false);
+    return;
+  }
+
+  if (lower.startsWith('/video')) {
+    const vPrompt = userText.slice(6).trim() || 'A cinematic landscape';
     store.addMessage({ role: 'bot', type: 'text', text: '🎬 Starting video…' });
     try {
       const url = await generateVideo(vPrompt, 3, (m) => replaceLastMessage(`🎬 ${m}`));
