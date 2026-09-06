@@ -161,3 +161,54 @@
   50% { transform: translate3d(0,-16px,0) scale(1.03); }
 }
 
+
+/* ── Reasoning effort track (Codex-style) ─────────────────────── */
+.effort-track {
+  background: linear-gradient(90deg, hsl(var(--primary) / .55), hsl(var(--primary)));
+}
+.effort-track-ultra {
+  background:
+    radial-gradient(2px 2px at 20% 40%, rgba(255,255,255,.9), transparent 60%),
+    radial-gradient(1.5px 1.5px at 45% 70%, rgba(255,255,255,.8), transparent 60%),
+    radial-gradient(2px 2px at 70% 30%, rgba(255,255,255,.85), transparent 60%),
+    radial-gradient(1.5px 1.5px at 88% 60%, rgba(255,255,255,.7), transparent 60%),
+    linear-gradient(90deg, #6d8bff, #8b5cf6, #a855f7, #6d8bff);
+  background-size: 200% 100%, 200% 100%, 200% 100%, 200% 100%, 300% 100%;
+  animation: ultraFlow 4s linear infinite;
+}
+@keyframes ultraFlow {
+  0% { background-position: 0% 0, 0% 0, 0% 0, 0% 0, 0% 0; }
+  100% { background-position: 200% 0, 200% 0, 200% 0, 200% 0, 300% 0; }
+}
+.effort-ultra-text {
+  background: linear-gradient(90deg, #a78bfa, #f0abfc, #a78bfa);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: ultraFlow 3s linear infinite;
+  font-weight: 800;
+}
+
+/* ── DeepSeek-style shimmering "thinking" text ────────────────── */
+.shine-text {
+  background: linear-gradient(90deg,
+    hsl(var(--muted-foreground) / .45) 0%,
+    hsl(var(--foreground) / .95) 45%,
+    hsl(var(--muted-foreground) / .45) 90%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shineSweep 2.1s linear infinite;
+}
+@keyframes shineSweep {
+  0% { background-position: 120% 0; }
+  100% { background-position: -60% 0; }
+}
+
+/* ── Voice mode orb ───────────────────────────────────────────── */
+.voice-orb {
+  background: radial-gradient(circle at 32% 28%, #fff8, transparent 45%), var(--gradient-primary);
+  box-shadow: 0 0 90px -10px hsl(var(--primary) / .8);
+}
