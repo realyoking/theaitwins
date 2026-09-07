@@ -37,7 +37,7 @@ export type Conversation = {
 };
 
 export type AIModel = 'anson67' | 'gemini' | 'chester' | 'bobby' | 'max';
-export type ChatMode = 'fast' | 'thinking' | 'pro';
+export type ChatMode = 'none' | 'low' | 'medium' | 'high' | 'super' | 'ultra';
 
 export type CustomPersona = {
   id: string;
@@ -299,7 +299,7 @@ export const useAppStore = create<AppState>((set, get) => {
     lastReset: localStorage.getItem('tat_reset') || new Date().toDateString(),
     theme: (localStorage.getItem('tat_theme') as 'dark' | 'light') || 'dark',
     model: 'anson67',
-    mode: 'fast',
+    mode: 'low',
     isCanvasOpen: false,
     canvasCode: '',
     isGenerating: false,
@@ -468,8 +468,8 @@ export const useAppStore = create<AppState>((set, get) => {
       localStorage.setItem('tat_user', JSON.stringify(user));
     },
     getCreditCost: () => {
-      const m = get().mode;
-      return m === 'fast' ? 1 : m === 'thinking' ? 3 : 5;
+      const costs: Record<string, number> = { none: 1, low: 1, medium: 2, high: 4, super: 6, ultra: 10 };
+      return costs[get().mode] ?? 1;
     },
     deductCredits: () => {
       const { isPro, credits, getCreditCost } = get();

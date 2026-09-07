@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, ImageIcon, X, Zap, Mic, MicOff, Square, Circle, Sparkles, Reply } from 'lucide-react';
-import { useAppStore, type ChatMode } from '@/lib/store';
+import { Send, ImageIcon, X, Zap, Mic, MicOff, Square, Circle, Sparkles, Reply, AudioLines } from 'lucide-react';
+import { useAppStore } from '@/lib/store';
 import { sendChatMessage, abortChat } from '@/lib/chat-api';
 import { executePlugin } from './PluginSystem';
 import ModelPicker from './ModelPicker';
+import EffortPicker from './EffortPicker';
+import VoiceMode from './VoiceMode';
 import SkillsModal from './SkillsModal';
 import GifPicker from './GifPicker';
+import { effortDef } from '@/lib/reasoning';
 import { rememberGif } from '@/lib/gifs';
 
 const ChatInput = () => {
@@ -16,6 +19,7 @@ const ChatInput = () => {
   const [videoRef2, setVideoRef2] = useState<string | null>(null);
   const [showSkills, setShowSkills] = useState(false);
   const [showGifs, setShowGifs] = useState(false);
+  const [showVoice, setShowVoice] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -26,8 +30,7 @@ const ChatInput = () => {
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const costMap: Record<ChatMode, number> = { fast: 1, thinking: 3, pro: 5 };
-  const modeLabels: Record<ChatMode, string> = { fast: '⚡ Fast', thinking: '🧠 Thinking', pro: '💎 Pro' };
+  const cost = effortDef(mode as any).cost;
 
   // Attach / reply bus (from message bubbles)
   useEffect(() => {
@@ -208,31 +211,27 @@ const ChatInput = () => {
         <div className="flex justify-between items-center gap-2 mb-2 px-1">
           <div className="flex items-center gap-1.5 min-w-0">
             <ModelPicker />
-            <div className="flex bg-muted/70 p-0.5 rounded-full border border-border/60 shadow-sm shrink-0">
-              {(['fast', 'thinking', 'pro'] as ChatMode[]).map((m) => (
-                <button key={m} onClick={() => setMode(m)}
-                  className={`px-1.5 md:px-2.5 py-1 text-[10px] font-bold rounded-full transition-all flex items-center gap-1 ${mode === m
-                    ? 'bg-card shadow-sm text-foreground'
-                    : 'text-muted-foreground hover:text-foreground'}`}>
-                  <span className="md:hidden">{modeLabels[m].split(' ')[0]}</span>
-                  <span className="hidden md:inline">{modeLabels[m]}</span>
-                </button>
-              ))}
-            </div>
+            <EffortPicker />
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
+            <button onClick={() => setShowVoice(true)}
+              className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground hover:text-foreground bg-muted/70 px-2 py-1 rounded-full border border-border/60"
+              title="Voice mode">
+              <AudioLines className="w-3 h-3 text-primary" /> <span className="hidden sm:inline">Voice</span>
+            </button>
             <button onClick={() => setShowSkills(true)}
               className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground hover:text-foreground bg-muted/70 px-2 py-1 rounded-full border border-border/60"
               title="Skills">
               <Sparkles className="w-3 h-3 text-amber-accent" /> <span className="hidden sm:inline">Skills</span>
             </button>
             <span className="hidden sm:flex text-[10px] font-bold text-muted-foreground bg-muted/70 px-2 py-1 rounded-full border border-border/60 items-center gap-1">
-              {costMap[mode]} <Zap className="w-3 h-3 text-amber-accent" />
+              {cost} <Zap className="w-3 h-3 text-amber-accent" />
             </span>
           </div>
         </div>
 
         {showSkills && <SkillsModal onClose={() => setShowSkills(false)} />}
+        {showVoice && <VoiceMode onClose={() => setShowVoice(false)} />}
         {showGifs && (
           <GifPicker
             onClose={() => setShowGifs(false)}
