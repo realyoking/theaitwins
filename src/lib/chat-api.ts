@@ -138,9 +138,7 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
       finalSysPrompt += `\n\nAI MEMORY - Facts about the user:\n${memories.map((m, i) => `${i + 1}. ${m}`).join('\n')}\nUse these facts to better assist the user.`;
     }
 
-    if (mode === 'fast') finalSysPrompt += '\nMODE: FAST. Be concise, direct, and short.';
-    if (mode === 'thinking') finalSysPrompt += '\nMODE: THINKING. Think step-by-step logically before answering.';
-    if (mode === 'pro') finalSysPrompt += '\nMODE: PRO. Provide an extremely exhaustive, expert-level response.';
+    finalSysPrompt += `\n${effortDef(mode as any).instruction}`;
 
     if (imageData) {
       finalSysPrompt += '\nThe user attached an image. Analyze it thoroughly and respond about what you see.';

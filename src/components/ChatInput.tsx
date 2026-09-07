@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, ImageIcon, X, Zap, Mic, MicOff, Square, Circle, Sparkles, Reply } from 'lucide-react';
-import { useAppStore, type ChatMode } from '@/lib/store';
+import { Send, ImageIcon, X, Zap, Mic, MicOff, Square, Circle, Sparkles, Reply, AudioLines } from 'lucide-react';
+import { useAppStore } from '@/lib/store';
 import { sendChatMessage, abortChat } from '@/lib/chat-api';
 import { executePlugin } from './PluginSystem';
 import ModelPicker from './ModelPicker';
+import EffortPicker from './EffortPicker';
+import VoiceMode from './VoiceMode';
 import SkillsModal from './SkillsModal';
 import GifPicker from './GifPicker';
+import { effortDef } from '@/lib/reasoning';
 import { rememberGif } from '@/lib/gifs';
 
 const ChatInput = () => {
@@ -26,8 +29,7 @@ const ChatInput = () => {
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const costMap: Record<ChatMode, number> = { fast: 1, thinking: 3, pro: 5 };
-  const modeLabels: Record<ChatMode, string> = { fast: '⚡ Fast', thinking: '🧠 Thinking', pro: '💎 Pro' };
+  const cost = effortDef(mode as any).cost;
 
   // Attach / reply bus (from message bubbles)
   useEffect(() => {
