@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Plus, Trash2, Sparkles } from 'lucide-react';
 import { getSkills, saveSkills, upsertSkill, deleteSkill, type Skill } from '@/lib/skills';
 

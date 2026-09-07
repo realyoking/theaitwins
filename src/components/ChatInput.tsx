@@ -231,6 +231,7 @@ const ChatInput = () => {
         </div>
 
         {showSkills && <SkillsModal onClose={() => setShowSkills(false)} />}
+        {showVoice && <VoiceMode onClose={() => setShowVoice(false)} />}
         {showGifs && (
           <GifPicker
             onClose={() => setShowGifs(false)}
