@@ -210,26 +210,21 @@ const ChatInput = () => {
         <div className="flex justify-between items-center gap-2 mb-2 px-1">
           <div className="flex items-center gap-1.5 min-w-0">
             <ModelPicker />
-            <div className="flex bg-muted/70 p-0.5 rounded-full border border-border/60 shadow-sm shrink-0">
-              {(['fast', 'thinking', 'pro'] as ChatMode[]).map((m) => (
-                <button key={m} onClick={() => setMode(m)}
-                  className={`px-1.5 md:px-2.5 py-1 text-[10px] font-bold rounded-full transition-all flex items-center gap-1 ${mode === m
-                    ? 'bg-card shadow-sm text-foreground'
-                    : 'text-muted-foreground hover:text-foreground'}`}>
-                  <span className="md:hidden">{modeLabels[m].split(' ')[0]}</span>
-                  <span className="hidden md:inline">{modeLabels[m]}</span>
-                </button>
-              ))}
-            </div>
+            <EffortPicker />
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
+            <button onClick={() => setShowVoice(true)}
+              className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground hover:text-foreground bg-muted/70 px-2 py-1 rounded-full border border-border/60"
+              title="Voice mode">
+              <AudioLines className="w-3 h-3 text-primary" /> <span className="hidden sm:inline">Voice</span>
+            </button>
             <button onClick={() => setShowSkills(true)}
               className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground hover:text-foreground bg-muted/70 px-2 py-1 rounded-full border border-border/60"
               title="Skills">
               <Sparkles className="w-3 h-3 text-amber-accent" /> <span className="hidden sm:inline">Skills</span>
             </button>
             <span className="hidden sm:flex text-[10px] font-bold text-muted-foreground bg-muted/70 px-2 py-1 rounded-full border border-border/60 items-center gap-1">
-              {costMap[mode]} <Zap className="w-3 h-3 text-amber-accent" />
+              {cost} <Zap className="w-3 h-3 text-amber-accent" />
             </span>
           </div>
         </div>

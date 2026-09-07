@@ -5,6 +5,7 @@ import { chatWebLLM, getLoadedModelId, loadWebLLMModel } from './webllm';
 import { streamByokChat } from './byok';
 import { buildSystemSuffix, parseDirectives, executeAction, generateImage, generateVideo } from './ai-tools';
 import { downscaleImage } from './media';
+import { effortDef } from './reasoning';
 
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
