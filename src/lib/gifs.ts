@@ -1,6 +1,8 @@
 /**
- * GIF / sticker search — Tenor + GIPHY public endpoints, called straight by URL
- * from the browser. No connector, no self-hosted proxy.
+ * GIF / sticker / clip / emoji search.
+ * Primary source: KLIPY (through the secured `gif-search` edge function).
+ * Fallback: Tenor / GIPHY public endpoints straight from the browser, so the
+ * picker still works if KLIPY isn't connected.
  */
 
 export type GifMedia = 'gifs' | 'stickers' | 'clips' | 'emojis';
@@ -10,28 +12,58 @@ export interface GifItem {
   title: string;
   url: string;
   preview: string;
-  source?: 'tenor' | 'giphy';
+  source?: 'klipy' | 'tenor' | 'giphy';
 }
 
 const RECENT_KEY = 'tat_recent_gifs';
 const FAV_KEY = 'tat_fav_gifs';
 const PROVIDER_KEY = 'tat_gif_provider';
+const CUSTOMER_KEY = 'tat_gif_customer';
 
 /** Public/anonymous demo keys published by the providers themselves. */
 const TENOR_KEY = 'LIVDSRZULELA';
 const GIPHY_KEY = 'dc6zaTOxFJmzC';
 
-export type GifProvider = 'tenor' | 'giphy';
+export type GifProvider = 'klipy' | 'tenor' | 'giphy';
 
 export const getGifProvider = (): GifProvider =>
-  (localStorage.getItem(PROVIDER_KEY) as GifProvider) || 'tenor';
+  (localStorage.getItem(PROVIDER_KEY) as GifProvider) || 'klipy';
 
 export const setGifProvider = (p: GifProvider) => {
   localStorage.setItem(PROVIDER_KEY, p);
   cache.clear();
 };
 
+function customerId(): string {
+  let id = localStorage.getItem(CUSTOMER_KEY);
+  if (!id) {
+    id = `c${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+    localStorage.setItem(CUSTOMER_KEY, id);
+  }
+  return id;
+}
+
 const cache = new Map<string, GifItem[]>();
+
+async function klipy(q: string, media: GifMedia, page: number): Promise<GifItem[]> {
+  const r = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gif-search`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+    },
+    body: JSON.stringify({ q, media, page, perPage: 24, customerId: customerId() }),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d?.error || `KLIPY ${r.status}`);
+  return (d.items || []).map((it: any) => ({
+    id: String(it.id),
+    title: it.title || q,
+    url: it.url,
+    preview: it.preview || it.url,
+    source: 'klipy' as const,
+  }));
+}
 
 async function tenor(q: string, media: GifMedia, page: number): Promise<GifItem[]> {
   const params = new URLSearchParams({
@@ -81,17 +113,21 @@ async function giphy(q: string, media: GifMedia, page: number): Promise<GifItem[
   })).filter((g: GifItem) => !!g.url);
 }
 
+const FETCHERS: Record<GifProvider, (q: string, m: GifMedia, p: number) => Promise<GifItem[]>> = {
+  klipy, tenor, giphy,
+};
+
 export async function searchGifs(q: string, media: GifMedia = 'gifs', page = 1): Promise<GifItem[]> {
   const provider = getGifProvider();
   const key = `${provider}:${media}:${q.trim().toLowerCase()}:${page}`;
   const hit = cache.get(key);
   if (hit) return hit;
 
-  const order: GifProvider[] = provider === 'tenor' ? ['tenor', 'giphy'] : ['giphy', 'tenor'];
+  const order: GifProvider[] = [provider, ...(['klipy', 'tenor', 'giphy'] as GifProvider[]).filter((p) => p !== provider)];
   let lastErr: any;
   for (const p of order) {
     try {
-      const items = p === 'tenor' ? await tenor(q, media, page) : await giphy(q, media, page);
+      const items = await FETCHERS[p](q, media, page);
       if (items.length) {
         cache.set(key, items);
         return items;
