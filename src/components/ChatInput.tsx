@@ -19,6 +19,7 @@ const ChatInput = () => {
   const [videoRef2, setVideoRef2] = useState<string | null>(null);
   const [showSkills, setShowSkills] = useState(false);
   const [showGifs, setShowGifs] = useState(false);
+  const [showVoice, setShowVoice] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
