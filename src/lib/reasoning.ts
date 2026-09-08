@@ -9,11 +9,13 @@ export interface EffortDef {
   cost: number;
   hint: string;
   instruction: string;
+  thinkingLabel: string;
 }
 
 export const EFFORTS: EffortDef[] = [
   {
     id: 'none',
+    thinkingLabel: 'Replying…',
     label: 'Instant',
     tier: 'None',
     cost: 1,
@@ -22,6 +24,7 @@ export const EFFORTS: EffortDef[] = [
   },
   {
     id: 'low',
+    thinkingLabel: 'Thinking…',
     label: 'Sol',
     tier: 'Low',
     cost: 1,
@@ -30,6 +33,7 @@ export const EFFORTS: EffortDef[] = [
   },
   {
     id: 'medium',
+    thinkingLabel: 'Reasoning…',
     label: 'Terra',
     tier: 'Medium',
     cost: 2,
@@ -38,6 +42,7 @@ export const EFFORTS: EffortDef[] = [
   },
   {
     id: 'high',
+    thinkingLabel: 'Thinking deeply…',
     label: 'Nova',
     tier: 'High',
     cost: 4,
@@ -47,6 +52,7 @@ export const EFFORTS: EffortDef[] = [
   },
   {
     id: 'super',
+    thinkingLabel: 'Analysing deeply…',
     label: 'Quasar',
     tier: 'Super high',
     cost: 6,
@@ -56,7 +62,8 @@ export const EFFORTS: EffortDef[] = [
   },
   {
     id: 'ultra',
-    label: 'Sol',
+    thinkingLabel: 'Reasoning at maximum depth…',
+    label: 'Singularity',
     tier: 'Ultra',
     cost: 10,
     hint: 'Maximum depth. Slowest, best quality.',

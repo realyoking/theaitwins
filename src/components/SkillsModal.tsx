@@ -17,8 +17,8 @@ const SkillsModal = ({ onClose }: { onClose: () => void }) => {
     saveSkills(next);
   };
 
-  return (
-    <div className="fixed inset-0 z-50 bg-background/70 backdrop-blur-sm flex items-center justify-center p-3 md:p-6" onClick={onClose}>
+  return createPortal(
+    <div className="fixed inset-0 z-[110] bg-background/70 backdrop-blur-sm flex items-center justify-center p-3 md:p-6" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()}
         className="w-full md:max-w-lg max-h-[80dvh] overflow-y-auto custom-scrollbar bg-card border border-border rounded-3xl shadow-2xl p-4 md:p-5">
         <div className="flex items-center gap-2 mb-4">
@@ -76,7 +76,8 @@ const SkillsModal = ({ onClose }: { onClose: () => void }) => {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 
