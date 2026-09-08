@@ -14,6 +14,7 @@ import CodePlayground from "./pages/CodePlayground";
 import PublicProject from "./pages/PublicProject";
 import Workspace from "./pages/Workspace";
 import ProgressOverlay from "./components/ProgressOverlay";
+import PermissionPrompt from "./components/PermissionPrompt";
 import NotFound from "./pages/NotFound";
 
 
@@ -23,6 +24,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <ProgressOverlay />
+      <PermissionPrompt />
       <Toaster />
 
       <Sonner />

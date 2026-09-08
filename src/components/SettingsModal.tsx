@@ -100,6 +100,7 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
   };
 
   const { customFont, setCustomFont } = useAppStore();
+  const [aiAlwaysAllow, setAiAlwaysAllow] = useState(isAlwaysAllow());
 
   const inputClass = "w-full mt-1 px-3 py-2 bg-muted rounded-lg outline-none border border-transparent focus:border-muted-foreground/30 text-sm";
   const modelIconComponents: Record<AIModel, any> = { anson67: Ghost, gemini: Cpu, chester: Skull, bobby: Heart, max: Sandwich };
@@ -400,6 +401,7 @@ const SettingsModal = ({ open, onClose }: SettingsModalProps) => {
                   </div>
                 </div>
                 {toggleItem('Send on Enter', sendOnEnter, setSendOnEnter)}
+                {toggleItem('AI can change my app without asking', aiAlwaysAllow, (v) => { setAlwaysAllow(v); setAiAlwaysAllow(v); })}
                 {toggleItem('Show Timestamps', showTimestamps, setShowTimestamps)}
                 {toggleItem('Compact Mode', compactMode, setCompactMode)}
                 {toggleItem('Sound Effects', soundEnabled, setSoundEnabled)}
