@@ -1,3 +1,4 @@
+import { isAlwaysAllow, setAlwaysAllow } from '@/lib/app-control';
 import { useState, useEffect, useCallback } from 'react';
 import { subscribeToPush, unsubscribeFromPush } from '@/lib/push-notifications';
 import { supabase } from '@/integrations/supabase/client';
