@@ -14,6 +14,7 @@ import { startProgress, setProgress, endProgress, creepProgress, getProgress } f
 import { upsertDoc, generateDoc, type DocKind } from './workspace';
 import { pickGif, rememberGif, type GifMedia } from './gifs';
 import { writeScript, makeSceneImage, renderMovie } from './video-studio';
+import { runControl, CONTROL_ACTIONS } from './app-control';
 
 export const APP_CONTEXT = `
 ## WHERE YOU ARE
@@ -28,7 +29,8 @@ App map (routes):
 
 Things the user can do that you should mention when relevant:
 - Switch model from the model picker (Cloud models, BYOK = their own OpenAI-compatible endpoint, or Local on-device WebLLM).
-- Type \`/draw <prompt>\` for an image, \`/video <prompt>\` for a short generated video.
+- Type \`/image <prompt>\` for a photoreal/illustrated image, \`/draw <prompt>\` for a hand-drawn or pixel-art style drawing, \`/video <prompt>\` for a short generated video, \`/gif <query>\` for a GIF.
+- Open Settings for theme, wallpaper, fonts, notifications, effort and the "AI can change my app" permission switch. You can change all of these yourself with the app_control tool.
 - Reply to a specific message so you know exactly which one they mean.
 - Set any generated image as the chat background/wallpaper, remix it, or download it.
 - Run code blocks (JS, TS, Python, Java) with the Run button, or Render HTML/React in the canvas.
@@ -74,6 +76,18 @@ kind is one of: design | slides | doc | sheet | video | code.
 {"tool":"send_gif","query":"mind blown","media":"gifs"}
 \`\`\`
 media is one of: gifs | stickers | clips | emojis. Use this when the user asks for a GIF/sticker, or when a reaction GIF makes the reply more fun.
+
+8) Operate the app for the user (you can change ANY setting the user could change themselves):
+\`\`\`action
+{"tool":"app_control","action":"set_theme","value":"light"}
+\`\`\`
+Available actions: ${CONTROL_ACTIONS.join(', ')}.
+Examples: {"tool":"app_control","action":"set_font_size","value":"lg"} ·
+{"tool":"app_control","action":"set_effort","value":"ultra"} ·
+{"tool":"app_control","action":"set_skill","target":"web-designer","value":true} ·
+{"tool":"app_control","action":"navigate","value":"/playground"} ·
+{"tool":"app_control","action":"remember","value":"User loves dark UI"}.
+Destructive actions (clear_chats, clear_memories, reset_settings, sign_out) pop a permission dialog unless the user turned on "always allow" in Settings — that is expected, just tell them to confirm.
 
 Rules:
 - Emit at most 2 directive blocks per reply.
