@@ -80,11 +80,27 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
 
   const lower = userText.toLowerCase();
 
+  if (lower.startsWith('/image')) {
+    const imgPrompt = userText.slice(6).trim() || 'A beautiful landscape';
+    try {
+      const { url, note } = await generateImage(
+        `${imgPrompt} — high quality photographic/illustrated image, rich detail, professional lighting`,
+      );
+      store.addMessage({ role: 'bot', type: 'image', text: note || `Image: "${imgPrompt}"`, url, image: url } as any);
+    } catch (e: any) {
+      store.addMessage({ role: 'bot', type: 'text', text: `⚠️ **Image Error:** ${e.message}` });
+    }
+    store.setIsGenerating(false);
+    return;
+  }
+
   if (lower.startsWith('/draw')) {
     const drawPrompt = userText.slice(5).trim() || 'A beautiful landscape';
     try {
-      const { url, note } = await generateImage(drawPrompt);
-      store.addMessage({ role: 'bot', type: 'image', text: note || `Generated: "${drawPrompt}"`, url, image: url } as any);
+      const { url, note } = await generateImage(
+        `${drawPrompt} — hand-drawn artwork: bold pixel-art / sketch / doodle style, flat colours, visible strokes, playful illustration, no photorealism`,
+      );
+      store.addMessage({ role: 'bot', type: 'image', text: note || `Drawing: "${drawPrompt}"`, url, image: url } as any);
     } catch (e: any) {
       store.addMessage({ role: 'bot', type: 'text', text: `⚠️ **Draw Error:** ${e.message}` });
     }

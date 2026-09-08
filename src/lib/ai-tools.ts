@@ -295,6 +295,10 @@ export async function executeAction(
       rememberGif(item);
       return { tool: action.tool, gifUrl: item.url, gifTitle: item.title };
     }
+    if (action.tool === 'app_control') {
+      const out = await runControl(String(action.action || ''), action.value, action.target);
+      return { tool: action.tool, output: out };
+    }
     if (action.tool === 'run_code') {
       const lang = detectLanguage(String(action.language || 'javascript'));
       if (!lang || lang === 'react') throw new Error('Unsupported language for execution');
