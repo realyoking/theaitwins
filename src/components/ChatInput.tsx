@@ -235,10 +235,7 @@ const ChatInput = () => {
         {showGifs && (
           <GifPicker
             onClose={() => setShowGifs(false)}
-            onPick={(item) => {
-              rememberGif(item);
-              addMessage({ role: 'user', type: 'gif', text: item.title, url: item.url } as any);
-            }}
+            onPick={(item) => { rememberGif(item); handleSendGif(item); }}
           />
         )}
 

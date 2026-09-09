@@ -125,7 +125,7 @@ const GifPicker = ({ onPick, onClose }: Props) => {
         )}
 
         <div className="flex-1 overflow-y-auto custom-scrollbar p-3">
-          {loading && (
+          {loading && !list.length && (
             <div className="h-full flex items-center justify-center text-muted-foreground">
               <Loader2 className="w-5 h-5 animate-spin" />
             </div>
