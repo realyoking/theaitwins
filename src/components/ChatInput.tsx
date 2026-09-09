@@ -176,6 +176,24 @@ const ChatInput = () => {
   };
 
 
+  // Sending a GIF: post it, then let the AI actually look at it and reply.
+  const handleSendGif = async (item: { url: string; title?: string }) => {
+    if (isGenerating) return;
+    if (!deductCredits()) return;
+    addMessage({ role: 'user', type: 'gif', text: item.title || '', url: item.url } as any);
+    setIsGenerating(true);
+    trackMessage(model, mode);
+    const caption = text.trim();
+    if (caption) setText('');
+    await sendChatMessage(
+      [
+        `[The user just sent you a GIF${item.title ? ` titled "${item.title}"` : ''}. Look at the attached frame from it, understand the reaction/joke it conveys, and reply naturally to it — do not wait for another message.]`,
+        caption,
+      ].filter(Boolean).join('\n'),
+      item.url,
+    );
+  };
+
   const handleSend = async () => {
     if ((!text.trim() && !imageData) || isGenerating) return;
     if (isListening) {
