@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, Loader2, Star, History, Sparkles } from 'lucide-react';
 import {
   searchGifs, recentGifs, favoriteGifs, rememberGif, toggleFavoriteGif,
-  GIF_SUGGESTIONS, type GifItem, type GifMedia,
+  GIF_SUGGESTIONS, prefetchGifs, type GifItem, type GifMedia,
 } from '@/lib/gifs';
 
 const TABS: { key: GifMedia | 'recent' | 'fav'; label: string }[] = [
@@ -31,9 +31,9 @@ const GifPicker = ({ onPick, onClose }: Props) => {
   const [favTick, setFavTick] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { inputRef.current?.focus(); }, []);
+  useEffect(() => { inputRef.current?.focus(); prefetchGifs(['gifs', 'stickers', 'clips']); }, []);
   useEffect(() => {
-    const t = setTimeout(() => setDebounced(q), 350);
+    const t = setTimeout(() => setDebounced(q), 160);
     return () => clearTimeout(t);
   }, [q]);
 
