@@ -174,10 +174,18 @@ export async function sendChatMessage(userText: string, imageData?: string | nul
     // Only the newest user image is sent (downscaled) — sending every historical
     // image made vision requests huge and appear to hang.
     if (imageData) {
-      const small = await downscaleImage(imageData);
+      let small = imageData;
+      try {
+        small = await Promise.race([
+          downscaleImage(imageData),
+          new Promise<string>((r) => setTimeout(() => r(imageData), 6000)),
+        ]);
+      } catch { small = imageData; }
+      let attached = false;
       for (let i = history.length - 1; i >= 0; i--) {
-        if (history[i].role === 'user') { history[i].imageData = small; break; }
+        if (history[i].role === 'user') { history[i].imageData = small; attached = true; break; }
       }
+      if (!attached) history.push({ role: 'user', content: userText || 'Look at this.', imageData: small });
     }
 
 

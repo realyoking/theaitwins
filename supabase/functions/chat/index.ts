@@ -29,14 +29,14 @@ serve(async (req) => {
         const content: any[] = [
           { type: "text", text: m.content || "What do you see in this image?" },
         ];
-        const match = m.imageData.match(/^data:([^;]+);base64,(.+)$/);
-        if (match) {
-          content.push({
-            type: "image_url",
-            image_url: { url: m.imageData },
-          });
+        const isData = /^data:[^;]+;base64,/.test(m.imageData);
+        const isUrl = /^https?:\/\//i.test(m.imageData);
+        if (isData || isUrl) {
+          content.push({ type: "image_url", image_url: { url: m.imageData } });
+        } else {
+          console.warn("Unsupported imageData format, skipping attachment");
         }
-        chatMessages.push({ role, content });
+        chatMessages.push({ role, content: content.length > 1 ? content : content[0].text });
       } else {
         chatMessages.push({ role, content: m.content });
       }
