@@ -117,27 +117,44 @@ const FETCHERS: Record<GifProvider, (q: string, m: GifMedia, p: number) => Promi
   klipy, tenor, giphy,
 };
 
+const inflight = new Map<string, Promise<GifItem[]>>();
+
 export async function searchGifs(q: string, media: GifMedia = 'gifs', page = 1): Promise<GifItem[]> {
   const provider = getGifProvider();
   const key = `${provider}:${media}:${q.trim().toLowerCase()}:${page}`;
   const hit = cache.get(key);
   if (hit) return hit;
+  const running = inflight.get(key);
+  if (running) return running;
 
   const order: GifProvider[] = [provider, ...(['klipy', 'tenor', 'giphy'] as GifProvider[]).filter((p) => p !== provider)];
-  let lastErr: any;
-  for (const p of order) {
-    try {
-      const items = await FETCHERS[p](q, media, page);
-      if (items.length) {
-        cache.set(key, items);
-        return items;
+
+  const run = (async () => {
+    let lastErr: any;
+    for (const p of order) {
+      try {
+        const items = await FETCHERS[p](q, media, page);
+        if (items.length) {
+          cache.set(key, items);
+          // warm the browser image cache for the first row
+          items.slice(0, 12).forEach((it) => { const i = new Image(); i.src = it.preview; });
+          return items;
+        }
+      } catch (e) {
+        lastErr = e;
       }
-    } catch (e) {
-      lastErr = e;
     }
-  }
-  if (lastErr) throw new Error(`GIF search failed: ${lastErr.message || lastErr}`);
-  return [];
+    if (lastErr) throw new Error(`GIF search failed: ${lastErr.message || lastErr}`);
+    return [];
+  })().finally(() => inflight.delete(key));
+
+  inflight.set(key, run);
+  return run;
+}
+
+/** Kick off trending fetches early so the picker opens instantly. */
+export function prefetchGifs(medias: GifMedia[] = ['gifs', 'stickers']) {
+  medias.forEach((m) => { searchGifs('', m).catch(() => {}); });
 }
 
 /** Best single GIF for a query — used by the AI `send_gif` tool. */
