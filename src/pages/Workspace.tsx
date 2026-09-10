@@ -45,6 +45,7 @@ const Workspace = () => {
   const [busy, setBusy] = useState(false);
   const [log, setLog] = useState<string[]>([]);
   const [query, setQuery] = useState('');
+  const [filterKind, setFilterKind] = useState<DocKind | 'all'>('all');
   const [slide, setSlide] = useState(0);
   const [codeTab, setCodeTab] = useState<'preview' | 'code'>('preview');
   const [peers, setPeers] = useState<Peer[]>([]);
