@@ -346,6 +346,11 @@ const ChatInput = () => {
             <ImageIcon className="w-4 h-4 md:w-5 md:h-5" />
           </button>
           <input type="file" ref={fileRef} className="hidden" accept="image/*" onChange={handleImage} />
+          <button onClick={() => docRef.current?.click()} title="Attach a PDF, Word file or text file"
+            className="p-2 mb-0.5 text-muted-foreground hover:text-foreground hover:bg-card rounded-full transition-colors shrink-0">
+            <Paperclip className="w-4 h-4 md:w-5 md:h-5" />
+          </button>
+          <input type="file" ref={docRef} className="hidden" multiple accept={DOC_ACCEPT} onChange={handleDocs} />
 
           <button onClick={() => setShowGifs(true)} title="Send a GIF"
             className="px-2 py-1.5 mb-0.5 text-[10px] font-black tracking-wide text-muted-foreground hover:text-foreground hover:bg-card rounded-full transition-colors shrink-0 border border-border/50">
