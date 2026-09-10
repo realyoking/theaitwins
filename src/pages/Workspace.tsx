@@ -374,7 +374,24 @@ const Workspace = () => {
     );
   };
 
-  const filtered = docs.filter((d) => d.title.toLowerCase().includes(query.toLowerCase()));
+  const filtered = docs
+    .filter((d) => (filterKind === 'all' ? true : d.kind === filterKind))
+    .filter((d) => d.title.toLowerCase().includes(query.toLowerCase()))
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+
+  const duplicate = (d: WorkDoc) => {
+    const copy: WorkDoc = { ...d, id: `w${Date.now().toString(36)}`, title: `${d.title} (copy)`, updatedAt: Date.now() };
+    upsertDoc(copy);
+    setDocs(loadDocs());
+    toast.success('Duplicated');
+  };
+
+  const rename = (d: WorkDoc) => {
+    const name = window.prompt('Rename file', d.title);
+    if (!name) return;
+    upsertDoc({ ...d, title: name, updatedAt: Date.now() });
+    setDocs(loadDocs());
+  };
 
   return (
     <div className="h-[100dvh] flex flex-col bg-background text-foreground overflow-hidden">

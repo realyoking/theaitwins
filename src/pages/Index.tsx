@@ -13,6 +13,7 @@ import AnalyticsModal from '@/components/AnalyticsModal';
 import PluginSystem from '@/components/PluginSystem';
 import AnnouncementPopup from '@/components/AnnouncementPopup';
 import PwaNotificationPrompt from '@/components/PwaNotificationPrompt';
+import CommandPalette from '@/components/CommandPalette';
 
 const Index = () => {
   const { user, theme, checkDailyReset, checkStreak, customThemeId, setCustomThemeId, customFont, plugins, setPlugins, setUser } = useAppStore();
@@ -141,6 +142,7 @@ const Index = () => {
       />
       <AnalyticsModal open={analyticsOpen} onClose={() => setAnalyticsOpen(false)} />
       <PluginSystem open={pluginsOpen} onClose={() => setPluginsOpen(false)} plugins={plugins} setPlugins={setPlugins} />
+      <CommandPalette onOpenSettings={() => setSettingsOpen(true)} onOpenAnalytics={() => setAnalyticsOpen(true)} />
       <AnnouncementPopup />
       <PwaNotificationPrompt />
     </div>
