@@ -310,6 +310,25 @@ const ChatInput = () => {
           </div>
         )}
 
+        {(docs.length > 0 || docBusy) && (
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            {docs.map((d) => (
+              <div key={d.id} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-muted/70 border border-border/60 max-w-[220px]">
+                <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span className="text-[11px] font-bold truncate">{d.name}</span>
+                <span className="text-[10px] text-muted-foreground shrink-0">{prettySize(d.size)}</span>
+                <button onClick={() => setDocs((x) => x.filter((y) => y.id !== d.id))}><X className="w-3 h-3" /></button>
+              </div>
+            ))}
+            {docBusy && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-muted/70 border border-border/60">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
+                <span className="text-[11px] font-bold text-muted-foreground">Reading file…</span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Recording indicator */}
         {isRecording && (
           <div className="mb-2 flex items-center gap-2 px-3 py-2 bg-destructive/10 rounded-xl border border-destructive/30">
