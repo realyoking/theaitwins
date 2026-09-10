@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, ImageIcon, X, Zap, Mic, MicOff, Square, Circle, Sparkles, Reply, AudioLines } from 'lucide-react';
+import { Send, ImageIcon, X, Zap, Mic, MicOff, Square, Circle, Sparkles, Reply, AudioLines, Paperclip, FileText, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { readDocument, docPromptBlock, prettySize, DOC_ACCEPT, type AttachedDoc } from '@/lib/documents';
 import { useAppStore } from '@/lib/store';
 import { sendChatMessage, abortChat } from '@/lib/chat-api';
 import { executePlugin } from './PluginSystem';
@@ -17,6 +19,8 @@ const ChatInput = () => {
   const [imageData, setImageData] = useState<string | null>(null);
   const [replyQuote, setReplyQuote] = useState<string | null>(null);
   const [videoRef2, setVideoRef2] = useState<string | null>(null);
+  const [docs, setDocs] = useState<AttachedDoc[]>([]);
+  const [docBusy, setDocBusy] = useState(false);
   const [showSkills, setShowSkills] = useState(false);
   const [showGifs, setShowGifs] = useState(false);
   const [showVoice, setShowVoice] = useState(false);
@@ -24,6 +28,7 @@ const ChatInput = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
+  const docRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -159,17 +164,22 @@ const ChatInput = () => {
     if (!deductCredits()) return;
     const quote = replyQuote;
     const vRef = videoRef2;
-    addMessage({ role: 'user', text: userText, image: imageData || undefined, replyTo: quote || undefined });
+    const files = docs;
+    const fileNote = files.length ? `\n\n📎 ${files.map((d) => d.name).join(', ')}` : '';
+    addMessage({ role: 'user', text: userText + fileNote, image: imageData || undefined, replyTo: quote || undefined });
     setText('');
     setImageData(null);
     setReplyQuote(null);
     setVideoRef2(null);
+    setDocs([]);
+    if (docRef.current) docRef.current.value = '';
     if (textareaRef.current) textareaRef.current.style.height = '20px';
     setIsGenerating(true);
     trackMessage(model, mode);
     const payload = [
       quote ? `[Replying to this earlier message: "${quote}"]` : '',
       vRef ? `[The user is referring to this generated video: ${vRef}]` : '',
+      docPromptBlock(files),
       userText,
     ].filter(Boolean).join('\n');
     await sendChatMessage(payload, imageData);
@@ -195,7 +205,7 @@ const ChatInput = () => {
   };
 
   const handleSend = async () => {
-    if ((!text.trim() && !imageData) || isGenerating) return;
+    if ((!text.trim() && !imageData && docs.length === 0) || isGenerating) return;
     if (isListening) {
       recognitionRef.current?.stop();
       setIsListening(false);
@@ -214,6 +224,22 @@ const ChatInput = () => {
       r.onloadend = () => setImageData(r.result as string);
       r.readAsDataURL(f);
     }
+  };
+
+  const handleDocs = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const list = Array.from(e.target.files || []);
+    if (!list.length) return;
+    setDocBusy(true);
+    for (const f of list.slice(0, 4)) {
+      if (f.size > 20 * 1024 * 1024) { toast.error(`${f.name} is larger than 20 MB.`); continue; }
+      try {
+        const doc = await readDocument(f);
+        setDocs((d) => [...d, doc]);
+      } catch (err: any) {
+        toast.error(err?.message || `Could not read ${f.name}`);
+      }
+    }
+    setDocBusy(false);
   };
 
   const autoResize = (el: HTMLTextAreaElement) => {
@@ -284,6 +310,25 @@ const ChatInput = () => {
           </div>
         )}
 
+        {(docs.length > 0 || docBusy) && (
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            {docs.map((d) => (
+              <div key={d.id} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-muted/70 border border-border/60 max-w-[220px]">
+                <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span className="text-[11px] font-bold truncate">{d.name}</span>
+                <span className="text-[10px] text-muted-foreground shrink-0">{prettySize(d.size)}</span>
+                <button onClick={() => setDocs((x) => x.filter((y) => y.id !== d.id))}><X className="w-3 h-3" /></button>
+              </div>
+            ))}
+            {docBusy && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-muted/70 border border-border/60">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
+                <span className="text-[11px] font-bold text-muted-foreground">Reading file…</span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Recording indicator */}
         {isRecording && (
           <div className="mb-2 flex items-center gap-2 px-3 py-2 bg-destructive/10 rounded-xl border border-destructive/30">
@@ -301,6 +346,11 @@ const ChatInput = () => {
             <ImageIcon className="w-4 h-4 md:w-5 md:h-5" />
           </button>
           <input type="file" ref={fileRef} className="hidden" accept="image/*" onChange={handleImage} />
+          <button onClick={() => docRef.current?.click()} title="Attach a PDF, Word file or text file"
+            className="p-2 mb-0.5 text-muted-foreground hover:text-foreground hover:bg-card rounded-full transition-colors shrink-0">
+            <Paperclip className="w-4 h-4 md:w-5 md:h-5" />
+          </button>
+          <input type="file" ref={docRef} className="hidden" multiple accept={DOC_ACCEPT} onChange={handleDocs} />
 
           <button onClick={() => setShowGifs(true)} title="Send a GIF"
             className="px-2 py-1.5 mb-0.5 text-[10px] font-black tracking-wide text-muted-foreground hover:text-foreground hover:bg-card rounded-full transition-colors shrink-0 border border-border/50">
