@@ -205,7 +205,7 @@ const ChatInput = () => {
   };
 
   const handleSend = async () => {
-    if ((!text.trim() && !imageData) || isGenerating) return;
+    if ((!text.trim() && !imageData && docs.length === 0) || isGenerating) return;
     if (isListening) {
       recognitionRef.current?.stop();
       setIsListening(false);
@@ -224,6 +224,22 @@ const ChatInput = () => {
       r.onloadend = () => setImageData(r.result as string);
       r.readAsDataURL(f);
     }
+  };
+
+  const handleDocs = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const list = Array.from(e.target.files || []);
+    if (!list.length) return;
+    setDocBusy(true);
+    for (const f of list.slice(0, 4)) {
+      if (f.size > 20 * 1024 * 1024) { toast.error(`${f.name} is larger than 20 MB.`); continue; }
+      try {
+        const doc = await readDocument(f);
+        setDocs((d) => [...d, doc]);
+      } catch (err: any) {
+        toast.error(err?.message || `Could not read ${f.name}`);
+      }
+    }
+    setDocBusy(false);
   };
 
   const autoResize = (el: HTMLTextAreaElement) => {
