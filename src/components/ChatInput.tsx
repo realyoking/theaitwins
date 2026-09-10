@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, ImageIcon, X, Zap, Mic, MicOff, Square, Circle, Sparkles, Reply, AudioLines } from 'lucide-react';
+import { Send, ImageIcon, X, Zap, Mic, MicOff, Square, Circle, Sparkles, Reply, AudioLines, Paperclip, FileText, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { readDocument, docPromptBlock, prettySize, DOC_ACCEPT, type AttachedDoc } from '@/lib/documents';
 import { useAppStore } from '@/lib/store';
 import { sendChatMessage, abortChat } from '@/lib/chat-api';
 import { executePlugin } from './PluginSystem';
@@ -17,6 +19,8 @@ const ChatInput = () => {
   const [imageData, setImageData] = useState<string | null>(null);
   const [replyQuote, setReplyQuote] = useState<string | null>(null);
   const [videoRef2, setVideoRef2] = useState<string | null>(null);
+  const [docs, setDocs] = useState<AttachedDoc[]>([]);
+  const [docBusy, setDocBusy] = useState(false);
   const [showSkills, setShowSkills] = useState(false);
   const [showGifs, setShowGifs] = useState(false);
   const [showVoice, setShowVoice] = useState(false);
