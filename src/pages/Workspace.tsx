@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   ArrowLeft, Sparkles, Trash2, Download, Send, Loader2, LayoutGrid, PenTool, Presentation,
-  FileText, Table2, Search, Copy, Wand2, Film, Code2, Play, RefreshCw, Eye, Users, Type,
+  FileText, Table2, Search, Copy, Wand2, Film, Code2, Play, RefreshCw, Eye, Users, Type, Pencil,
 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
