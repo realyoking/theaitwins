@@ -279,7 +279,7 @@ const ChatArea = () => {
             );
           })
         )}
-        {isGenerating && <TypingIndicator model={model} />}
+        {isGenerating && messages[messages.length - 1]?.role !== 'bot' && <TypingIndicator model={model} />}
       </div>
 
       <ChatInput />
