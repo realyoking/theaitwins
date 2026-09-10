@@ -505,9 +505,19 @@ const Workspace = () => {
                   ))}
                 </div>
 
-                <div className="mt-6 flex items-center gap-2 bg-muted/60 border border-border/60 rounded-xl px-3 py-2 max-w-sm">
-                  <Search className="w-3.5 h-3.5 text-muted-foreground" />
-                  <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search files…" className="bg-transparent outline-none text-sm flex-1" />
+                <div className="mt-6 flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-2 bg-muted/60 border border-border/60 rounded-xl px-3 py-2 w-full sm:w-64">
+                    <Search className="w-3.5 h-3.5 text-muted-foreground" />
+                    <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search files…" className="bg-transparent outline-none text-sm flex-1" />
+                  </div>
+                  <div className="flex gap-1 overflow-x-auto no-scrollbar">
+                    {(['all', ...KINDS] as (DocKind | 'all')[]).map((k) => (
+                      <button key={k} onClick={() => setFilterKind(k)}
+                        className={`shrink-0 px-2.5 py-1.5 rounded-full border text-[10px] font-bold ${filterKind === k ? 'bg-primary/10 border-primary/40 text-primary' : 'bg-muted/60 border-border/60 text-muted-foreground hover:text-foreground'}`}>
+                        {k === 'all' ? 'All' : KIND_META[k].label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 pb-32">
@@ -534,7 +544,9 @@ const Workspace = () => {
                             <div className="text-[10px] text-muted-foreground">{KIND_META[d.kind].label} · {new Date(d.updatedAt).toLocaleString()}</div>
                           </div>
                         </button>
-                        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute top-2 right-2 flex gap-1 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => rename(d)} title="Rename" className="p-1.5 rounded-lg bg-card/90 border border-border/60"><Pencil className="w-3 h-3" /></button>
+                          <button onClick={() => duplicate(d)} title="Duplicate" className="p-1.5 rounded-lg bg-card/90 border border-border/60"><Copy className="w-3 h-3" /></button>
                           <button onClick={() => exportDoc(d)} className="p-1.5 rounded-lg bg-card/90 border border-border/60"><Download className="w-3 h-3" /></button>
                           <button onClick={() => remove(d.id)} className="p-1.5 rounded-lg bg-card/90 border border-border/60 text-destructive"><Trash2 className="w-3 h-3" /></button>
                         </div>
