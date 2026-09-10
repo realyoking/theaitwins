@@ -28,6 +28,7 @@ const ChatInput = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
+  const docRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -163,17 +164,22 @@ const ChatInput = () => {
     if (!deductCredits()) return;
     const quote = replyQuote;
     const vRef = videoRef2;
-    addMessage({ role: 'user', text: userText, image: imageData || undefined, replyTo: quote || undefined });
+    const files = docs;
+    const fileNote = files.length ? `\n\n📎 ${files.map((d) => d.name).join(', ')}` : '';
+    addMessage({ role: 'user', text: userText + fileNote, image: imageData || undefined, replyTo: quote || undefined });
     setText('');
     setImageData(null);
     setReplyQuote(null);
     setVideoRef2(null);
+    setDocs([]);
+    if (docRef.current) docRef.current.value = '';
     if (textareaRef.current) textareaRef.current.style.height = '20px';
     setIsGenerating(true);
     trackMessage(model, mode);
     const payload = [
       quote ? `[Replying to this earlier message: "${quote}"]` : '',
       vRef ? `[The user is referring to this generated video: ${vRef}]` : '',
+      docPromptBlock(files),
       userText,
     ].filter(Boolean).join('\n');
     await sendChatMessage(payload, imageData);
